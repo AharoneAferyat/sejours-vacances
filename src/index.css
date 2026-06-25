@@ -34,9 +34,9 @@ body {
 .app-layout {
   display: grid;
   grid-template-columns: 1fr 1.4fr 1fr;
-  gap: 1.25rem;
+  gap: clamp(.4rem, 1.5vw, 1.25rem);
   width: 100%;
-  padding: 1rem 1.25rem 3rem;
+  padding: clamp(.4rem, 2vw, 1.25rem) clamp(.4rem, 2vw, 1.25rem) 3rem;
   align-items: start;
   box-sizing: border-box;
 }
@@ -796,120 +796,49 @@ body {
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
 
-/* Desktop large */
-@media (min-width: 1001px) {
-  .app-layout { grid-template-columns: 1fr 1.4fr 1fr; }
-}
+/* Everything uses clamp() and % so it scales at any zoom level */
 
-/* Tablet 600–1000px : 2 colonnes */
-@media (min-width: 601px) and (max-width: 1000px) {
+/* Under 900px: stack to single column */
+@media (max-width: 900px) {
   .app-layout {
-    grid-template-columns: 1fr 1fr;
-    padding: .75rem;
-    gap: .75rem;
+    grid-template-columns: 1fr !important;
   }
-  .col-center { grid-column: 1 / -1; order: -1; }
 }
 
-/* Mobile < 600px : 1 colonne */
+/* Under 600px: tighter padding */
 @media (max-width: 600px) {
   .app-layout {
-    grid-template-columns: 1fr;
-    padding: .5rem;
-    gap: .6rem;
+    padding: .5rem .5rem 2rem !important;
+    gap: .5rem !important;
   }
-
-  /* Header compact */
-  header { padding: .7rem .85rem !important; }
-  header > div:first-child {
-    grid-template-columns: 1fr 1fr !important;
-    gap: .4rem !important;
-  }
-  header > div:first-child > div:nth-child(2) {
-    display: none !important;
-  }
-  header > div:first-child::after {
-    content: 'Vacances Aharone';
-    font-family: 'Playfair Display', serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #fff;
-    text-align: center;
-    grid-column: 1 / -1;
-    order: -1;
-  }
-
-  .clock-big { font-size: 1.1rem !important; }
-  .clock-utc { font-size: .7rem !important; }
-
-  .trip-tabs-row {
-    justify-content: flex-start !important;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    flex-wrap: nowrap !important;
-    padding-bottom: .25rem;
-  }
-  .trip-tabs-row::-webkit-scrollbar { display: none; }
-
-  /* Today card */
-  .today-card { margin: .4rem .5rem !important; padding: .8rem; }
-  .today-title { font-size: .9rem; }
-  .chrono-box { padding: .5rem .7rem; }
-
-  /* Cards */
-  .card-header { padding: .6rem .7rem; gap: .4rem; }
-  .card-icon { width: 30px; height: 30px; font-size: .85rem; }
-  .card-title { font-size: .82rem; }
-  .card-sub { font-size: .67rem; }
-
-  /* Tabs */
-  .tab-btn { font-size: .72rem; padding: 5px 2px; }
-
-  /* Modals */
   .form-row { grid-template-columns: 1fr !important; }
-  .modal { padding: .85rem; max-height: 96vh; margin: .5rem; border-radius: 10px; }
-  .modal h2 { font-size: .9rem; margin-bottom: .7rem; }
-  .modal-overlay { padding: .5rem; align-items: flex-end; }
+  .modal { padding: .85rem !important; }
+  .modal-overlay { padding: .5rem !important; align-items: flex-end !important; }
+}
 
-  /* Check items */
-  .check-item { padding: .5rem .6rem; }
-  .check-item-text { font-size: .79rem; }
-  .check-item-icon { width: 28px; height: 28px; font-size: .85rem; }
+/* Full width cols always */
+.col-side, .col-center { width: 100%; min-width: 0; }
+.check-item { width: 100%; box-sizing: border-box; }
+.add-row { width: 100%; box-sizing: border-box; }
 
-  /* Badges & stats */
-  .badge { font-size: .58rem; padding: 2px 5px; }
-  .stat { font-size: .67rem; padding: 2px 6px; }
-  .pill { font-size: .65rem; }
+/* Trip color bar — prevent overflow */
+.trip-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .65rem clamp(.5rem, 2vw, 1.5rem);
+}
 
-  /* Weather */
-  .weather-strip { padding: .4rem .6rem; font-size: .73rem; }
-  .hour-cell { min-width: 36px; padding: .25rem .3rem; }
-  .hour-cell > div:first-child { font-size: .6rem; }
+.trip-bar-left {
+  min-width: 0;
+  flex: 1;
+}
 
-  /* Warn strip */
-  .warn-strip { padding: .35rem .6rem; font-size: .7rem; }
-
-  /* Col head */
-  .col-head { margin-bottom: .4rem; }
-  .col-head h2 { font-size: .7rem; }
-
-  /* Add row */
-  .add-row input { font-size: .78rem; padding: 5px 8px; }
-
-  /* Activity details */
-  .act-main { padding: .45rem .35rem; }
-  .act-main-icon { width: 30px; height: 30px; font-size: .95rem; }
-  .act-main-title { font-size: .82rem; }
-  .act-main-sub { font-size: .68rem; }
-
-  /* Links */
-  .ext-link { font-size: .7rem; padding: 3px 8px; }
-
-  /* Gear */
-  .gear-block { font-size: .76rem; }
-
-  /* Progress */
-  .progress-wrap { gap: .4rem; }
-  .progress-text { font-size: .7rem; }
+.trip-bar-stats {
+  display: flex;
+  gap: .4rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
