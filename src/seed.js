@@ -1,13 +1,13 @@
-// Run this once to seed Firebase with Val d'Isère data
-// Import and call seedDatabase() from browser console after deploying
-
-import { db } from './firebase'
+import { db, auth } from './firebase'
 import { doc, setDoc } from 'firebase/firestore'
-import { USER_ID } from './firebase'
 
 const vid = 'v_aharone'
 
 export async function seedDatabase() {
+  const user = auth.currentUser
+  if (!user) { console.error('Not logged in!'); return }
+  const uid = user.uid
+
   const data = {
     trips: [{
       id: 'trip_valdisere_2026',
@@ -82,8 +82,7 @@ export async function seedDatabase() {
             type: 'rando', difficulty: 'facile',
             subtitle: "Forêt de mélèzes · chute d'eau · acclimation parfaite",
             startTime: '08:30', endTime: '13:00',
-            distanceKm: 5, durationMin: 150, dplus: 220,
-            features: ['cascade'],
+            distanceKm: 5, durationMin: 150, dplus: 220, features: ['cascade'],
             desc: "Bus rouge gratuit depuis le village (~15 min). Suivre le chemin en rive gauche de l'Isère jusqu'au pont des Cognons, puis vers la <strong>cascade du Fornet</strong>.",
             gear: ['Chaussures de rando', 'Bâtons recommandés', 'Eau 1L'],
             links: [{ url: 'https://www.alltrails.com/fr/randonnee/france/savoie/cascade-du-fornet', label: 'AllTrails — Cascade du Fornet' }],
@@ -99,8 +98,7 @@ export async function seedDatabase() {
             type: 'rando', difficulty: 'moyen',
             subtitle: 'Lac turquoise 2350m · 700m D+ · montée intégrale à pied',
             startTime: '07:30', endTime: '14:00',
-            distanceKm: 10, durationMin: 390, dplus: 700,
-            features: ['lac', 'faune', 'vue'],
+            distanceKm: 10, durationMin: 390, dplus: 700, features: ['lac', 'faune', 'vue'],
             desc: "<strong>Montée intégrale à pied !</strong> Sentier Solaise depuis le camp. 1h30–2h de montée.<br><br>Au sommet : <strong>lac de l'Ouillette</strong> aux reflets turquoise · marmottes · Restaurant La Plage (10h–17h).",
             gear: ['Chaussures de rando avec maintien', 'Bâtons fortement recommandés', 'Eau 1,5–2L', 'Coupe-vent', 'Crème solaire SPF 50+', 'Pique-nique'],
             links: [{ url: 'https://www.alltrails.com/fr/randonnee/france/savoie/val-d-isere-lac-de-l-ouillette', label: "AllTrails — Lac de l'Ouillette" }],
@@ -116,8 +114,7 @@ export async function seedDatabase() {
             type: 'rando', difficulty: 'moyen',
             subtitle: 'Bois de Laye · résurgence mystérieuse · barrage le plus haut de France',
             startTime: '08:30', endTime: '13:30',
-            distanceKm: 9.5, durationMin: 180, dplus: 350,
-            features: ['cascade', 'lac', 'vue'],
+            distanceKm: 9.5, durationMin: 180, dplus: 350, features: ['cascade', 'lac', 'vue'],
             desc: "Depuis La Daille (bus rouge), sentier dans le <strong>Bois de Laye</strong>.<br><br>• <strong>Gouille de Salin</strong> — eau du glacier qui ressort du sol<br>• <strong>Cascades de Salin</strong> — chutes imposantes<br>• Vue sur le <strong>lac du Chevril</strong> (barrage 160m)",
             gear: ['Chaussures de rando', 'Eau 1,5L', 'Coupe-vent'],
             links: [{ url: 'https://www.alltrails.com/fr/randonnee/france/savoie/la-daille-bois-de-laye-lac-du-chevril', label: 'AllTrails — Bois de Laye' }],
@@ -133,8 +130,7 @@ export async function seedDatabase() {
             type: 'rando', difficulty: 'moyen',
             subtitle: 'Boucle Vanoise · double cascade remarquable · 4,9⭐ AllTrails',
             startTime: '08:15', endTime: '14:00',
-            distanceKm: 12, durationMin: 330, dplus: 625,
-            features: ['cascade', 'faune', 'vue'],
+            distanceKm: 12, durationMin: 330, dplus: 625, features: ['cascade', 'faune', 'vue'],
             desc: "<strong>La rando coup de cœur — 4,9/5 AllTrails.</strong><br><br>Sens <strong>anti-horaire (par les Pissets)</strong>.<br>• <strong>Cascade du Saut du Pisset</strong> — double écoulement<br>• <strong>Lac du Grapillon</strong> (2665m)<br>• Marmottes + Vue Mont Blanc",
             gear: ['Chaussures de rando semelle crantée', 'Bâtons', 'Eau 2L', 'Pique-nique', 'Coupe-vent (2600m+)', 'Crème solaire SPF 50+'],
             links: [
@@ -169,7 +165,7 @@ export async function seedDatabase() {
   }
 
   await setDoc(doc(db, 'users', uid), data)
-  console.log('✅ Base de données initialisée avec les données Val d\'Isère !')
-  console.log('UID utilisé:', uid)
+  console.log("✅ Données Val d'Isère chargées dans Firebase !")
+  console.log('UID:', uid)
   return data
 }
