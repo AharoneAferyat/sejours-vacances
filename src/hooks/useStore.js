@@ -281,13 +281,13 @@ export function useStore() {
   }, [update])
 
   // ─── VOYAGEURS ─────────────────────────────────────────────────────────────
-  const addVoyageur = useCallback((tripId, name) => {
+  const addVoyageur = useCallback((tripId, name, email = null) => {
     const vid = 'v_' + Date.now()
     update(s => ({
       ...s,
       trips: s.trips.map(t => t.id === tripId ? {
         ...t,
-        voyageurs: [...(t.voyageurs||[]), { id: vid, name }],
+        voyageurs: [...(t.voyageurs||[]), { id: vid, name, email }],
         voyageurData: { ...(t.voyageurData||{}), [vid]: makeVoyageurData() },
       } : t)
     }))

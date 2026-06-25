@@ -796,31 +796,51 @@ body {
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
 
-/* Tablet < 1000px */
-@media (max-width: 1000px) {
-  .app-layout {
-    grid-template-columns: 1fr;
-    padding: .75rem .75rem 2rem;
-    gap: .75rem;
-  }
+/* Desktop large */
+@media (min-width: 1001px) {
+  .app-layout { grid-template-columns: 1fr 1.4fr 1fr; }
 }
 
-/* Mobile < 600px */
-@media (max-width: 600px) {
-  /* Header */
-  header { padding: .75rem .85rem !important; }
+/* Tablet 600–1000px : 2 colonnes */
+@media (min-width: 601px) and (max-width: 1000px) {
+  .app-layout {
+    grid-template-columns: 1fr 1fr;
+    padding: .75rem;
+    gap: .75rem;
+  }
+  .col-center { grid-column: 1 / -1; order: -1; }
+}
 
-  header > div:first-child {
-    grid-template-columns: 1fr !important;
-    gap: .5rem !important;
+/* Mobile < 600px : 1 colonne */
+@media (max-width: 600px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    padding: .5rem;
+    gap: .6rem;
   }
 
-  header > div:first-child > div:last-child {
-    justify-content: flex-start !important;
+  /* Header compact */
+  header { padding: .7rem .85rem !important; }
+  header > div:first-child {
+    grid-template-columns: 1fr 1fr !important;
+    gap: .4rem !important;
+  }
+  header > div:first-child > div:nth-child(2) {
+    display: none !important;
+  }
+  header > div:first-child::after {
+    content: 'Vacances Aharone';
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    grid-column: 1 / -1;
+    order: -1;
   }
 
   .clock-big { font-size: 1.1rem !important; }
-  .clock-utc { font-size: .72rem !important; }
+  .clock-utc { font-size: .7rem !important; }
 
   .trip-tabs-row {
     justify-content: flex-start !important;
@@ -828,51 +848,68 @@ body {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     flex-wrap: nowrap !important;
-    padding-bottom: .2rem;
+    padding-bottom: .25rem;
   }
   .trip-tabs-row::-webkit-scrollbar { display: none; }
 
-  /* Layout */
-  .app-layout { padding: .5rem .5rem 2rem; gap: .5rem; }
-
   /* Today card */
-  .today-card { margin: .4rem .5rem !important; padding: .85rem .9rem; }
-  .today-title { font-size: .95rem; }
+  .today-card { margin: .4rem .5rem !important; padding: .8rem; }
+  .today-title { font-size: .9rem; }
+  .chrono-box { padding: .5rem .7rem; }
 
   /* Cards */
-  .card-header { padding: .6rem .7rem; gap: .45rem; }
-  .card-icon { width: 30px; height: 30px; font-size: .9rem; }
+  .card-header { padding: .6rem .7rem; gap: .4rem; }
+  .card-icon { width: 30px; height: 30px; font-size: .85rem; }
   .card-title { font-size: .82rem; }
   .card-sub { font-size: .67rem; }
 
   /* Tabs */
-  .tabs { padding: 2px; }
-  .tab-btn { font-size: .72rem; padding: 5px 0; }
+  .tab-btn { font-size: .72rem; padding: 5px 2px; }
 
-  /* Forms */
+  /* Modals */
   .form-row { grid-template-columns: 1fr !important; }
-  .modal { padding: .9rem; max-height: 95vh; }
-  .modal h2 { font-size: .9rem; }
+  .modal { padding: .85rem; max-height: 96vh; margin: .5rem; border-radius: 10px; }
+  .modal h2 { font-size: .9rem; margin-bottom: .7rem; }
+  .modal-overlay { padding: .5rem; align-items: flex-end; }
 
   /* Check items */
-  .check-item { padding: .5rem .65rem; }
+  .check-item { padding: .5rem .6rem; }
   .check-item-text { font-size: .79rem; }
+  .check-item-icon { width: 28px; height: 28px; font-size: .85rem; }
 
   /* Badges & stats */
-  .badge { font-size: .6rem; padding: 2px 5px; }
+  .badge { font-size: .58rem; padding: 2px 5px; }
   .stat { font-size: .67rem; padding: 2px 6px; }
+  .pill { font-size: .65rem; }
 
   /* Weather */
-  .weather-strip { padding: .4rem .7rem; font-size: .75rem; }
-  .hour-cell { min-width: 36px; padding: .28rem .35rem; }
+  .weather-strip { padding: .4rem .6rem; font-size: .73rem; }
+  .hour-cell { min-width: 36px; padding: .25rem .3rem; }
+  .hour-cell > div:first-child { font-size: .6rem; }
 
   /* Warn strip */
-  .warn-strip { padding: .4rem .7rem; font-size: .72rem; }
+  .warn-strip { padding: .35rem .6rem; font-size: .7rem; }
 
   /* Col head */
-  .col-head { margin-bottom: .5rem; }
+  .col-head { margin-bottom: .4rem; }
   .col-head h2 { font-size: .7rem; }
 
   /* Add row */
-  .add-row input { font-size: .78rem; }
+  .add-row input { font-size: .78rem; padding: 5px 8px; }
+
+  /* Activity details */
+  .act-main { padding: .45rem .35rem; }
+  .act-main-icon { width: 30px; height: 30px; font-size: .95rem; }
+  .act-main-title { font-size: .82rem; }
+  .act-main-sub { font-size: .68rem; }
+
+  /* Links */
+  .ext-link { font-size: .7rem; padding: 3px 8px; }
+
+  /* Gear */
+  .gear-block { font-size: .76rem; }
+
+  /* Progress */
+  .progress-wrap { gap: .4rem; }
+  .progress-text { font-size: .7rem; }
 }

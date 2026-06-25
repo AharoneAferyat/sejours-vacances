@@ -10,7 +10,6 @@ import TripForm from './components/TripForm'
 import VoyageursModal from './components/VoyageursModal'
 import InfosTab from './components/InfosTab'
 import AIRandoSearch from './components/AIRandoSearch'
-import InviteModal from './components/InviteModal'
 
 export default function App() {
   const store = useStore()
@@ -19,7 +18,6 @@ export default function App() {
   const [editingTrip, setEditingTrip] = useState(null)
   const [showVoyageurs, setShowVoyageurs] = useState(false)
   const [showAI, setShowAI] = useState(false)
-  const [showInvite, setShowInvite] = useState(false)
   const [aiTargetDayId, setAiTargetDayId] = useState(null)
 
   const trip = store.activeTrip
@@ -122,11 +120,7 @@ export default function App() {
               </div>
               {trip.accommodation && <div style={{ fontSize: '.73rem', opacity: .8 }}>{trip.accommodation}</div>}
             </div>
-            {!trip._isShared && (
-              <button onClick={() => setShowInvite(true)} style={{ background: 'rgba(255,255,255,.2)', border: '1px solid rgba(255,255,255,.3)', borderRadius: 8, padding: '5px 12px', color: '#fff', cursor: 'pointer', fontSize: '.75rem', fontFamily: 'inherit', fontWeight: 500, flexShrink: 0 }}>
-                ✉️ Inviter
-              </button>
-            )}
+
             {/* Trip total stats */}
             {tripStats && (tripStats.totalKm > 0 || tripStats.totalMin > 0) && (
               <div style={{ display: 'flex', gap: '.5rem', flexShrink: 0, opacity: .85, fontSize: '.75rem' }}>
@@ -254,20 +248,11 @@ export default function App() {
 
       {showVoyageurs && trip && (
         <VoyageursModal
-          tripName={trip.name}
+          trip={trip}
           voyageurs={tripVoyageurs}
-          onAdd={name => store.addVoyageur(trip.id, name)}
+          onAdd={(name, email) => store.addVoyageur(trip.id, name, email)}
           onRemove={vid => store.removeVoyageur(trip.id, vid)}
           onClose={() => setShowVoyageurs(false)}
-        />
-      )}
-
-      {showInvite && trip && (
-        <InviteModal
-          trip={trip}
-          onClose={() => setShowInvite(false)}
-          onInvite={(email) => store.inviteGuest(trip.id, email)}
-          onRemoveGuest={(email) => store.removeGuest(trip.id, email)}
         />
       )}
 
