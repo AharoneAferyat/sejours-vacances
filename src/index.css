@@ -793,80 +793,86 @@ body {
 .act-extra:hover { background: var(--gray-light); }
 .act-extra input[type=checkbox] { accent-color: var(--green); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; margin-top: 2px; }
 
-/* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
+
 /* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
 
-/* Tablette (< 900px) : empile les 3 colonnes */
-@media (max-width: 900px) {
+/* Tablet < 1000px */
+@media (max-width: 1000px) {
   .app-layout {
     grid-template-columns: 1fr;
     padding: .75rem .75rem 2rem;
     gap: .75rem;
   }
-  .today-card { margin: .5rem .75rem; }
-  .warn-strip, .weather-strip { padding: .45rem .75rem; }
 }
 
-/* Mobile (< 600px) */
+/* Mobile < 600px */
 @media (max-width: 600px) {
-  .app-layout { padding: .5rem .5rem 2rem; gap: .6rem; }
-
   /* Header */
-  header { padding: .8rem .9rem; }
-  header h1, .header-title h1 { font-size: 1.25rem !important; }
+  header { padding: .75rem .85rem !important; }
 
-  /* Clock */
+  header > div:first-child {
+    grid-template-columns: 1fr !important;
+    gap: .5rem !important;
+  }
+
+  header > div:first-child > div:last-child {
+    justify-content: flex-start !important;
+  }
+
   .clock-big { font-size: 1.1rem !important; }
   .clock-utc { font-size: .72rem !important; }
 
-  /* Trip tabs — scroll horizontal */
   .trip-tabs-row {
+    justify-content: flex-start !important;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    flex-wrap: nowrap !important;
     padding-bottom: .2rem;
   }
   .trip-tabs-row::-webkit-scrollbar { display: none; }
 
+  /* Layout */
+  .app-layout { padding: .5rem .5rem 2rem; gap: .5rem; }
+
   /* Today card */
-  .today-card { margin: .4rem .5rem; padding: .85rem .9rem; }
+  .today-card { margin: .4rem .5rem !important; padding: .85rem .9rem; }
   .today-title { font-size: .95rem; }
 
   /* Cards */
-  .card-header { padding: .65rem .75rem; gap: .5rem; }
-  .card-icon { width: 32px; height: 32px; font-size: 1rem; }
+  .card-header { padding: .6rem .7rem; gap: .45rem; }
+  .card-icon { width: 30px; height: 30px; font-size: .9rem; }
   .card-title { font-size: .82rem; }
-  .card-sub { font-size: .68rem; }
-  .card-body { padding: .7rem; }
+  .card-sub { font-size: .67rem; }
 
   /* Tabs */
-  .tab-btn { font-size: .73rem; padding: 5px 0; }
+  .tabs { padding: 2px; }
+  .tab-btn { font-size: .72rem; padding: 5px 0; }
 
   /* Forms */
-  .form-row { grid-template-columns: 1fr; }
-  .modal { padding: 1rem; }
-  .modal h2 { font-size: .92rem; }
+  .form-row { grid-template-columns: 1fr !important; }
+  .modal { padding: .9rem; max-height: 95vh; }
+  .modal h2 { font-size: .9rem; }
 
   /* Check items */
-  .check-item { padding: .55rem .7rem; }
-  .check-item-text { font-size: .8rem; }
+  .check-item { padding: .5rem .65rem; }
+  .check-item-text { font-size: .79rem; }
 
-  /* Badges */
+  /* Badges & stats */
   .badge { font-size: .6rem; padding: 2px 5px; }
+  .stat { font-size: .67rem; padding: 2px 6px; }
 
-  /* Stats / pills */
-  .stats { gap: .25rem; }
-  .stat { font-size: .68rem; padding: 2px 7px; }
+  /* Weather */
+  .weather-strip { padding: .4rem .7rem; font-size: .75rem; }
+  .hour-cell { min-width: 36px; padding: .28rem .35rem; }
 
-  /* Hourly weather scroll */
-  .hourly-scroll { gap: .25rem; }
-  .hour-cell { min-width: 38px; padding: .3rem .4rem; }
+  /* Warn strip */
+  .warn-strip { padding: .4rem .7rem; font-size: .72rem; }
 
   /* Col head */
+  .col-head { margin-bottom: .5rem; }
   .col-head h2 { font-size: .7rem; }
-}
 
-/* Full width */
-.col-side { width: 100%; min-width: 0; }
-.check-item { width: 100%; box-sizing: border-box; }
-.add-row { width: 100%; box-sizing: border-box; }
+  /* Add row */
+  .add-row input { font-size: .78rem; }
+}

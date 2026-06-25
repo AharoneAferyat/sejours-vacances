@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { saveToCloud, loadFromCloud, subscribeToCloud, onAuthChange, signInWithGoogle, signOutUser } from '../firebase'
+import { saveToCloud, loadFromCloud, subscribeToCloud, onAuthChange, signInWithGoogle, signOutUser, shareTrip, getSharedTrips, loadSharedTripData } from '../firebase'
 
 const DEFAULT_VOYAGEUR_NAME = 'Moi'
 
@@ -56,6 +56,7 @@ function fixTrips(trips) {
 
 export function useStore() {
   const [uid, setUid] = useState(null)
+  const [userEmail, setUserEmail] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [state, setState] = useState({ trips: [], activeTripId: null, notes: [] })
   const [dataLoaded, setDataLoaded] = useState(false)
@@ -67,6 +68,7 @@ export function useStore() {
   useEffect(() => {
     const unsub = onAuthChange(user => {
       setUid(user?.uid || null)
+      setUserEmail(user?.email || null)
       setAuthLoading(false)
     })
     return () => unsub()
@@ -84,12 +86,36 @@ export function useStore() {
     setDataLoaded(false)
     initialized.current = false
 
-    loadFromCloud(uid).then(cloudData => {
+    loadFromCloud(uid).then(async cloudData => {
+      let ownData = { trips: [], activeTripId: null, notes: [] }
       if (cloudData && cloudData.trips) {
-        const fixed = { ...cloudData, trips: fixTrips(cloudData.trips) }
-        setState(fixed)
-        // Save back cleaned data
-        saveToCloud(uid, fixed)
+        ownData = { ...cloudData, trips: fixTrips(cloudData.trips) }
+        saveToCloud(uid, ownData)
+      }
+
+      // Load shared trips
+      if (userEmail) {
+        try {
+          const shared = await getSharedTrips(userEmail)
+          for (const share of shared) {
+            const ownerData = await loadSharedTripData(share.ownerUid)
+            if (ownerData?.trips) {
+              const sharedTrip = ownerData.trips.find(t => t.id === share.tripId)
+              if (sharedTrip && !ownData.trips.find(t => t.id === sharedTrip.id)) {
+                // Mark as shared so we know not to save it to own storage
+                ownData = {
+                  ...ownData,
+                  trips: [...ownData.trips, { ...sharedTrip, _sharedFrom: share.ownerUid, _isShared: true }]
+                }
+              }
+            }
+          }
+        } catch(e) { console.warn('Shared trips load error:', e) }
+      }
+
+      setState(ownData)
+      if (!ownData.activeTripId && ownData.trips.length > 0) {
+        setState(s => ({ ...s, activeTripId: ownData.trips[0].id }))
       }
       initialized.current = true
       setDataLoaded(true)
@@ -350,6 +376,31 @@ export function useStore() {
     })}))
   }, [update])
 
+  // ─── INVITATIONS ───────────────────────────────────────────────────────────
+  const inviteGuest = useCallback(async (tripId, guestEmail) => {
+    if (!uid) return
+    // Add to trip guests list
+    update(s => ({
+      ...s,
+      trips: s.trips.map(t => t.id === tripId ? {
+        ...t,
+        guests: [...(t.guests || []), { email: guestEmail, accepted: false, invitedAt: Date.now() }]
+      } : t)
+    }))
+    // Create shared trip record in Firebase
+    await shareTrip(uid, tripId, guestEmail)
+  }, [update, uid])
+
+  const removeGuest = useCallback((tripId, guestEmail) => {
+    update(s => ({
+      ...s,
+      trips: s.trips.map(t => t.id === tripId ? {
+        ...t,
+        guests: (t.guests || []).filter(g => g.email !== guestEmail)
+      } : t)
+    }))
+  }, [update])
+
   // ─── NOTES ─────────────────────────────────────────────────────────────────
   const addNote = useCallback((text) => {
     update(s => ({ ...s, notes: [...(s.notes||[]), { id:'n_'+Date.now(), text, done:false }] }))
@@ -383,5 +434,6 @@ export function useStore() {
     toggleValiseItem, addValiseItem, removeValiseItem,
     toggleSacItem, addSacItem, removeSacItem,
     addNote, toggleNote, removeNote,
+    inviteGuest, removeGuest, userEmail,
   }
 }
