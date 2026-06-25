@@ -172,14 +172,6 @@ export default function App() {
               {trip.accommodation && <div style={{ fontSize: '.73rem', opacity: .8 }}>{trip.accommodation}</div>}
             </div>
 
-            {/* Trip total stats */}
-            {tripStats && (tripStats.totalKm > 0 || tripStats.totalMin > 0) && (
-              <div style={{ display: 'flex', gap: '.5rem', flexShrink: 0, opacity: .85, fontSize: '.75rem' }}>
-                {tripStats.totalKm > 0 && <span style={{ background: 'rgba(255,255,255,.2)', padding: '3px 9px', borderRadius: 20 }}>📍 {tripStats.totalKm}km total</span>}
-                {tripStats.totalDplus > 0 && <span style={{ background: 'rgba(255,255,255,.2)', padding: '3px 9px', borderRadius: 20 }}>⬆️ {tripStats.totalDplus}m D+</span>}
-                {tripStats.totalMin > 0 && <span style={{ background: 'rgba(255,255,255,.2)', padding: '3px 9px', borderRadius: 20 }}>⏱ {formatDuration(tripStats.totalMin)}</span>}
-              </div>
-            )}
           </div>
 
           <WeatherStrip lat={trip.lat} lon={trip.lon} locationName={trip.destination || trip.name} />
