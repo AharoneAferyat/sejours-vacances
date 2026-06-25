@@ -168,8 +168,8 @@ export async function seedDatabase() {
     updatedAt: Date.now()
   }
 
-  await setDoc(doc(db, 'users', USER_ID), data)
+  await setDoc(doc(db, 'users', uid), data)
   console.log('✅ Base de données initialisée avec les données Val d\'Isère !')
-  console.log('USER_ID utilisé:', USER_ID)
+  console.log('UID utilisé:', uid)
   return data
 }

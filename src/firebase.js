@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore'
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: "AIzaSyDQHZKkob_S1zXDjjuWPc_SefM9Fk7rhMg",
@@ -12,35 +13,42 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
+export const auth = getAuth(app)
 
-// ID unique par utilisateur — stocké en localStorage
-function getUserId() {
-  let uid = localStorage.getItem('sejours_uid')
-  if (!uid) {
-    uid = 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)
-    localStorage.setItem('sejours_uid', uid)
+// Google sign-in
+export async function signInWithGoogle() {
+  const provider = new GoogleAuthProvider()
+  try {
+    const result = await signInWithPopup(auth, provider)
+    return result.user
+  } catch (e) {
+    console.error('Sign in error:', e)
+    return null
   }
-  return uid
 }
 
-export const USER_ID = getUserId()
+export function signOutUser() {
+  return signOut(auth)
+}
 
-// Sauvegarde l'état complet dans Firestore
-export async function saveToCloud(state) {
+export function onAuthChange(callback) {
+  return onAuthStateChanged(auth, callback)
+}
+
+// Cloud operations - use auth UID
+export async function saveToCloud(uid, state) {
+  if (!uid) return
   try {
-    await setDoc(doc(db, 'users', USER_ID), {
-      ...state,
-      updatedAt: Date.now()
-    })
+    await setDoc(doc(db, 'users', uid), { ...state, updatedAt: Date.now() })
   } catch (e) {
     console.warn('Cloud save failed:', e.message)
   }
 }
 
-// Charge l'état depuis Firestore
-export async function loadFromCloud() {
+export async function loadFromCloud(uid) {
+  if (!uid) return null
   try {
-    const snap = await getDoc(doc(db, 'users', USER_ID))
+    const snap = await getDoc(doc(db, 'users', uid))
     if (snap.exists()) return snap.data()
   } catch (e) {
     console.warn('Cloud load failed:', e.message)
@@ -48,11 +56,9 @@ export async function loadFromCloud() {
   return null
 }
 
-// Écoute les changements en temps réel (sync entre appareils)
-export function subscribeToCloud(callback) {
-  return onSnapshot(doc(db, 'users', USER_ID), (snap) => {
+export function subscribeToCloud(uid, callback) {
+  if (!uid) return () => {}
+  return onSnapshot(doc(db, 'users', uid), (snap) => {
     if (snap.exists()) callback(snap.data())
-  }, (e) => {
-    console.warn('Cloud sync error:', e.message)
-  })
+  }, (e) => console.warn('Cloud sync error:', e.message))
 }
