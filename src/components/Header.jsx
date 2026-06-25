@@ -22,58 +22,63 @@ export default function AppHeader({
     return () => clearInterval(id)
   }, [])
 
+  // Show only email part before @, or first 12 chars of UID
+  const displayUser = userEmail?.includes('@')
+    ? userEmail.split('@')[0]
+    : userEmail?.slice(0, 10)
+
   return (
     <header style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', color: '#fff' }}>
 
-      {/* ── TOP BAR ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(.4rem, 2vw, 1rem)', padding: 'clamp(.5rem, 2vw, .9rem) clamp(.6rem, 2.5vw, 1.25rem)', borderBottom: '1px solid rgba(255,255,255,.08)', flexWrap: 'wrap' }}>
+      {/* ── ROW 1: Séjours | Title + Clock | Déconnexion + Voyageurs ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'start', gap: 'clamp(.4rem, 2vw, 1rem)', padding: 'clamp(.5rem, 2vw, .85rem) clamp(.6rem, 2.5vw, 1.25rem)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
 
         {/* LEFT — Séjours dropdown */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div style={{ position: 'relative' }}>
           <button onClick={() => setShowTripMenu(m => !m)} style={{
             background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
             borderRadius: 10, padding: '7px 12px', color: '#fff', cursor: 'pointer',
             fontSize: 'clamp(.72rem, 1.8vw, .82rem)', fontFamily: 'inherit', fontWeight: 500,
-            display: 'flex', alignItems: 'center', gap: '.35rem'
+            display: 'flex', alignItems: 'center', gap: '.35rem', whiteSpace: 'nowrap'
           }}>
             ✈️ Séjours
-            <span style={{ fontSize: '.65rem', opacity: .7, background: 'rgba(255,255,255,.15)', borderRadius: 10, padding: '1px 6px' }}>{trips.length}</span>
-            <span style={{ fontSize: '.6rem', opacity: .6 }}>{showTripMenu ? '▴' : '▾'}</span>
+            <span style={{ fontSize: '.6rem', opacity: .65, background: 'rgba(255,255,255,.15)', borderRadius: 8, padding: '1px 5px' }}>{trips.length}</span>
+            <span style={{ fontSize: '.6rem', opacity: .5 }}>{showTripMenu ? '▴' : '▾'}</span>
           </button>
 
           {showTripMenu && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 200,
               background: '#fff', border: '1px solid var(--border)', borderRadius: 12,
-              boxShadow: '0 8px 32px rgba(0,0,0,.18)', minWidth: 240, overflow: 'hidden'
+              boxShadow: '0 8px 32px rgba(0,0,0,.2)', minWidth: 240, overflow: 'hidden'
             }}>
-              <div style={{ padding: '.5rem .8rem', fontSize: '.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ padding: '.5rem .8rem', fontSize: '.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
                 Mes séjours
               </div>
               {trips.map((t, i) => {
                 const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
                 const isActive = t.id === activeTrip?.id
                 return (
-                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', padding: '.55rem .8rem', gap: '.55rem', background: isActive ? '#f8f7f3' : '#fff', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', padding: '.5rem .8rem', gap: '.5rem', background: isActive ? '#f8f7f3' : '#fff', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
                     onClick={() => { onSelectTrip(t.id); setShowTripMenu(false) }}>
-                    <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '.83rem', fontWeight: isActive ? 600 : 400, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.name}</div>
+                      <div style={{ fontSize: '.83rem', fontWeight: isActive ? 600 : 400, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
                       {t.startDate && <div style={{ fontSize: '.68rem', color: 'var(--text-muted)' }}>
                         {new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})} → {new Date(t.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}
                       </div>}
                     </div>
-                    <div style={{ display: 'flex', gap: 3 }}>
+                    <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
                       <button onClick={e => { e.stopPropagation(); onEditTrip(t); setShowTripMenu(false) }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.72rem', padding: '2px 3px', color: 'var(--text-muted)' }}>✏️</button>
+                        title="Modifier" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.72rem', padding: '2px 3px', color: 'var(--text-muted)', borderRadius: 4 }}>✏️</button>
                       {trips.length > 1 && <button onClick={e => { e.stopPropagation(); confirm(`Supprimer "${t.name}" ?`) && onDeleteTrip(t.id); setShowTripMenu(false) }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.72rem', padding: '2px 3px', color: 'var(--text-muted)' }}>🗑</button>}
+                        title="Supprimer" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.72rem', padding: '2px 3px', color: 'var(--text-muted)', borderRadius: 4 }}>🗑</button>}
                     </div>
                   </div>
                 )
               })}
               <button onClick={() => { onNewTrip(); setShowTripMenu(false) }}
-                style={{ width: '100%', padding: '.6rem .8rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.82rem', fontWeight: 500, color: 'var(--green)', textAlign: 'left' }}>
+                style={{ width: '100%', padding: '.6rem .8rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.82rem', fontWeight: 600, color: 'var(--green)', textAlign: 'left' }}>
                 ＋ Nouveau séjour
               </button>
             </div>
@@ -81,81 +86,98 @@ export default function AppHeader({
         </div>
 
         {/* CENTER — Title + clock */}
-        <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1rem, 3vw, 1.5rem)', fontWeight: 700, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ textAlign: 'center', minWidth: 0 }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(.95rem, 3vw, 1.5rem)', fontWeight: 700, lineHeight: 1.1 }}>
             Vacances Aharone
           </div>
-          <div style={{ marginTop: '.2rem', fontSize: 'clamp(.7rem, 2vw, .85rem)' }}>
-            <span style={{ fontFamily: 'monospace', fontWeight: 600, letterSpacing: '.05em' }}>{time.local}</span>
-            <span style={{ fontFamily: 'monospace', opacity: .45, marginLeft: '.5rem', fontSize: '.85em' }}>UTC {time.utc}</span>
-            {syncing && <span style={{ opacity: .45, marginLeft: '.4rem' }}>☁️</span>}
+          <div style={{ marginTop: '.2rem' }}>
+            <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 'clamp(.78rem, 2vw, 1.05rem)', letterSpacing: '.05em' }}>{time.local}</span>
+            <span style={{ fontFamily: 'monospace', opacity: .4, marginLeft: '.5rem', fontSize: 'clamp(.65rem, 1.5vw, .78rem)' }}>UTC {time.utc}</span>
+            {syncing && <span style={{ opacity: .4, marginLeft: '.35rem', fontSize: '.7rem' }}>☁️</span>}
           </div>
         </div>
 
-        {/* RIGHT — Voyageurs + Déconnexion */}
-        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.25rem' }}>
+        {/* RIGHT — Déconnexion (top) + Voyageurs (below) */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.3rem' }}>
+          {/* Déconnexion — top right, most visible */}
+          {onSignOut && (
+            <button onClick={onSignOut} style={{
+              background: 'rgba(255,60,60,.15)', border: '1px solid rgba(255,100,100,.25)',
+              borderRadius: 8, padding: '5px 11px', color: 'rgba(255,180,180,.9)', cursor: 'pointer',
+              fontSize: 'clamp(.68rem, 1.6vw, .75rem)', fontFamily: 'inherit', fontWeight: 500,
+              display: 'flex', alignItems: 'center', gap: '.3rem', whiteSpace: 'nowrap'
+            }}>
+              {displayUser && <span style={{ opacity: .7 }}>{displayUser}</span>}
+              {displayUser && <span style={{ opacity: .4 }}>·</span>}
+              Déconnexion
+            </button>
+          )}
+
+          {/* Voyageurs */}
           <button onClick={onOpenVoyageurs} style={{
             background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
-            borderRadius: 10, padding: '7px 12px', color: '#fff', cursor: 'pointer',
-            fontSize: 'clamp(.72rem, 1.8vw, .82rem)', fontFamily: 'inherit', fontWeight: 500,
-            display: 'flex', alignItems: 'center', gap: '.45rem'
+            borderRadius: 8, padding: '5px 11px', color: '#fff', cursor: 'pointer',
+            fontSize: 'clamp(.68rem, 1.6vw, .75rem)', fontFamily: 'inherit', fontWeight: 500,
+            display: 'flex', alignItems: 'center', gap: '.4rem', whiteSpace: 'nowrap'
           }}>
             <div style={{ display: 'flex' }}>
               {voyageurs.slice(0,3).map((v, i) => (
                 <div key={v.id} style={{
-                  width: 22, height: 22, borderRadius: '50%',
-                  background: i === 0 ? '#1D9E75' : '#6b6b99',
+                  width: 20, height: 20, borderRadius: '50%',
+                  background: i === 0 ? '#1D9E75' : '#6b7cc4',
                   border: '1.5px solid rgba(255,255,255,.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '.6rem', fontWeight: 700, color: '#fff',
-                  marginLeft: i > 0 ? -7 : 0, position: 'relative', zIndex: 3-i
+                  fontSize: '.58rem', fontWeight: 700, color: '#fff',
+                  marginLeft: i > 0 ? -6 : 0, position: 'relative', zIndex: 3-i
                 }}>
                   {v.name.charAt(0).toUpperCase()}
                 </div>
               ))}
               {voyageurs.length > 3 && (
-                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,.2)', border: '1.5px solid rgba(255,255,255,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.55rem', color: '#fff', marginLeft: -7 }}>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,.2)', border: '1.5px solid rgba(255,255,255,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.52rem', color: '#fff', marginLeft: -6 }}>
                   +{voyageurs.length - 3}
                 </div>
               )}
             </div>
-            Voyageurs
+            👥 Voyageurs
           </button>
-          {onSignOut && (
-            <div style={{ textAlign: 'right' }}>
-              {userEmail && <div style={{ fontSize: '.6rem', opacity: .4, marginBottom: '1px', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>}
-              <button onClick={onSignOut} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,.4)', fontSize: '.65rem', fontFamily: 'inherit', padding: 0 }}>
-                Déconnexion
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* ── TRIP TABS (always visible, scrollable) ── */}
-      <div style={{ display: 'flex', gap: '.4rem', padding: '.55rem clamp(.6rem, 2.5vw, 1.25rem)', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+      {/* ── ROW 2: Trip tabs with edit/delete ── */}
+      <div style={{ display: 'flex', gap: '.35rem', padding: '.5rem clamp(.6rem, 2.5vw, 1.25rem)', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', alignItems: 'center' }}>
         {trips.map((t, i) => {
           const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
           const isActive = t.id === activeTrip?.id
           return (
-            <button key={t.id} onClick={() => onSelectTrip(t.id)} style={{
-              background: isActive ? color : 'rgba(255,255,255,.08)',
-              border: `1.5px solid ${isActive ? color : 'rgba(255,255,255,.15)'}`,
-              borderRadius: 8, padding: '5px 13px', color: '#fff', cursor: 'pointer',
-              fontSize: 'clamp(.72rem, 1.8vw, .8rem)', fontFamily: 'inherit',
-              fontWeight: isActive ? 600 : 400, whiteSpace: 'nowrap',
-              transition: 'all .15s', flexShrink: 0,
-              display: 'flex', flexDirection: 'column', alignItems: 'flex-start'
-            }}>
-              <span>{t.name}</span>
-              {t.startDate && (
-                <span style={{ fontSize: '.6rem', opacity: .72 }}>
-                  {new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}
-                  {' → '}
-                  {new Date(t.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}
-                </span>
-              )}
-            </button>
+            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+              <button onClick={() => onSelectTrip(t.id)} style={{
+                background: isActive ? color : 'rgba(255,255,255,.08)',
+                border: `1.5px solid ${isActive ? color : 'rgba(255,255,255,.15)'}`,
+                borderRadius: '8px 0 0 8px', padding: '5px 12px', color: '#fff', cursor: 'pointer',
+                fontSize: 'clamp(.7rem, 1.8vw, .8rem)', fontFamily: 'inherit',
+                fontWeight: isActive ? 600 : 400, transition: 'all .15s',
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start'
+              }}>
+                <span>{t.name}</span>
+                {t.startDate && (
+                  <span style={{ fontSize: '.58rem', opacity: .72 }}>
+                    {new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}
+                    {' → '}
+                    {new Date(t.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}
+                  </span>
+                )}
+              </button>
+              {/* Edit/delete buttons attached to tab */}
+              <div style={{ display: 'flex', flexDirection: 'column', background: isActive ? color : 'rgba(255,255,255,.06)', border: `1.5px solid ${isActive ? color : 'rgba(255,255,255,.15)'}`, borderLeft: 'none', borderRadius: '0 8px 8px 0', overflow: 'hidden' }}>
+                <button onClick={() => onEditTrip(t)} title="Modifier"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', padding: '3px 6px', color: 'rgba(255,255,255,.6)', borderBottom: '1px solid rgba(255,255,255,.1)', lineHeight: 1 }}>✏️</button>
+                {trips.length > 1 && (
+                  <button onClick={() => confirm(`Supprimer "${t.name}" ?`) && onDeleteTrip(t.id)} title="Supprimer"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', padding: '3px 6px', color: 'rgba(255,255,255,.5)', lineHeight: 1 }}>🗑</button>
+                )}
+              </div>
+            </div>
           )
         })}
       </div>

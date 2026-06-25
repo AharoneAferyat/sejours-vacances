@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useStore } from './hooks/useStore'
-import { getTodayStr, genId, formatDate, displayToISO, calcDayStats, formatDuration } from './utils'
+import { getTodayStr, genId, formatDate, displayToISO } from './utils'
 import Header from './components/Header'
 import WeatherStrip from './components/WeatherStrip'
+import { useWeather } from './hooks/useWeather'
 import TodayZone from './components/TodayZone'
 import DayCard from './components/DayCard'
 import CheckList from './components/CheckList'
@@ -124,12 +125,6 @@ export default function App() {
   const validatedDays = trip?.days.filter(d => d.validated).length || 0
   const pct = totalDays ? Math.round(validatedDays / totalDays * 100) : 0
 
-  // Global trip stats
-  const tripStats = trip ? (() => {
-    const allActs = trip.days.flatMap(d => d.activities)
-    const stats = calcDayStats(allActs)
-    return stats
-  })() : null
 
 
 
@@ -146,6 +141,7 @@ export default function App() {
   }
 
   const tripColor = trip?.color || '#0F6E56'
+  const { weather: currentWeather, tomorrow: tomorrowWeather } = useWeather(trip?.lat, trip?.lon)
 
   return (
     <div>
@@ -189,16 +185,16 @@ export default function App() {
 
           <WeatherStrip lat={trip.lat} lon={trip.lon} locationName={trip.destination || trip.name} />
           <div className="warn-strip">⚠️ Règle d'or : partir avant 9h · rentrer avant 14h si ciel se couvre · orages 14h–18h</div>
-          <TodayZone trip={trip} onUpdateDay={(dayId, changes) => store.updateDay(trip.id, dayId, changes)} />
+          <TodayZone trip={trip} tomorrowWeather={tomorrowWeather} onUpdateDay={(dayId, changes) => store.updateDay(trip.id, dayId, changes)} />
         </>
       )}
 
       {/* MAIN 3-COL LAYOUT */}
       <div className="app-layout">
 
-        {/* LEFT: VALISE */}
+        {/* LEFT: SAC À DOS */}
         <div className="col-side">
-          <div className="col-head"><h2>🧳 Valise</h2></div>
+          <div className="col-head"><h2>🎒 Sac à dos</h2></div>
           {tripVoyageurs.length > 1 && (
             <div className="tabs" style={{ marginBottom: '.5rem' }}>
               {tripVoyageurs.map(v => (
@@ -208,11 +204,11 @@ export default function App() {
             </div>
           )}
           <CheckList
-            items={store.currentValise}
-            onToggle={id => store.toggleValiseItem(trip?.id, vid, id)}
-            onAdd={text => store.addValiseItem(trip?.id, vid, text)}
-            onRemove={id => store.removeValiseItem(trip?.id, vid, id)}
-            emptyEmoji="🧳"
+            items={store.currentSac}
+            onToggle={id => store.toggleSacItem(trip?.id, vid, id)}
+            onAdd={text => store.addSacItem(trip?.id, vid, text)}
+            onRemove={id => store.removeSacItem(trip?.id, vid, id)}
+            emptyEmoji="🎒"
           />
         </div>
 
@@ -268,9 +264,9 @@ export default function App() {
           {tab === 'infos' && <InfosTab trip={trip} onUpdateTrip={(changes) => store.updateTrip(trip.id, changes)} />}
         </div>
 
-        {/* RIGHT: SAC À DOS */}
+        {/* RIGHT: VALISE */}
         <div className="col-side">
-          <div className="col-head"><h2>🎒 Sac à dos</h2></div>
+          <div className="col-head"><h2>🧳 Valise</h2></div>
           {tripVoyageurs.length > 1 && (
             <div className="tabs" style={{ marginBottom: '.5rem' }}>
               {tripVoyageurs.map(v => (
@@ -280,11 +276,11 @@ export default function App() {
             </div>
           )}
           <CheckList
-            items={store.currentSac}
-            onToggle={id => store.toggleSacItem(trip?.id, vid, id)}
-            onAdd={text => store.addSacItem(trip?.id, vid, text)}
-            onRemove={id => store.removeSacItem(trip?.id, vid, id)}
-            emptyEmoji="🎒"
+            items={store.currentValise}
+            onToggle={id => store.toggleValiseItem(trip?.id, vid, id)}
+            onAdd={text => store.addValiseItem(trip?.id, vid, text)}
+            onRemove={id => store.removeValiseItem(trip?.id, vid, id)}
+            emptyEmoji="🧳"
           />
         </div>
       </div>
