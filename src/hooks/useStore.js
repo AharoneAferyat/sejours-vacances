@@ -28,8 +28,12 @@ function fixTrips(trips) {
       const validDates = new Set()
       const s = new Date(t.startDate + 'T00:00:00')
       const e = new Date(t.endDate + 'T00:00:00')
-      for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1))
-        validDates.add(d.toISOString().split('T')[0])
+      for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+        const y = d.getFullYear()
+        const m = String(d.getMonth()+1).padStart(2,'0')
+        const day = String(d.getDate()).padStart(2,'0')
+        validDates.add(`${y}-${m}-${day}`)
+      }
 
       const kept = days.filter(d => validDates.has(d.date))
       const keptDates = new Set(kept.map(d => d.date))
