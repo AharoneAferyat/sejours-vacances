@@ -141,7 +141,6 @@ export default function App() {
   }
 
   const tripColor = trip?.color || '#0F6E56'
-  const { weather: currentWeather, tomorrow: tomorrowWeather } = useWeather(trip?.lat, trip?.lon)
 
   return (
     <div>
