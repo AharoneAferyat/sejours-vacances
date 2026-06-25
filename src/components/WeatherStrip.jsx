@@ -5,16 +5,10 @@ const WC_ICON = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',61:
 export default function WeatherStrip({ lat, lon, locationName }) {
   const { weather, loading } = useWeather(lat, lon)
 
-  if (!lat || !lon) {
-    return (
-      <div className="weather-strip">
-        📍 Pas de coordonnées — ajoutez une adresse dans les infos du séjour
-      </div>
-    )
-  }
-
-  if (loading) return <div className="weather-strip">🌤 Chargement météo {locationName ? `(${locationName})` : ''}…</div>
-
+  if (!lat || !lon) return (
+    <div className="weather-strip">📍 Localisez le séjour pour voir la météo</div>
+  )
+  if (loading) return <div className="weather-strip">🌤 Chargement météo…</div>
   if (!weather) return (
     <div className="weather-strip">
       🌤 Météo indisponible —{' '}
@@ -29,7 +23,7 @@ export default function WeatherStrip({ lat, lon, locationName }) {
           <span>
             {weather.icon} {locationName && <strong>{locationName} : </strong>}
             <strong>{weather.temp}°C</strong> · {weather.label} · Vent {weather.wind} km/h
-            {weather.hasStorm && <strong style={{ marginLeft: '.5rem', color: '#b45309' }}>⚠️ Orages prévus</strong>}
+            {weather.hasStorm && <strong style={{ marginLeft: '.5rem', color: '#b45309' }}> ⚠️ Orages prévus</strong>}
           </span>
         </div>
         <div className="hourly-scroll">

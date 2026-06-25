@@ -63,14 +63,15 @@ export function useWeather(lat, lon) {
         })
 
         setWeather(mkWeather(todayHours))
+        const midDay = tomorrowHours.find(h => h.h === 12) || tomorrowHours[3] || tomorrowHours[0]
+        const tomorrowWc = midDay?.wc || 0
         setTomorrow({
-          ...mkWeather(tomorrowHours),
-          temp: tomorrowHours.length ? Math.round(tomorrowHours.reduce((s,h) => s+h.temp,0)/tomorrowHours.length) : 0,
-          wc: tomorrowHours[6]?.wc || 0,
-          icon: WC_ICON[tomorrowHours[6]?.wc || 0] || '🌡',
-          label: WC_LBL[tomorrowHours[6]?.wc || 0] || '',
+          temp: tomorrowHours.length ? Math.round(Math.max(...tomorrowHours.map(h => h.temp))) : 0,
+          wind: Math.round(d.current.windspeed_10m),
+          wc: tomorrowWc,
+          icon: WC_ICON[tomorrowWc] || '🌡',
+          label: WC_LBL[tomorrowWc] || '',
           hasStorm: tomorrowHours.some(h => [95,96,99,80,81,82].includes(h.wc)),
-          wind: Math.round(tomorrowHours.reduce((s,h) => s+h.rain,0)/tomorrowHours.length || 0),
           hours: tomorrowHours,
         })
       } catch (e) {
