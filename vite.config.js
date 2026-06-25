@@ -3,5 +3,16 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  build: { outDir: 'dist' }
+  build: {
+    outDir: 'dist',
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'firebase': ['firebase/app', 'firebase/firestore'],
+          'react-vendor': ['react', 'react-dom'],
+        }
+      }
+    }
+  }
 })

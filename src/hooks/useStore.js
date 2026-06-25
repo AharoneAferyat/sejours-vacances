@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { VAL_DISERE_TRIP, VALISE0, SAC0 } from '../data/defaults'
+import { saveToCloud, loadFromCloud, subscribeToCloud } from '../firebase'
 
 const STORAGE_KEY = 'sejours_app_v3'
-
 const DEFAULT_VOYAGEUR = { id: 'v_aharone', name: 'Aharone' }
 
 function makeVoyageurData(vid) {
@@ -12,42 +12,61 @@ function makeVoyageurData(vid) {
   }
 }
 
+function formatDateLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const weekday = d.toLocaleDateString('fr-FR', { weekday: 'short' })
+  const day = d.getDate()
+  const month = d.toLocaleDateString('fr-FR', { month: 'short' })
+  return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${day} ${month}`
+}
+
+function getDaysBetween(start, end) {
+  const s = new Date(start + 'T00:00:00')
+  const e = new Date(end + 'T00:00:00')
+  const days = []
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+    days.push(d.toISOString().split('T')[0])
+  }
+  return days
+}
+
 function ensureVoyageurData(trips) {
   return trips.map(t => {
+    // Fix voyageur data
     const voyageurs = t.voyageurs || [DEFAULT_VOYAGEUR]
-    const voyageurData = t.voyageurData || {}
-    // Ensure every voyageur has data
+    const voyageurData = { ...(t.voyageurData || {}) }
     voyageurs.forEach(v => {
-      if (!voyageurData[v.id]) {
-        voyageurData[v.id] = makeVoyageurData(v.id)
-      }
+      if (!voyageurData[v.id]) voyageurData[v.id] = makeVoyageurData(v.id)
     })
+
+    // Fix days: remove days outside startDate-endDate range, add missing ones
+    let days = t.days || []
+    if (t.startDate && t.endDate) {
+      const validDates = new Set(getDaysBetween(t.startDate, t.endDate))
+      // Remove days outside range
+      const kept = days.filter(d => validDates.has(d.date))
+      const keptDates = new Set(kept.map(d => d.date))
+      // Add missing days
+      const added = [...validDates].filter(d => !keptDates.has(d)).map(date => ({
+        id: 'day_' + date.replace(/-/g,''), date,
+        label: formatDateLabel(date),
+        type: date === t.startDate || date === t.endDate ? 'voyage' : 'rando',
+        validated: false, activities: []
+      }))
+      days = [...kept, ...added].sort((a, b) => a.date.localeCompare(b.date))
+      // Fix labels while we're at it
+      days = days.map(d => ({ ...d, label: formatDateLabel(d.date) }))
+    }
+
     return {
-      ...t,
-      voyageurs,
+      ...t, days, voyageurs,
       activeVoyageurId: t.activeVoyageurId || voyageurs[0]?.id,
       voyageurData,
     }
   })
 }
 
-function getInitialState() {
-  // Clean up old storage keys to avoid phantom data
-  try { localStorage.removeItem('sejours_app_v1') } catch(e) {}
-  try { localStorage.removeItem('sejours_app_v2') } catch(e) {}
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const p = JSON.parse(raw)
-      if (p.trips && p.trips.length > 0) {
-        // Migrate: ensure all trips have voyageurData and lat/lon
-        return { ...p, trips: ensureVoyageurData(p.trips) }
-      }
-    }
-  } catch (e) {}
-
-  const tripId = VAL_DISERE_TRIP.id
+function getDefaultState() {
   const vid = DEFAULT_VOYAGEUR.id
   return {
     trips: [{
@@ -56,22 +75,71 @@ function getInitialState() {
       activeVoyageurId: vid,
       voyageurData: { [vid]: makeVoyageurData(vid) },
     }],
-    activeTripId: tripId,
-    notes: [
-      { id: 'n0', text: 'Vérifier météo chaque soir', done: false },
-      { id: 'n1', text: 'Télécharger AllTrails hors-ligne', done: false },
-    ],
+    activeTripId: VAL_DISERE_TRIP.id,
+    notes: [],
   }
 }
 
-export function useStore() {
-  const [state, setState] = useState(getInitialState)
+function getLocalState() {
+  // Clean old keys
+  try { localStorage.removeItem('sejours_app_v1') } catch(e) {}
+  try { localStorage.removeItem('sejours_app_v2') } catch(e) {}
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const p = JSON.parse(raw)
+      if (p.trips && p.trips.length > 0) {
+        return { ...p, trips: ensureVoyageurData(p.trips) }
+      }
+    }
+  } catch (e) {}
+  return getDefaultState()
+}
 
+export function useStore() {
+  const [state, setState] = useState(getLocalState)
+  const [syncing, setSyncing] = useState(false)
+  const saveTimeout = useRef(null)
+  const isRemoteUpdate = useRef(false)
+
+  // Load from cloud on mount
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch (e) {}
+    setSyncing(true)
+    loadFromCloud().then(cloudData => {
+      if (cloudData && cloudData.trips && cloudData.trips.length > 0) {
+        const migrated = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
+        isRemoteUpdate.current = true
+        setState(migrated)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
+      }
+      setSyncing(false)
+    })
+
+    // Subscribe to real-time updates (sync between devices)
+    const unsub = subscribeToCloud((cloudData) => {
+      if (!cloudData || !cloudData.trips) return
+      if (isRemoteUpdate.current) { isRemoteUpdate.current = false; return }
+      const migrated = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
+      isRemoteUpdate.current = true
+      setState(migrated)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
+    })
+
+    return () => unsub()
+  }, [])
+
+  // Save to both localStorage and cloud (debounced)
+  useEffect(() => {
+    if (isRemoteUpdate.current) return
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    saveTimeout.current = setTimeout(() => {
+      saveToCloud(state)
+    }, 1500) // debounce 1.5s
   }, [state])
 
   const update = useCallback((updater) => {
+    isRemoteUpdate.current = false
     setState(prev => typeof updater === 'function' ? updater(prev) : { ...prev, ...updater })
   }, [])
 
@@ -147,7 +215,8 @@ export function useStore() {
     update(s => ({
       ...s,
       trips: s.trips.map(t => t.id === tripId
-        ? { ...t, days: t.days.map(d => d.id === dayId ? { ...d, activities: [...d.activities, activity] } : d) }
+        ? { ...t, days: t.days.map(d => d.id === dayId
+            ? { ...d, activities: [...d.activities, activity] } : d) }
         : t)
     }))
   }, [update])
@@ -189,11 +258,16 @@ export function useStore() {
 
       const toDay = newDays.find(d => d.date === toDate)
       if (toDay) {
-        newDays = newDays.map(d => d.date === toDate ? { ...d, activities: [...d.activities, activity] } : d)
+        newDays = newDays.map(d => d.date === toDate
+          ? { ...d, activities: [...d.activities, activity] } : d)
       } else {
+        // Create new day for this date
+        const d = new Date(toDate + 'T00:00:00')
+        const weekday = d.toLocaleDateString('fr-FR', { weekday: 'short' })
+        const label = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${d.getDate()} ${d.toLocaleDateString('fr-FR', { month: 'short' })}`
         newDays = [...newDays, {
-          id: 'day_' + Date.now(), date: toDate,
-          label: toDate, type: activity.type, validated: false, activities: [activity]
+          id: 'day_' + Date.now(), date: toDate, label,
+          type: activity.type, validated: false, activities: [activity]
         }].sort((a, b) => a.date.localeCompare(b.date))
       }
 
@@ -212,7 +286,7 @@ export function useStore() {
     }))
   }, [update])
 
-  // ─── VOYAGEURS (per trip) ─────────────────────────────────────────────────
+  // ─── VOYAGEURS (per trip) ──────────────────────────────────────────────────
   const addVoyageur = useCallback((tripId, name) => {
     const vid = 'v_' + Date.now()
     update(s => ({
@@ -231,12 +305,12 @@ export function useStore() {
       trips: s.trips.map(t => {
         if (t.id !== tripId) return t
         const remaining = (t.voyageurs || []).filter(v => v.id !== vid)
-        const oldVd = t.voyageurData || {}; const voyageurData = Object.fromEntries(Object.entries(oldVd).filter(([k]) => k !== vid))
+        const vd = { ...(t.voyageurData || {}) }
+        delete vd[vid]
         return {
-          ...t,
-          voyageurs: remaining,
+          ...t, voyageurs: remaining,
           activeVoyageurId: t.activeVoyageurId === vid ? remaining[0]?.id : t.activeVoyageurId,
-          voyageurData,
+          voyageurData: vd,
         }
       })
     }))
@@ -249,121 +323,91 @@ export function useStore() {
     }))
   }, [update])
 
-  // ─── VALISE / SAC (per trip per voyageur) ──────────────────────────────────
+  // ─── VALISE / SAC ──────────────────────────────────────────────────────────
   const toggleValiseItem = useCallback((tripId, vid, itemId) => {
-    update(s => ({
-      ...s,
-      trips: s.trips.map(t => {
-        if (t.id !== tripId) return t
-        const vd = t.voyageurData || {}
-        return { ...t, voyageurData: { ...vd, [vid]: {
-          ...vd[vid],
-          valise: (vd[vid]?.valise || []).map(i => i.id === itemId ? { ...i, done: !i.done } : i)
-        }}}
-      })
-    }))
+    update(s => ({ ...s, trips: s.trips.map(t => {
+      if (t.id !== tripId) return t
+      const vd = t.voyageurData || {}
+      return { ...t, voyageurData: { ...vd, [vid]: { ...vd[vid],
+        valise: (vd[vid]?.valise || []).map(i => i.id === itemId ? { ...i, done: !i.done } : i)
+      }}}
+    })}))
   }, [update])
 
   const addValiseItem = useCallback((tripId, vid, text) => {
-    update(s => ({
-      ...s,
-      trips: s.trips.map(t => {
-        if (t.id !== tripId) return t
-        const vd = t.voyageurData || {}
-        return { ...t, voyageurData: { ...vd, [vid]: {
-          ...vd[vid],
-          valise: [...(vd[vid]?.valise || []), { id: 'vi_' + Date.now(), text, done: false }]
-        }}}
-      })
-    }))
+    update(s => ({ ...s, trips: s.trips.map(t => {
+      if (t.id !== tripId) return t
+      const vd = t.voyageurData || {}
+      return { ...t, voyageurData: { ...vd, [vid]: { ...vd[vid],
+        valise: [...(vd[vid]?.valise || []), { id: 'vi_' + Date.now(), text, done: false }]
+      }}}
+    })}))
   }, [update])
 
   const removeValiseItem = useCallback((tripId, vid, itemId) => {
-    update(s => ({
-      ...s,
-      trips: s.trips.map(t => {
-        if (t.id !== tripId) return t
-        const vd = t.voyageurData || {}
-        return { ...t, voyageurData: { ...vd, [vid]: {
-          ...vd[vid],
-          valise: (vd[vid]?.valise || []).filter(i => i.id !== itemId)
-        }}}
-      })
-    }))
+    update(s => ({ ...s, trips: s.trips.map(t => {
+      if (t.id !== tripId) return t
+      const vd = t.voyageurData || {}
+      return { ...t, voyageurData: { ...vd, [vid]: { ...vd[vid],
+        valise: (vd[vid]?.valise || []).filter(i => i.id !== itemId)
+      }}}
+    })}))
   }, [update])
 
   const toggleSacItem = useCallback((tripId, vid, itemId) => {
-    update(s => ({
-      ...s,
-      trips: s.trips.map(t => {
-        if (t.id !== tripId) return t
-        const vd = t.voyageurData || {}
-        return { ...t, voyageurData: { ...vd, [vid]: {
-          ...vd[vid],
-          sac: (vd[vid]?.sac || []).map(i => i.id === itemId ? { ...i, done: !i.done } : i)
-        }}}
-      })
-    }))
+    update(s => ({ ...s, trips: s.trips.map(t => {
+      if (t.id !== tripId) return t
+      const vd = t.voyageurData || {}
+      return { ...t, voyageurData: { ...vd, [vid]: { ...vd[vid],
+        sac: (vd[vid]?.sac || []).map(i => i.id === itemId ? { ...i, done: !i.done } : i)
+      }}}
+    })}))
   }, [update])
 
   const addSacItem = useCallback((tripId, vid, text) => {
-    update(s => ({
-      ...s,
-      trips: s.trips.map(t => {
-        if (t.id !== tripId) return t
-        const vd = t.voyageurData || {}
-        return { ...t, voyageurData: { ...vd, [vid]: {
-          ...vd[vid],
-          sac: [...(vd[vid]?.sac || []), { id: 'si_' + Date.now(), text, done: false }]
-        }}}
-      })
-    }))
+    update(s => ({ ...s, trips: s.trips.map(t => {
+      if (t.id !== tripId) return t
+      const vd = t.voyageurData || {}
+      return { ...t, voyageurData: { ...vd, [vid]: { ...vd[vid],
+        sac: [...(vd[vid]?.sac || []), { id: 'si_' + Date.now(), text, done: false }]
+      }}}
+    })}))
   }, [update])
 
   const removeSacItem = useCallback((tripId, vid, itemId) => {
-    update(s => ({
-      ...s,
-      trips: s.trips.map(t => {
-        if (t.id !== tripId) return t
-        const vd = t.voyageurData || {}
-        return { ...t, voyageurData: { ...vd, [vid]: {
-          ...vd[vid],
-          sac: (vd[vid]?.sac || []).filter(i => i.id !== itemId)
-        }}}
-      })
-    }))
+    update(s => ({ ...s, trips: s.trips.map(t => {
+      if (t.id !== tripId) return t
+      const vd = t.voyageurData || {}
+      return { ...t, voyageurData: { ...vd, [vid]: { ...vd[vid],
+        sac: (vd[vid]?.sac || []).filter(i => i.id !== itemId)
+      }}}
+    })}))
   }, [update])
 
   // ─── NOTES ─────────────────────────────────────────────────────────────────
   const addNote = useCallback((text) => {
-    update(s => ({ ...s, notes: [...s.notes, { id: 'n_' + Date.now(), text, done: false }] }))
+    update(s => ({ ...s, notes: [...(s.notes||[]), { id: 'n_' + Date.now(), text, done: false }] }))
   }, [update])
-
   const toggleNote = useCallback((id) => {
-    update(s => ({ ...s, notes: s.notes.map(n => n.id === id ? { ...n, done: !n.done } : n) }))
+    update(s => ({ ...s, notes: (s.notes||[]).map(n => n.id === id ? { ...n, done: !n.done } : n) }))
   }, [update])
-
   const removeNote = useCallback((id) => {
-    update(s => ({ ...s, notes: s.notes.filter(n => n.id !== id) }))
+    update(s => ({ ...s, notes: (s.notes||[]).filter(n => n.id !== id) }))
   }, [update])
 
   // ─── COMPUTED ──────────────────────────────────────────────────────────────
   const activeTrip = state.trips.find(t => t.id === state.activeTripId) || null
   const tripVoyageurs = activeTrip?.voyageurs || [DEFAULT_VOYAGEUR]
   const activeVoyageurId = activeTrip?.activeVoyageurId || tripVoyageurs[0]?.id
-  const activeVoyageur = tripVoyageurs.find(v => v.id === activeVoyageurId) || tripVoyageurs[0]
   const voyageurData = activeTrip?.voyageurData || {}
   const currentValise = voyageurData[activeVoyageurId]?.valise || []
   const currentSac = voyageurData[activeVoyageurId]?.sac || []
 
   return {
     ...state,
-    activeTrip,
-    tripVoyageurs,
-    activeVoyageurId,
-    activeVoyageur,
-    currentValise,
-    currentSac,
+    syncing,
+    activeTrip, tripVoyageurs, activeVoyageurId,
+    currentValise, currentSac,
     addTrip, updateTrip, deleteTrip, setActiveTrip,
     addDay, updateDay, deleteDay, validateDay,
     addActivity, updateActivity, deleteActivity, moveActivity, validateActivity,

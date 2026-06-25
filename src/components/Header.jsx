@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 
 const TRIP_COLORS = ['#0F6E56','#185FA5','#A32D2D','#BA7517','#7C3AED','#0891B2','#BE185D','#065F46']
 
-export default function AppHeader({ trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip, voyageurs, onOpenVoyageurs }) {
+export default function AppHeader({ trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip, voyageurs, onOpenVoyageurs, syncing }) {
   const [time, setTime] = useState({ local: '', utc: '' })
 
   useEffect(() => {
@@ -59,6 +59,7 @@ export default function AppHeader({ trips, activeTrip, onSelectTrip, onNewTrip, 
         <span className="clock-utc" style={{ fontFamily: 'monospace', fontSize: '.85rem', opacity: .55, marginLeft: '.75rem', letterSpacing: '.06em' }}>
           UTC {time.utc}
         </span>
+        {syncing && <span style={{ fontSize: '.72rem', opacity: .6, marginLeft: '.75rem' }}>☁️ sync…</span>}
       </div>
 
       {/* Row 3 — Trip tabs centered */}

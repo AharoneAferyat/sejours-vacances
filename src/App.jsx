@@ -64,6 +64,7 @@ export default function App() {
         onDeleteTrip={id => store.deleteTrip(id)}
         voyageurs={tripVoyageurs}
         onOpenVoyageurs={() => setShowVoyageurs(true)}
+        syncing={store.syncing}
       />
 
       {/* TRIP-SPECIFIC SECTION */}
