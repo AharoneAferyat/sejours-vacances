@@ -100,7 +100,8 @@ export function useStore() {
   const [state, setState] = useState(getLocalState)
   const [syncing, setSyncing] = useState(false)
   const saveTimeout = useRef(null)
-  const isRemoteUpdate = useRef(false)
+  const lastSaveTime = useRef(0)
+  const initialized = useRef(false)
 
   // Load from cloud on mount
   useEffect(() => {
@@ -108,19 +109,22 @@ export function useStore() {
     loadFromCloud().then(cloudData => {
       if (cloudData && cloudData.trips && cloudData.trips.length > 0) {
         const migrated = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
-        isRemoteUpdate.current = true
         setState(migrated)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
+        // Save back the fixed data (removes July 4, adds July 10 etc)
+        saveToCloud(migrated)
       }
+      initialized.current = true
       setSyncing(false)
     })
 
     // Subscribe to real-time updates (sync between devices)
+    // Only apply if the update is from ANOTHER device (not our own save)
     const unsub = subscribeToCloud((cloudData) => {
       if (!cloudData || !cloudData.trips) return
-      if (isRemoteUpdate.current) { isRemoteUpdate.current = false; return }
+      // Ignore updates that come within 3s of our own save (our own echo)
+      if (Date.now() - lastSaveTime.current < 3000) return
       const migrated = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
-      isRemoteUpdate.current = true
       setState(migrated)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
     })
@@ -128,18 +132,18 @@ export function useStore() {
     return () => unsub()
   }, [])
 
-  // Save to both localStorage and cloud (debounced)
+  // Save to localStorage immediately, cloud after debounce
   useEffect(() => {
-    if (isRemoteUpdate.current) return
+    if (!initialized.current) return
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
     saveTimeout.current = setTimeout(() => {
+      lastSaveTime.current = Date.now()
       saveToCloud(state)
-    }, 1500) // debounce 1.5s
+    }, 1000)
   }, [state])
 
   const update = useCallback((updater) => {
-    isRemoteUpdate.current = false
     setState(prev => typeof updater === 'function' ? updater(prev) : { ...prev, ...updater })
   }, [])
 

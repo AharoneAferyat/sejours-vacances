@@ -53,8 +53,8 @@ Sois précis sur les distances, dénivelés et durées. Les liens doivent être 
           generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
         })
       })
-      if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const data = await r.json()
+      if (!r.ok) throw new Error(data.error || data.details || `HTTP ${r.status}`)
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
       // Parse JSON from response
@@ -63,7 +63,7 @@ Sois précis sur les distances, dénivelés et durées. Les liens doivent être 
       const activities = JSON.parse(jsonMatch[0])
       setResults(activities)
     } catch (e) {
-      setError('Erreur lors de la recherche. Réessayez.')
+      setError('Erreur : ' + e.message)
     } finally {
       setLoading(false)
     }
