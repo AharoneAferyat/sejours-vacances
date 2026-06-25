@@ -1,61 +1,40 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { VAL_DISERE_TRIP, VALISE0, SAC0 } from '../data/defaults'
+import { VALISE0, SAC0 } from '../data/defaults'
 import { saveToCloud, loadFromCloud, subscribeToCloud } from '../firebase'
 
-const STORAGE_KEY = 'sejours_app_v3'
 const DEFAULT_VOYAGEUR = { id: 'v_aharone', name: 'Aharone' }
 
-function makeVoyageurData(vid) {
-  return {
-    valise: VALISE0.map(x => ({ ...x, id: x.id + '_' + vid })),
-    sac: SAC0.map(x => ({ ...x, id: x.id + '_' + vid })),
-  }
-}
-
-function formatDateLabel(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00')
-  const weekday = d.toLocaleDateString('fr-FR', { weekday: 'short' })
-  const day = d.getDate()
-  const month = d.toLocaleDateString('fr-FR', { month: 'short' })
-  return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${day} ${month}`
-}
-
-function getDaysBetween(start, end) {
-  const s = new Date(start + 'T00:00:00')
-  const e = new Date(end + 'T00:00:00')
-  const days = []
-  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
-    days.push(d.toISOString().split('T')[0])
-  }
-  return days
+function makeVoyageurData() {
+  return { valise: [], sac: [] }
 }
 
 function ensureVoyageurData(trips) {
   return trips.map(t => {
-    // Fix voyageur data
     const voyageurs = t.voyageurs || [DEFAULT_VOYAGEUR]
     const voyageurData = { ...(t.voyageurData || {}) }
     voyageurs.forEach(v => {
-      if (!voyageurData[v.id]) voyageurData[v.id] = makeVoyageurData(v.id)
+      if (!voyageurData[v.id]) voyageurData[v.id] = makeVoyageurData()
     })
 
-    // Fix days: remove days outside startDate-endDate range, add missing ones
+    // Fix days: keep only days within startDate-endDate, add missing ones
     let days = t.days || []
     if (t.startDate && t.endDate) {
-      const validDates = new Set(getDaysBetween(t.startDate, t.endDate))
-      // Remove days outside range
+      const s = new Date(t.startDate + 'T00:00:00')
+      const e = new Date(t.endDate + 'T00:00:00')
+      const validDates = new Set()
+      for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+        validDates.add(d.toISOString().split('T')[0])
+      }
       const kept = days.filter(d => validDates.has(d.date))
       const keptDates = new Set(kept.map(d => d.date))
-      // Add missing days
       const added = [...validDates].filter(d => !keptDates.has(d)).map(date => ({
         id: 'day_' + date.replace(/-/g,''), date,
-        label: formatDateLabel(date),
+        label: formatLabel(date),
         type: date === t.startDate || date === t.endDate ? 'voyage' : 'rando',
         validated: false, activities: []
       }))
       days = [...kept, ...added].sort((a, b) => a.date.localeCompare(b.date))
-      // Fix labels while we're at it
-      days = days.map(d => ({ ...d, label: formatDateLabel(d.date) }))
+      days = days.map(d => ({ ...d, label: formatLabel(d.date) }))
     }
 
     return {
@@ -66,83 +45,53 @@ function ensureVoyageurData(trips) {
   })
 }
 
-function getDefaultState() {
-  const vid = DEFAULT_VOYAGEUR.id
-  return {
-    trips: [{
-      ...VAL_DISERE_TRIP,
-      voyageurs: [DEFAULT_VOYAGEUR],
-      activeVoyageurId: vid,
-      voyageurData: { [vid]: makeVoyageurData(vid) },
-    }],
-    activeTripId: VAL_DISERE_TRIP.id,
-    notes: [],
-  }
+function formatLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const wd = d.toLocaleDateString('fr-FR', { weekday: 'short' })
+  const mo = d.toLocaleDateString('fr-FR', { month: 'short' })
+  return `${wd.charAt(0).toUpperCase()+wd.slice(1)} ${d.getDate()} ${mo}`
 }
 
-function getLocalState() {
-  // Clean old keys
-  try { localStorage.removeItem('sejours_app_v1') } catch(e) {}
-  try { localStorage.removeItem('sejours_app_v2') } catch(e) {}
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const p = JSON.parse(raw)
-      if (p.trips && p.trips.length > 0) {
-        return { ...p, trips: ensureVoyageurData(p.trips) }
-      }
-    }
-  } catch (e) {}
-  return getDefaultState()
+function getEmptyState() {
+  return { trips: [], activeTripId: null, notes: [] }
 }
 
 export function useStore() {
-  const [state, setState] = useState(getLocalState)
-  const [syncing, setSyncing] = useState(false)
+  const [state, setState] = useState(getEmptyState)
+  const [syncing, setSyncing] = useState(true)
+  const [loaded, setLoaded] = useState(false)
   const saveTimeout = useRef(null)
   const lastSaveTime = useRef(0)
   const initialized = useRef(false)
 
-  // Load from cloud on mount
+  // On mount: load from Firebase only
   useEffect(() => {
-    setSyncing(true)
     loadFromCloud().then(cloudData => {
-      if (cloudData && cloudData.trips && cloudData.trips.length > 0) {
-        // Force-fix days for all trips based on their startDate/endDate
-        const migrated = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
-        setState(migrated)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
-        // Save fixed data back to Firebase so it's clean for next load
-        saveToCloud(migrated)
-        console.log('Loaded from cloud, days fixed:', migrated.trips[0]?.days?.map(d => d.date))
-      } else {
-        // No cloud data - save defaults to cloud
-        const defaults = getDefaultState()
-        saveToCloud(defaults)
-        console.log('No cloud data, saved defaults')
+      if (cloudData && cloudData.trips) {
+        const fixed = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
+        setState(fixed)
+        // Save back fixed data (cleans up bad dates)
+        saveToCloud(fixed)
       }
       initialized.current = true
       setSyncing(false)
+      setLoaded(true)
     })
 
-    // Subscribe to real-time updates (sync between devices)
-    // Only apply if the update is from ANOTHER device (not our own save)
+    // Real-time sync between devices
     const unsub = subscribeToCloud((cloudData) => {
       if (!cloudData || !cloudData.trips) return
-      // Ignore updates that come within 3s of our own save (our own echo)
-      if (Date.now() - lastSaveTime.current < 3000) return
-      const migrated = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
-      setState(migrated)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
+      if (Date.now() - lastSaveTime.current < 3000) return // ignore own saves
+      const fixed = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
+      setState(fixed)
     })
 
     return () => unsub()
   }, [])
 
-  // Save to localStorage immediately, cloud after debounce
+  // Save to Firebase on every state change (debounced)
   useEffect(() => {
     if (!initialized.current) return
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
     saveTimeout.current = setTimeout(() => {
       lastSaveTime.current = Date.now()
@@ -161,7 +110,7 @@ export function useStore() {
       ...trip,
       voyageurs: [DEFAULT_VOYAGEUR],
       activeVoyageurId: vid,
-      voyageurData: { [vid]: makeVoyageurData(vid) },
+      voyageurData: { [vid]: makeVoyageurData() },
     }
     update(s => ({ ...s, trips: [...s.trips, fullTrip], activeTripId: fullTrip.id }))
   }, [update])
@@ -261,27 +210,19 @@ export function useStore() {
       const fromDay = trip.days.find(d => d.id === fromDayId)
       const activity = fromDay?.activities.find(a => a.id === actId)
       if (!activity) return s
-
       let newDays = trip.days.map(d => ({
         ...d,
         activities: d.id === fromDayId ? d.activities.filter(a => a.id !== actId) : d.activities
       }))
-
       const toDay = newDays.find(d => d.date === toDate)
       if (toDay) {
-        newDays = newDays.map(d => d.date === toDate
-          ? { ...d, activities: [...d.activities, activity] } : d)
+        newDays = newDays.map(d => d.date === toDate ? { ...d, activities: [...d.activities, activity] } : d)
       } else {
-        // Create new day for this date
-        const d = new Date(toDate + 'T00:00:00')
-        const weekday = d.toLocaleDateString('fr-FR', { weekday: 'short' })
-        const label = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${d.getDate()} ${d.toLocaleDateString('fr-FR', { month: 'short' })}`
         newDays = [...newDays, {
-          id: 'day_' + Date.now(), date: toDate, label,
+          id: 'day_' + Date.now(), date: toDate, label: formatLabel(toDate),
           type: activity.type, validated: false, activities: [activity]
         }].sort((a, b) => a.date.localeCompare(b.date))
       }
-
       return { ...s, trips: s.trips.map(t => t.id === tripId ? { ...t, days: newDays } : t) }
     })
   }, [update])
@@ -297,7 +238,7 @@ export function useStore() {
     }))
   }, [update])
 
-  // ─── VOYAGEURS (per trip) ──────────────────────────────────────────────────
+  // ─── VOYAGEURS ─────────────────────────────────────────────────────────────
   const addVoyageur = useCallback((tripId, name) => {
     const vid = 'v_' + Date.now()
     update(s => ({
@@ -305,7 +246,7 @@ export function useStore() {
       trips: s.trips.map(t => t.id === tripId ? {
         ...t,
         voyageurs: [...(t.voyageurs || []), { id: vid, name }],
-        voyageurData: { ...(t.voyageurData || {}), [vid]: makeVoyageurData(vid) },
+        voyageurData: { ...(t.voyageurData || {}), [vid]: makeVoyageurData() },
       } : t)
     }))
   }, [update])
@@ -318,11 +259,9 @@ export function useStore() {
         const remaining = (t.voyageurs || []).filter(v => v.id !== vid)
         const vd = { ...(t.voyageurData || {}) }
         delete vd[vid]
-        return {
-          ...t, voyageurs: remaining,
+        return { ...t, voyageurs: remaining,
           activeVoyageurId: t.activeVoyageurId === vid ? remaining[0]?.id : t.activeVoyageurId,
-          voyageurData: vd,
-        }
+          voyageurData: vd }
       })
     }))
   }, [update])
@@ -416,7 +355,7 @@ export function useStore() {
 
   return {
     ...state,
-    syncing,
+    syncing, loaded,
     activeTrip, tripVoyageurs, activeVoyageurId,
     currentValise, currentSac,
     addTrip, updateTrip, deleteTrip, setActiveTrip,

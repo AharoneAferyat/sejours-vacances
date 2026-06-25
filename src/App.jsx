@@ -141,7 +141,12 @@ export default function App() {
                 <div className="progress-text">{validatedDays} / {totalDays} validées</div>
               </div>
 
-              {trip.days.map(day => (
+              {trip.days.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '.85rem' }}>
+              Aucun jour dans ce séjour. Modifie le séjour pour définir les dates.
+            </div>
+          )}
+          {trip.days.map(day => (
                 <DayCard
                   key={day.id}
                   day={day}
