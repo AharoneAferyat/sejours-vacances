@@ -170,7 +170,37 @@ export async function seedDatabase() {
             tip: "⚠️ Se présenter Gare Routière avant 08h45.",
             notes: [], done: false
           }]
-        }
+        },
+      ],
+      infoBlocks: [
+        {
+          id: 'info_hebergement', icon: '🏕', title: 'Hébergement',
+          content: "Camp Cévéo\n116 Avenue Olympique, 73150 Val d'Isère\nTél : 04 79 06 19 65\nDossier : C26-47259\n\nPension complète · Linge inclus · Ménage inclus\nAssurance Mutuaide : 01 55 98 71 84\nSinistre : https://sinistre.assurinco.com"
+        },
+        {
+          id: 'info_urgences', icon: '📞', title: 'Urgences & Contacts',
+          content: "Urgences : 15 ou 112\nPGHM Savoie : +33 4 79 08 30 44\nAltibus urgences : +33 4 79 07 04 49\nMutuaide 24h/7j : 01 55 98 71 84\n\nMétéo live : https://www.valdisere.com/live/meteo-a-val-disere/"
+        },
+        {
+          id: 'info_aller', icon: '🚄', title: 'Trajet aller — Dim 5 juillet',
+          content: "**07h52** Paris Gare de Lyon → **12h15** Chambéry\nVoiture 5 · Siège 503 (pont bas)\n\n**13h53** Chambéry → **15h45** Bourg-Saint-Maurice\nTER 883164 · Correspondance Albertville 10 min\n\n**Altibus 16h00** BSM → Val d'Isère **16h45**\nRéf : BSG6411704 · Se présenter avant 15h45\n\nhttps://www.altibus.com"
+        },
+        {
+          id: 'info_retour', icon: '🚄', title: 'Trajet retour — Ven 10 juillet',
+          content: "**Altibus 09h00** Val d'Isère → BSM 09h40\nRéf : BSG6411704 · ⚠️ Se présenter avant 08h45\n\n**10h13** BSM → Albertville · **11h25** → Chambéry **12h57**\n\n**13h23** TGV 6972 → Paris **16h16**\nVoiture 8 · Siège 827 (fenêtre)\n\nhttps://www.altibus.com"
+        },
+        {
+          id: 'info_navettes', icon: '🚌', title: "Navettes gratuites Val d'Isère",
+          content: "**Bus Jaune** — Village ↔ Le Manchet\n**Bus Rouge** — Village ↔ La Daille ↔ Le Fornet\n\nGratuits · Fréquents en saison\nhttps://www.valdisere.com/pratique/transports/"
+        },
+        {
+          id: 'info_apps', icon: '🗺', title: 'Apps recommandées',
+          content: "**AllTrails** — GPS + cartes hors-ligne (télécharger tracés AVANT de partir)\n**IGN Rando** — carte 3633ET Tignes/Val d'Isère\n**Météo-France** — prévisions heure par heure"
+        },
+        {
+          id: 'info_regles', icon: '⚠️', title: 'Règles sécurité montagne',
+          content: "Partir avant 9h00\nRentrer avant 14h si le ciel se couvre\nOrages typiques 14h–18h en été\n\nNe jamais partir seul sans dire où on va\nTéléphone chargé obligatoire\nEau minimum 1,5L / personne / journée"
+        },
       ]
     }],
     activeTripId: 'trip_valdisere_2026',
