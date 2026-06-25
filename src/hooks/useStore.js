@@ -108,11 +108,18 @@ export function useStore() {
     setSyncing(true)
     loadFromCloud().then(cloudData => {
       if (cloudData && cloudData.trips && cloudData.trips.length > 0) {
+        // Force-fix days for all trips based on their startDate/endDate
         const migrated = { ...cloudData, trips: ensureVoyageurData(cloudData.trips) }
         setState(migrated)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
-        // Save back the fixed data (removes July 4, adds July 10 etc)
+        // Save fixed data back to Firebase so it's clean for next load
         saveToCloud(migrated)
+        console.log('Loaded from cloud, days fixed:', migrated.trips[0]?.days?.map(d => d.date))
+      } else {
+        // No cloud data - save defaults to cloud
+        const defaults = getDefaultState()
+        saveToCloud(defaults)
+        console.log('No cloud data, saved defaults')
       }
       initialized.current = true
       setSyncing(false)
