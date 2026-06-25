@@ -1,12 +1,26 @@
 import { db, auth } from './firebase'
 import { doc, setDoc } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
 
 const vid = 'v_aharone'
 
+function waitForAuth() {
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      unsub()
+      resolve(user)
+    })
+  })
+}
+
 export async function seedDatabase() {
-  const user = auth.currentUser
-  if (!user) { console.error('Not logged in!'); return }
+  const user = await waitForAuth()
+  if (!user) {
+    console.error('Non connecté ! Connecte-toi avec Google d\'abord.')
+    return
+  }
   const uid = user.uid
+  console.log('Connecté en tant que:', user.email, '/ UID:', uid)
 
   const data = {
     trips: [{
