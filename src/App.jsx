@@ -96,8 +96,8 @@ export default function App() {
   const today = getTodayStr()
   const vid = store.activeVoyageurId
 
-  // Hooks must be called before any conditional returns (React rules)
-  const { tomorrow: tomorrowWeather } = useWeather(activeTrip?.lat, activeTrip?.lon)
+  // ALL hooks must be called before any conditional returns (React rules of hooks)
+  const { tomorrow: tomorrowWeather } = useWeather(trip?.lat, trip?.lon)
 
   if (store.authLoading) {
     return (
