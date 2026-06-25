@@ -1,8 +1,4 @@
-const GEMINI_KEY = 'AIzaSyBRN6IHOFXlwhbxA1VUIZN_WXQPqCGFCtFWIQSWYkQXPg036g'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`
-
 export const handler = async (event) => {
-  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -18,6 +14,13 @@ export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
+
+  const GEMINI_KEY = process.env.GEMINI_API_KEY
+  if (!GEMINI_KEY) {
+    return { statusCode: 500, body: JSON.stringify({ error: 'GEMINI_API_KEY not configured' }) }
+  }
+
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`
 
   try {
     const body = JSON.parse(event.body)
@@ -40,9 +43,6 @@ export const handler = async (event) => {
       body: JSON.stringify(data)
     }
   } catch (e) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: e.message })
-    }
+    return { statusCode: 500, body: JSON.stringify({ error: e.message }) }
   }
 }
