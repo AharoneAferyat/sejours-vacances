@@ -96,6 +96,9 @@ export default function App() {
   const today = getTodayStr()
   const vid = store.activeVoyageurId
 
+  // Hooks must be called before any conditional returns (React rules)
+  const { tomorrow: tomorrowWeather } = useWeather(activeTrip?.lat, activeTrip?.lon)
+
   if (store.authLoading) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:'1rem', background:'#0f3460' }}>
