@@ -1,129 +1,153 @@
 import { useState } from 'react'
 
-// Password = voyageur_name + trip_name (lowercased, no spaces)
 function makePassword(voyageurName, tripName) {
   return (voyageurName + tripName).toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')
 }
 
+function Avatar({ name, size = 44, color = '#0F6E56', index = 0 }) {
+  const colors = ['#0F6E56','#185FA5','#A32D2D','#BA7517','#7C3AED','#0891B2','#BE185D']
+  const bg = color || colors[index % colors.length]
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', background: bg,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.4, fontWeight: 700, color: '#fff', flexShrink: 0,
+      boxShadow: '0 2px 8px rgba(0,0,0,.12)'
+    }}>
+      {name.charAt(0).toUpperCase()}
+    </div>
+  )
+}
+
 export default function VoyageursModal({ trip, voyageurs, onAdd, onRemove, onClose }) {
-  const [tab, setTab] = useState('list') // 'list' | 'invite'
+  const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [showPass, setShowPass] = useState(null) // voyageur id
+  const [showAccess, setShowAccess] = useState(null)
 
-  const handleAddWithEmail = () => {
+  const COLORS = ['#0F6E56','#185FA5','#A32D2D','#BA7517','#7C3AED','#0891B2','#BE185D']
+
+  const handleAdd = () => {
     if (!name.trim()) return alert('Prénom requis')
     onAdd(name.trim(), email.trim() || null)
     setName('')
     setEmail('')
+    setAdding(false)
   }
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 440 }}>
-        <h2>👥 Voyageurs — {trip?.name}</h2>
+      <div className="modal" style={{ maxWidth: 460 }}>
 
-        <div className="tabs" style={{ marginBottom: '.9rem' }}>
-          <button className={`tab-btn${tab === 'list' ? ' active' : ''}`} onClick={() => setTab('list')}>
-            Participants ({voyageurs.length})
-          </button>
-          <button className={`tab-btn${tab === 'invite' ? ' active' : ''}`} onClick={() => setTab('invite')}>
-            ＋ Ajouter
-          </button>
+        {/* Header */}
+        <div style={{ marginBottom: '1.1rem' }}>
+          <h2 style={{ marginBottom: '.2rem' }}>👥 Voyageurs</h2>
+          <div style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>{trip?.name} · {voyageurs.length} participant{voyageurs.length > 1 ? 's' : ''}</div>
         </div>
 
-        {tab === 'list' && (
-          <div>
-            {voyageurs.map((v, i) => (
-              <div key={v.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '.6rem 0', borderBottom: '1px solid var(--border)' }}>
+        {/* Avatars row */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          {voyageurs.map((v, i) => (
+            <div key={v.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.35rem', cursor: 'pointer' }}
+              onClick={() => setShowAccess(showAccess === v.id ? null : v.id)}>
+              <div style={{ position: 'relative' }}>
+                <Avatar name={v.name} size={52} index={i} />
+                {i === 0 && (
+                  <div style={{ position: 'absolute', bottom: -2, right: -2, fontSize: '.75rem', background: '#fff', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.15)' }}>👑</div>
+                )}
+              </div>
+              <div style={{ fontSize: '.75rem', fontWeight: 500, color: 'var(--text)', textAlign: 'center' }}>{v.name}</div>
+              {v.email && <div style={{ fontSize: '.63rem', color: 'var(--text-muted)', maxWidth: 70, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.email.split('@')[0]}</div>}
+            </div>
+          ))}
+
+          {/* Add button */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.35rem', cursor: 'pointer' }}
+            onClick={() => setAdding(true)}>
+            <div style={{ width: 52, height: 52, borderRadius: '50%', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', color: 'var(--text-muted)' }}>＋</div>
+            <div style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>Ajouter</div>
+          </div>
+        </div>
+
+        {/* Access info panel */}
+        {showAccess && (() => {
+          const v = voyageurs.find(x => x.id === showAccess)
+          const i = voyageurs.findIndex(x => x.id === showAccess)
+          if (!v) return null
+          const pass = makePassword(v.name, trip?.name || '')
+          return (
+            <div style={{ background: 'var(--gray-light)', borderRadius: 10, padding: '.9rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.65rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: i === 0 ? 'var(--green-light)' : 'var(--blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>
-                    {i === 0 ? '👑' : '👤'}
-                  </div>
+                  <Avatar name={v.name} size={36} index={i} />
                   <div>
-                    <div style={{ fontSize: '.85rem', fontWeight: 600 }}>{v.name}</div>
-                    {v.email && <div style={{ fontSize: '.7rem', color: 'var(--text-muted)' }}>{v.email}</div>}
+                    <div style={{ fontWeight: 600, fontSize: '.88rem' }}>{v.name}</div>
                     {i === 0 && <div style={{ fontSize: '.68rem', color: 'var(--green)' }}>Organisateur</div>}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '.3rem', alignItems: 'center' }}>
-                  {i > 0 && (
-                    <>
-                      <button className="btn" style={{ fontSize: '.7rem', padding: '3px 8px' }}
-                        onClick={() => setShowPass(showPass === v.id ? null : v.id)}>
-                        🔑 Accès
-                      </button>
-                      <button className="btn-icon" onClick={() => confirm(`Retirer ${v.name} ?`) && onRemove(v.id)}>✕</button>
-                    </>
-                  )}
-                </div>
+                {i > 0 && (
+                  <button className="btn btn-danger" style={{ fontSize: '.72rem' }}
+                    onClick={() => { confirm(`Retirer ${v.name} ?`) && onRemove(v.id); setShowAccess(null) }}>
+                    Retirer
+                  </button>
+                )}
               </div>
-            ))}
 
-            {showPass && (() => {
-              const v = voyageurs.find(x => x.id === showPass)
-              if (!v) return null
-              const pass = makePassword(v.name, trip?.name || '')
-              return (
-                <div style={{ background: 'var(--blue-light)', borderRadius: 9, padding: '.75rem', marginTop: '.75rem', fontSize: '.8rem' }}>
-                  <div style={{ fontWeight: 600, marginBottom: '.4rem', color: 'var(--blue)' }}>🔑 Accès pour {v.name}</div>
+              {i > 0 && (
+                <>
+                  <div style={{ fontSize: '.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '.4rem' }}>
+                    🔑 Accès au séjour
+                  </div>
                   {v.email ? (
-                    <div>
-                      <div style={{ color: 'var(--text-muted)', marginBottom: '.25rem' }}>Via compte Google :</div>
+                    <div style={{ fontSize: '.82rem' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '.73rem', marginBottom: '.2rem' }}>Connexion Google avec :</div>
                       <div style={{ fontWeight: 600 }}>{v.email}</div>
                     </div>
                   ) : (
                     <div>
-                      <div style={{ color: 'var(--text-muted)', marginBottom: '.35rem' }}>Identifiants de connexion :</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '.2rem' }}>
-                        <span>Nom :</span><strong>{v.name}</strong>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.4rem' }}>
+                        <div style={{ background: '#fff', borderRadius: 7, padding: '.5rem .7rem', fontSize: '.78rem' }}>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '.68rem', marginBottom: '.1rem' }}>Nom</div>
+                          <div style={{ fontWeight: 600 }}>{v.name}</div>
+                        </div>
+                        <div style={{ background: '#fff', borderRadius: 7, padding: '.5rem .7rem', fontSize: '.78rem' }}>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '.68rem', marginBottom: '.1rem' }}>Code</div>
+                          <div style={{ fontWeight: 600, fontFamily: 'monospace', letterSpacing: '.03em' }}>{pass}</div>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Code :</span>
-                        <strong style={{ fontFamily: 'monospace', letterSpacing: '.05em' }}>{pass}</strong>
-                      </div>
-                      <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', marginTop: '.4rem' }}>
+                      <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginTop: '.4rem' }}>
                         Sur le site → "Rejoindre avec un code" → entrer ces identifiants
                       </div>
                     </div>
                   )}
-                </div>
-              )
-            })()}
-          </div>
-        )}
-
-        {tab === 'invite' && (
-          <div>
-            <div style={{ background: 'var(--green-light)', borderRadius: 8, padding: '.65rem .9rem', fontSize: '.78rem', color: 'var(--green)', marginBottom: '.9rem', lineHeight: 1.6 }}>
-              💡 Deux options : invite par email Google (la personne se connecte avec son compte), ou crée juste un nom (un code d'accès sera généré automatiquement).
+                </>
+              )}
             </div>
+          )
+        })()}
 
+        {/* Add form */}
+        {adding && (
+          <div style={{ background: 'var(--green-light)', borderRadius: 10, padding: '.9rem', marginBottom: '.75rem', border: '1px solid rgba(15,110,86,.2)' }}>
+            <div style={{ fontWeight: 600, fontSize: '.85rem', marginBottom: '.75rem', color: 'var(--green)' }}>＋ Nouveau voyageur</div>
             <div className="form-group">
               <label>Prénom *</label>
-              <input value={name} onChange={e => setName(e.target.value)}
-                placeholder="ex: Sarah, Papa, Maxime…"
-                onKeyDown={e => e.key === 'Enter' && handleAddWithEmail()} />
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="ex: Sarah, Papa…"
+                onKeyDown={e => e.key === 'Enter' && handleAdd()} autoFocus />
             </div>
-
             <div className="form-group">
               <label>Email Google (optionnel)</label>
-              <input value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="prenom@gmail.com" type="email"
-                onKeyDown={e => e.key === 'Enter' && handleAddWithEmail()} />
+              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="prenom@gmail.com" type="email" />
             </div>
-
-            {name.trim() && !email.trim() && trip?.name && (
-              <div style={{ background: 'var(--amber-light)', borderRadius: 8, padding: '.55rem .85rem', fontSize: '.76rem', color: 'var(--amber)', marginBottom: '.75rem' }}>
-                Code généré : <strong style={{ fontFamily: 'monospace' }}>{makePassword(name.trim(), trip.name)}</strong>
-                <div style={{ fontSize: '.7rem', marginTop: '.2rem', opacity: .8 }}>À communiquer à {name.trim()} pour qu'il accède au séjour.</div>
+            {name.trim() && !email.trim() && (
+              <div style={{ fontSize: '.73rem', color: 'var(--green)', marginBottom: '.5rem' }}>
+                Code d'accès : <strong style={{ fontFamily: 'monospace' }}>{makePassword(name.trim(), trip?.name || '')}</strong>
               </div>
             )}
-
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}
-              onClick={handleAddWithEmail}>
-              ＋ Ajouter {name.trim() ? name.trim() : 'le voyageur'}
-            </button>
+            <div style={{ display: 'flex', gap: '.4rem' }}>
+              <button className="btn" onClick={() => { setAdding(false); setName(''); setEmail('') }}>Annuler</button>
+              <button className="btn btn-primary" onClick={handleAdd}>Ajouter</button>
+            </div>
           </div>
         )}
 
