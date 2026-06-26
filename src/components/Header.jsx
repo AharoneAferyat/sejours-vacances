@@ -4,7 +4,7 @@ const TRIP_COLORS = ['#0F6E56','#185FA5','#A32D2D','#BA7517','#7C3AED','#0891B2'
 
 export default function AppHeader({
   trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip,
-  voyageurs, onOpenVoyageurs, syncing, onSignOut, userEmail
+  voyageurs, onOpenVoyageurs, syncing, onSignOut, userEmail, onOpenGlobalBudget
 }) {
   const [time, setTime] = useState({ local: '', utc: '' })
   const [showTripMenu, setShowTripMenu] = useState(false)
@@ -110,6 +110,18 @@ export default function AppHeader({
               {displayUser && <span style={{ opacity: .7 }}>{displayUser}</span>}
               {displayUser && <span style={{ opacity: .4 }}>·</span>}
               Déconnexion
+            </button>
+          )}
+
+          {/* Budget global */}
+          {onOpenGlobalBudget && (
+            <button onClick={onOpenGlobalBudget} style={{
+              background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
+              borderRadius: 8, padding: '5px 11px', color: '#fff', cursor: 'pointer',
+              fontSize: 'clamp(.68rem, 1.6vw, .75rem)', fontFamily: 'inherit', fontWeight: 500,
+              display: 'flex', alignItems: 'center', gap: '.3rem', whiteSpace: 'nowrap'
+            }}>
+              💰 Budget global
             </button>
           )}
 

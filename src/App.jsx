@@ -10,6 +10,8 @@ import CheckList from './components/CheckList'
 import TripForm from './components/TripForm'
 import VoyageursModal from './components/VoyageursModal'
 import InfosTab from './components/InfosTab'
+import Budget from './components/Budget'
+import GlobalBudget from './components/GlobalBudget'
 import AIRandoSearch from './components/AIRandoSearch'
 import DangerAlert from './components/DangerAlert'
 
@@ -90,6 +92,7 @@ export default function App() {
   const [editingTrip, setEditingTrip] = useState(null)
   const [showVoyageurs, setShowVoyageurs] = useState(false)
   const [showAI, setShowAI] = useState(false)
+  const [showGlobalBudget, setShowGlobalBudget] = useState(false)
   const [aiTargetDayId, setAiTargetDayId] = useState(null)
 
   const trip = store.activeTrip
@@ -171,6 +174,7 @@ export default function App() {
         voyageurs={tripVoyageurs}
         onOpenVoyageurs={() => setShowVoyageurs(true)}
         syncing={store.syncing}
+        onOpenGlobalBudget={!store.isGuest || store.trips?.length > 1 ? () => setShowGlobalBudget(true) : null}
         userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail}
         onSignOut={store.signOut}
       />
@@ -229,6 +233,7 @@ export default function App() {
             <div className="tabs" style={{ flex: 1, marginBottom: 0 }}>
               <button className={`tab-btn${tab === 'planning' ? ' active' : ''}`} onClick={() => setTab('planning')}>📋 Planning</button>
               <button className={`tab-btn${tab === 'infos' ? ' active' : ''}`} onClick={() => setTab('infos')}>ℹ️ Infos</button>
+              <button className={`tab-btn${tab === 'budget' ? ' active' : ''}`} onClick={() => setTab('budget')}>💰 Budget</button>
             </div>
             {/* AI Button */}
             <button className="btn btn-primary" style={{ whiteSpace: 'nowrap', fontSize: '.75rem' }}
@@ -273,6 +278,15 @@ export default function App() {
           )}
 
           {tab === 'infos' && <InfosTab trip={trip} onUpdateTrip={(changes) => store.updateTrip(trip.id, changes)} />}
+          {tab === 'budget' && trip && (
+            <Budget
+              trip={trip}
+              voyageurs={store.tripVoyageurs}
+              isGuest={store.isGuest}
+              guestVoyageurId={store.activeVoyageurId}
+              onUpdate={(changes) => store.updateTrip(trip.id, changes)}
+            />
+          )}
         </div>
 
         {/* RIGHT: VALISE */}
@@ -307,6 +321,13 @@ export default function App() {
             setShowTripForm(false); setEditingTrip(null)
           }}
           onClose={() => { setShowTripForm(false); setEditingTrip(null) }}
+        />
+      )}
+
+      {showGlobalBudget && (
+        <GlobalBudget
+          trips={store.trips}
+          onClose={() => setShowGlobalBudget(false)}
         />
       )}
 
