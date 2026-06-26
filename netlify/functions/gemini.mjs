@@ -25,7 +25,7 @@ export const handler = async (event) => {
   }
 
   // Try gemini-1.5-flash first, fallback model
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_KEY}`
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
 
   try {
     const { prompt } = JSON.parse(event.body)
