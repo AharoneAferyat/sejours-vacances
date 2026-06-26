@@ -26,11 +26,17 @@ Format exact:
 Propose 3 activités adaptées à la recherche.`
 
     try {
-      const r = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      })
+      // Retry once on 502
+      let r
+      for (let attempt = 0; attempt < 2; attempt++) {
+        r = await fetch(GEMINI_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        })
+        if (r.status !== 502) break
+        await new Promise(res => setTimeout(res, 1500))
+      }
       const data = await r.json()
       if (!r.ok) throw new Error(data.details || data.error || `HTTP ${r.status}`)
       // gemini-2.5-flash uses thinking mode - may have multiple parts
