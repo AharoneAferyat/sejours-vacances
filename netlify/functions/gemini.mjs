@@ -49,8 +49,7 @@ export const handler = async (event) => {
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 8000,
-            thinkingConfig: { thinkingBudget: 0 }
+            maxOutputTokens: 8000
           }
         })
       })
@@ -58,7 +57,8 @@ export const handler = async (event) => {
       const text = await response.text()
 
       // Skip to next model on quota/unavailable errors
-      if (response.status === 429 || response.status === 503) {
+      console.log(`${model} response ${response.status}: ${text.slice(0,200)}`)
+      if (response.status === 429 || response.status === 503 || response.status === 404 || response.status === 400) {
         console.log(`${model} unavailable (${response.status}), trying next...`)
         lastError = { status: response.status, model, text: text.slice(0, 200) }
         continue
