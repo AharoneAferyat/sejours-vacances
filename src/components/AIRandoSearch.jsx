@@ -117,7 +117,10 @@ Propose 3 activités adaptées à la recherche.`
         await new Promise(res => setTimeout(res, 1500))
       }
       const data = await r.json()
-      if (!r.ok) throw new Error(data.details || data.error || `HTTP ${r.status}`)
+      if (!r.ok) {
+        const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || data.details || `HTTP ${r.status}`)
+        throw new Error(errMsg)
+      }
       // gemini-2.5-flash uses thinking mode - may have multiple parts
       const parts = data?.candidates?.[0]?.content?.parts || []
       const text = parts.map(p => p.text || '').join('')
