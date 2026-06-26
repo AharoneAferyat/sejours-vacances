@@ -38,7 +38,11 @@ export const handler = async (event) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2000,
+          thinkingConfig: { thinkingBudget: 0 }
+        }
       })
     })
 
@@ -52,6 +56,16 @@ export const handler = async (event) => {
         body: JSON.stringify({ error: `Gemini error ${response.status}`, details: text.slice(0, 500) })
       }
     }
+
+    // Log structure for debugging
+    try {
+      const parsed = JSON.parse(text)
+      const parts = parsed?.candidates?.[0]?.content?.parts || []
+      console.log('Parts count:', parts.length)
+      parts.forEach((p, i) => {
+        console.log(`Part ${i} thought:`, p.thought, 'text preview:', (p.text||'').slice(0, 100))
+      })
+    } catch(e) {}
 
     return {
       statusCode: 200,
