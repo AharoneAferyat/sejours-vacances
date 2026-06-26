@@ -134,15 +134,24 @@ export default function App() {
 
 
 
-  const handleAIResult = (activity) => {
+  const handleAIResult = (activity, targetDayId) => {
     if (!trip) return
-    if (aiTargetDayId) {
-      store.addActivity(trip.id, aiTargetDayId, { ...activity, id: genId('act') })
-    } else {
-      // Add to first available day or ask
-      const firstDay = trip.days[0]
-      if (firstDay) store.addActivity(trip.id, firstDay.id, { ...activity, id: genId('act') })
+    const dayId = targetDayId || aiTargetDayId
+    if (!dayId) return // shouldn't happen - AIRandoSearch handles day selection
+
+    // Check if similar activity already exists on that day
+    const targetDay = trip.days.find(d => d.id === dayId)
+    if (targetDay) {
+      const duplicate = targetDay.activities.find(a =>
+        a.title.toLowerCase().includes(activity.title.toLowerCase().slice(0, 10)) ||
+        activity.title.toLowerCase().includes(a.title.toLowerCase().slice(0, 10))
+      )
+      if (duplicate) {
+        if (!confirm(`"${duplicate.title}" est déjà prévu ce jour-là. Ajouter quand même ?`)) return
+      }
     }
+
+    store.addActivity(trip.id, dayId, { ...activity, id: genId('act') })
     setShowAI(false)
   }
 
@@ -309,6 +318,8 @@ export default function App() {
       {showAI && trip && (
         <AIRandoSearch
           destination={trip.destination || trip.name}
+          days={trip.days}
+          targetDayId={aiTargetDayId}
           onSelectActivity={handleAIResult}
           onClose={() => setShowAI(false)}
         />

@@ -3,11 +3,12 @@ import { useState } from 'react'
 // Proxy via Netlify Function (évite les blocages CORS)
 const GEMINI_URL = '/.netlify/functions/gemini'
 
-export default function AIRandoSearch({ destination, onSelectActivity, onClose }) {
+export default function AIRandoSearch({ destination, days, targetDayId, onSelectActivity, onClose }) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
+  const [selectedDayId, setSelectedDayId] = useState(targetDayId || null)
 
   const search = async () => {
     if (!query.trim()) return
@@ -89,7 +90,7 @@ Propose 3 activités adaptées à la recherche.`
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && search()}
-            placeholder="ex: rando avec lac et cascade, facile, moins de 600m D+"
+            placeholder="ex: idées quoi faire, escalade, spa, restaurant sympa, rando avec vue..."
             style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 7, padding: '8px 12px', fontSize: '.85rem', fontFamily: 'inherit', background: 'var(--bg)', outline: 'none' }}
           />
           <button className="btn btn-primary" onClick={search} disabled={loading} style={{ whiteSpace: 'nowrap' }}>
@@ -99,7 +100,7 @@ Propose 3 activités adaptées à la recherche.`
 
         {/* Suggestions rapides */}
         <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-          {['Rando facile avec lac', 'Cascade accessible', 'Randonnée sportive vue panoramique', 'Balade famille', 'Via ferrata débutant'].map(s => (
+          {['Idées pour demain', 'Activité si il pleut', 'Sortie famille', 'Sport extrême', 'Bonne table', 'Détente et spa', 'Vue panoramique', 'Expérience locale'].map(s => (
             <button key={s} className="btn" style={{ fontSize: '.72rem' }}
               onClick={() => { setQuery(s); }}>
               {s}
@@ -150,8 +151,28 @@ Propose 3 activités adaptées à la recherche.`
                 {act.desc && <div style={{ fontSize: '.8rem', color: 'var(--text)', marginBottom: '.4rem', lineHeight: 1.6 }}>{act.desc}</div>}
                 {act.tip && <div style={{ fontSize: '.75rem', color: '#0a5040', background: 'var(--green-light)', padding: '4px 8px', borderRadius: 6, marginBottom: '.5rem' }}>💡 {act.tip}</div>}
 
-                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '.25rem' }}
-                  onClick={() => onSelectActivity({ ...act, id: undefined, notes: [], done: false })}>
+                {/* Day selector if no targetDayId */}
+                {!targetDayId && days && days.length > 0 && (
+                  <select
+                    value={selectedDayId || ''}
+                    onChange={e => setSelectedDayId(e.target.value)}
+                    style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 7, padding: '5px 9px', fontSize: '.8rem', fontFamily: 'inherit', marginBottom: '.35rem', background: '#fff' }}
+                  >
+                    <option value="">Choisir un jour…</option>
+                    {days.map(d => (
+                      <option key={d.id} value={d.id}>{d.label}</option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', marginTop: '.25rem', opacity: (!targetDayId && !selectedDayId) ? .5 : 1 }}
+                  disabled={!targetDayId && !selectedDayId}
+                  onClick={() => {
+                    const dayId = targetDayId || selectedDayId
+                    if (!dayId) return
+                    onSelectActivity({ ...act, id: undefined, notes: [], done: false }, dayId)
+                  }}>
                   ＋ Ajouter au planning
                 </button>
               </div>
