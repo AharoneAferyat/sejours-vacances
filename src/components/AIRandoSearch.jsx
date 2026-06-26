@@ -48,13 +48,10 @@ Sois précis sur les distances, dénivelés et durées. Les liens doivent être 
       const r = await fetch(GEMINI_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
-        })
+        body: JSON.stringify({ prompt })
       })
       const data = await r.json()
-      if (!r.ok) throw new Error(data.error || data.details || `HTTP ${r.status}`)
+      if (!r.ok) throw new Error(data.details || data.error || `HTTP ${r.status}`)
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
       // Parse JSON from response

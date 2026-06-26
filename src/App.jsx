@@ -158,7 +158,7 @@ export default function App() {
         voyageurs={tripVoyageurs}
         onOpenVoyageurs={() => setShowVoyageurs(true)}
         syncing={store.syncing}
-        userEmail={store.uid}
+        userEmail={store.userEmail}
         onSignOut={store.signOut}
       />
 

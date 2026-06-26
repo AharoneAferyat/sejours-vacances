@@ -154,7 +154,7 @@ export default function AppHeader({
               <button onClick={() => onSelectTrip(t.id)} style={{
                 background: isActive ? color : 'rgba(255,255,255,.08)',
                 border: `1.5px solid ${isActive ? color : 'rgba(255,255,255,.15)'}`,
-                borderRadius: '8px 0 0 8px', padding: '5px 12px', color: '#fff', cursor: 'pointer',
+                borderRadius: '8px', padding: '5px 12px', color: '#fff', cursor: 'pointer',
                 fontSize: 'clamp(.7rem, 1.8vw, .8rem)', fontFamily: 'inherit',
                 fontWeight: isActive ? 600 : 400, transition: 'all .15s',
                 display: 'flex', flexDirection: 'column', alignItems: 'flex-start'
@@ -168,13 +168,13 @@ export default function AppHeader({
                   </span>
                 )}
               </button>
-              {/* Edit/delete buttons attached to tab */}
-              <div style={{ display: 'flex', flexDirection: 'column', background: isActive ? color : 'rgba(255,255,255,.06)', border: `1.5px solid ${isActive ? color : 'rgba(255,255,255,.15)'}`, borderLeft: 'none', borderRadius: '0 8px 8px 0', overflow: 'hidden' }}>
+              {/* Edit/delete - small, no background */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginLeft: 2 }}>
                 <button onClick={() => onEditTrip(t)} title="Modifier"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', padding: '3px 6px', color: 'rgba(255,255,255,.6)', borderBottom: '1px solid rgba(255,255,255,.1)', lineHeight: 1 }}>✏️</button>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', padding: '2px 3px', color: 'rgba(255,255,255,.45)', lineHeight: 1 }}>✏️</button>
                 {trips.length > 1 && (
                   <button onClick={() => confirm(`Supprimer "${t.name}" ?`) && onDeleteTrip(t.id)} title="Supprimer"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', padding: '3px 6px', color: 'rgba(255,255,255,.5)', lineHeight: 1 }}>🗑</button>
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', padding: '2px 3px', color: 'rgba(255,255,255,.35)', lineHeight: 1 }}>🗑</button>
                 )}
               </div>
             </div>
