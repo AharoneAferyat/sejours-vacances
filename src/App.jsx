@@ -11,6 +11,7 @@ import TripForm from './components/TripForm'
 import VoyageursModal from './components/VoyageursModal'
 import InfosTab from './components/InfosTab'
 import AIRandoSearch from './components/AIRandoSearch'
+import DangerAlert from './components/DangerAlert'
 
 function LoginScreen({ onGoogleSignIn, onCodeLogin }) {
   const [showCode, setShowCode] = useState(false)
@@ -174,6 +175,9 @@ export default function App() {
         onSignOut={store.signOut}
       />
 
+      {/* DANGER ALERT — shown on load if extreme conditions */}
+      {trip && <DangerAlert weather={tomorrowWeather} destination={trip.destination || trip.name} />}
+
       {/* TRIP-SPECIFIC SECTION */}
       {trip && (
         <>
@@ -214,6 +218,7 @@ export default function App() {
             onToggle={id => store.toggleSacItem(trip?.id, vid, id)}
             onAdd={text => store.addSacItem(trip?.id, vid, text)}
             onRemove={id => store.removeSacItem(trip?.id, vid, id)}
+            onUpdateQty={(id, qty) => store.updateSacItemQty(trip?.id, vid, id, qty)}
             emptyEmoji="🎒"
           />
         </div>
@@ -286,6 +291,7 @@ export default function App() {
             onToggle={id => store.toggleValiseItem(trip?.id, vid, id)}
             onAdd={text => store.addValiseItem(trip?.id, vid, text)}
             onRemove={id => store.removeValiseItem(trip?.id, vid, id)}
+            onUpdateQty={(id, qty) => store.updateValiseItemQty(trip?.id, vid, id, qty)}
             emptyEmoji="🧳"
           />
         </div>

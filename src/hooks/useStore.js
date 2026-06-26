@@ -422,6 +422,26 @@ export function useStore() {
     })}))
   }, [update])
 
+  const updateValiseItemQty = useCallback((tripId, vid, itemId, qty) => {
+    update(s => ({ ...s, trips: s.trips.map(t => {
+      if (t.id !== tripId) return t
+      const vd = t.voyageurData||{}
+      return { ...t, voyageurData: { ...vd, [vid]: { ...vd[vid],
+        valise: (vd[vid]?.valise||[]).map(i => i.id===itemId ? {...i, qty} : i)
+      }}}
+    })}))
+  }, [update])
+
+  const updateSacItemQty = useCallback((tripId, vid, itemId, qty) => {
+    update(s => ({ ...s, trips: s.trips.map(t => {
+      if (t.id !== tripId) return t
+      const vd = t.voyageurData||{}
+      return { ...t, voyageurData: { ...vd, [vid]: { ...vd[vid],
+        sac: (vd[vid]?.sac||[]).map(i => i.id===itemId ? {...i, qty} : i)
+      }}}
+    })}))
+  }, [update])
+
   const removeSacItem = useCallback((tripId, vid, itemId) => {
     update(s => ({ ...s, trips: s.trips.map(t => {
       if (t.id !== tripId) return t
@@ -467,6 +487,7 @@ export function useStore() {
     addDay, updateDay, deleteDay, validateDay,
     addActivity, updateActivity, deleteActivity, moveActivity, validateActivity,
     addVoyageur, removeVoyageur, updateVoyageurEmail, setActiveVoyageur,
+    updateValiseItemQty, updateSacItemQty,
     toggleValiseItem, addValiseItem, removeValiseItem,
     toggleSacItem, addSacItem, removeSacItem,
     addNote, toggleNote, removeNote,
