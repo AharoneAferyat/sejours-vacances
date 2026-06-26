@@ -61,7 +61,16 @@ Propose 3 activités adaptées à la recherche.`
       if (!Array.isArray(activities) || activities.length === 0) throw new Error('Réponse vide')
       setResults(activities)
     } catch (e) {
-      setError('Erreur : ' + e.message)
+      const msg = e.message || ''
+      if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand')) {
+        setError('🔄 Gemini est surchargé en ce moment — réessaie dans 1-2 minutes')
+      } else if (msg.includes('502') || msg.includes('fetch failed')) {
+        setError('⏱ Délai dépassé — réessaie dans quelques secondes')
+      } else if (msg.includes('429') || msg.includes('quota')) {
+        setError('⏳ Quota atteint — réessaie dans 1 heure')
+      } else {
+        setError('Erreur : ' + msg)
+      }
     } finally {
       setLoading(false)
     }
