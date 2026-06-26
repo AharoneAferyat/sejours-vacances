@@ -52,12 +52,18 @@ Sois précis sur les distances, dénivelés et durées. Les liens doivent être 
       })
       const data = await r.json()
       if (!r.ok) throw new Error(data.details || data.error || `HTTP ${r.status}`)
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      // gemini-2.5-flash uses thinking mode - may have multiple parts
+      const parts = data?.candidates?.[0]?.content?.parts || []
+      const text = parts.map(p => p.text || '').join('')
 
-      // Parse JSON from response
-      const jsonMatch = text.match(/\[[\s\S]*\]/)
-      if (!jsonMatch) throw new Error('Réponse invalide')
+      // Extract JSON array from response (may be wrapped in markdown or thinking text)
+      const jsonMatch = text.match(/\[\s*\{[\s\S]*?\}\s*\]/)
+      if (!jsonMatch) {
+        console.error('Raw response:', text.slice(0, 500))
+        throw new Error('Réponse invalide — aucun JSON trouvé')
+      }
       const activities = JSON.parse(jsonMatch[0])
+      if (!Array.isArray(activities) || activities.length === 0) throw new Error('Réponse vide')
       setResults(activities)
     } catch (e) {
       setError('Erreur : ' + e.message)
