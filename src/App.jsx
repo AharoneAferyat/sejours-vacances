@@ -12,21 +12,20 @@ import VoyageursModal from './components/VoyageursModal'
 import InfosTab from './components/InfosTab'
 import AIRandoSearch from './components/AIRandoSearch'
 
-function LoginScreen({ onGoogleSignIn }) {
+function LoginScreen({ onGoogleSignIn, onCodeLogin }) {
   const [showCode, setShowCode] = useState(false)
   const [codeName, setCodeName] = useState('')
   const [codePass, setCodePass] = useState('')
   const [codeError, setCodeError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleCodeLogin = () => {
-    // Code login: name + password must match a known pattern
-    // For now, just store in localStorage so the app can match it
+  const handleCodeLogin = async () => {
     if (!codeName.trim() || !codePass.trim()) return setCodeError('Remplis les deux champs')
-    // Store guest session in localStorage
-    localStorage.setItem('guest_name', codeName.trim())
-    localStorage.setItem('guest_pass', codePass.trim())
-    // Reload to trigger auth check
-    window.location.reload()
+    setLoading(true)
+    setCodeError('')
+    const result = await onCodeLogin(codeName.trim(), codePass.trim())
+    setLoading(false)
+    if (result?.error) setCodeError(result.error)
   }
 
   return (
@@ -73,8 +72,8 @@ function LoginScreen({ onGoogleSignIn }) {
             <button onClick={() => setShowCode(false)} style={{ flex:1, background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.2)', borderRadius:9, padding:'9px', color:'rgba(255,255,255,.7)', cursor:'pointer', fontFamily:'inherit', fontSize:'.85rem' }}>
               ← Retour
             </button>
-            <button onClick={handleCodeLogin} style={{ flex:2, background:'#0F6E56', border:'none', borderRadius:9, padding:'9px', color:'#fff', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:'.88rem' }}>
-              Accéder
+            <button onClick={handleCodeLogin} disabled={loading} style={{ flex:2, background:'#0F6E56', border:'none', borderRadius:9, padding:'9px', color:'#fff', cursor:'pointer', fontFamily:'inherit', fontWeight:600, fontSize:'.88rem', opacity: loading ? .7 : 1 }}>
+              {loading ? '⏳ Vérification…' : 'Accéder'}
             </button>
           </div>
         </div>
@@ -109,8 +108,8 @@ export default function App() {
     )
   }
 
-  if (!store.uid) {
-    return <LoginScreen onGoogleSignIn={store.signIn} />
+  if (!store.uid && !store.isGuest) {
+    return <LoginScreen onGoogleSignIn={store.signIn} onCodeLogin={store.loginWithCode} />
   }
 
   if (!store.dataLoaded) {
@@ -123,6 +122,10 @@ export default function App() {
     )
   }
   const tripVoyageurs = store.tripVoyageurs
+  // Guests only see their own voyageur in valise/sac tabs
+  const visibleVoyageurs = store.isGuest
+    ? tripVoyageurs.filter(v => v.id === store.activeVoyageurId)
+    : tripVoyageurs
 
   const totalDays = trip?.days.length || 0
   const validatedDays = trip?.days.filter(d => d.validated).length || 0
@@ -158,7 +161,7 @@ export default function App() {
         voyageurs={tripVoyageurs}
         onOpenVoyageurs={() => setShowVoyageurs(true)}
         syncing={store.syncing}
-        userEmail={store.userEmail}
+        userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail}
         onSignOut={store.signOut}
       />
 
@@ -189,9 +192,9 @@ export default function App() {
         {/* LEFT: SAC À DOS */}
         <div className="col-side">
           <div className="col-head"><h2>🎒 Sac à dos</h2></div>
-          {tripVoyageurs.length > 1 && (
+          {visibleVoyageurs.length > 1 && (
             <div className="tabs" style={{ marginBottom: '.5rem' }}>
-              {tripVoyageurs.map(v => (
+              {visibleVoyageurs.map(v => (
                 <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`}
                   onClick={() => store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
               ))}
@@ -261,9 +264,9 @@ export default function App() {
         {/* RIGHT: VALISE */}
         <div className="col-side">
           <div className="col-head"><h2>🧳 Valise</h2></div>
-          {tripVoyageurs.length > 1 && (
+          {visibleVoyageurs.length > 1 && (
             <div className="tabs" style={{ marginBottom: '.5rem' }}>
-              {tripVoyageurs.map(v => (
+              {visibleVoyageurs.map(v => (
                 <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`}
                   onClick={() => store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
               ))}
@@ -298,6 +301,7 @@ export default function App() {
           voyageurs={tripVoyageurs}
           onAdd={(name, email) => store.addVoyageur(trip.id, name, email)}
           onRemove={vid => store.removeVoyageur(trip.id, vid)}
+          onUpdateEmail={(vid, email) => store.updateVoyageurEmail(trip.id, vid, email)}
           onClose={() => setShowVoyageurs(false)}
         />
       )}

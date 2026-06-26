@@ -15,7 +15,7 @@ const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
 export const auth = getAuth(app)
 
-// Google sign-in
+// ─── GOOGLE AUTH ───────────────────────────────────────────────────────────
 export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider()
   try {
@@ -35,7 +35,7 @@ export function onAuthChange(callback) {
   return onAuthStateChanged(auth, callback)
 }
 
-// Cloud operations - use auth UID
+// ─── OWNER DATA ────────────────────────────────────────────────────────────
 export async function saveToCloud(uid, state) {
   if (!uid) return
   try {
@@ -63,62 +63,74 @@ export function subscribeToCloud(uid, callback) {
   }, (e) => console.warn('Cloud sync error:', e.message))
 }
 
-// ─── SHARED TRIPS ──────────────────────────────────────────────────────────
-// Save a shared trip reference so guests can access it
-export async function shareTrip(ownerUid, tripId, guestEmail) {
+// ─── GUEST ACCESS (code-based) ─────────────────────────────────────────────
+// Generate a code from voyageur name + trip name
+export function makeGuestCode(voyageurName, tripName) {
+  return (voyageurName + tripName)
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+    .replace(/[^a-z0-9]/g, '')
+}
+
+// Register a guest access when organizer adds a voyageur without email
+export async function registerGuestAccess(ownerUid, tripId, tripName, voyageurId, voyageurName) {
+  const code = makeGuestCode(voyageurName, tripName)
+  const shareId = `${tripId}__${voyageurId}`
   try {
-    // Store in sharedTrips collection: sharedTrips/{guestEmail_tripId}
-    const shareId = `${guestEmail.replace('@','_at_').replace('.','_dot_')}_${tripId}`
-    await setDoc(doc(db, 'sharedTrips', shareId), {
+    await setDoc(doc(db, 'guestAccess', shareId), {
       ownerUid,
       tripId,
-      guestEmail,
-      createdAt: Date.now(),
-      accepted: false
+      voyageurId,
+      voyageurName,
+      code,
+      createdAt: Date.now()
     })
-    return true
-  } catch(e) {
-    console.warn('Share trip failed:', e.message)
-    return false
+    return code
+  } catch (e) {
+    console.warn('Register guest failed:', e.message)
+    return null
   }
 }
 
-// Get all trips shared with a user (by their email)
-export async function getSharedTrips(userEmail) {
-  if (!userEmail) return []
+// Find a guest access by code
+export async function findGuestByCode(name, code) {
   try {
-    const q = query(collection(db, 'sharedTrips'), where('guestEmail', '==', userEmail))
+    const normalizedCode = code.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const q = query(collection(db, 'guestAccess'), where('code', '==', normalizedCode))
     const snap = await getDocs(q)
-    return snap.docs.map(d => d.data())
-  } catch(e) {
-    console.warn('Get shared trips failed:', e.message)
-    return []
+    if (snap.empty) return null
+    return snap.docs[0].data()
+  } catch (e) {
+    console.warn('Find guest failed:', e.message)
+    return null
   }
 }
 
-// Load the owner's trip data for a guest
-export async function loadSharedTripData(ownerUid) {
-  try {
-    const snap = await getDoc(doc(db, 'users', ownerUid))
-    if (snap.exists()) return snap.data()
-  } catch(e) {
-    console.warn('Load shared trip failed:', e.message)
-  }
-  return null
-}
-
-// Save guest's data (valise/sac) back to owner's document
-export async function saveGuestData(ownerUid, tripId, guestUid, voyageurData) {
+// Save guest's own valise/sac back to owner's document
+export async function saveGuestData(ownerUid, tripId, voyageurId, valise, sac) {
   try {
     const snap = await getDoc(doc(db, 'users', ownerUid))
     if (!snap.exists()) return
     const data = snap.data()
     const trips = data.trips.map(t => {
       if (t.id !== tripId) return t
-      return { ...t, voyageurData: { ...t.voyageurData, [guestUid]: voyageurData } }
+      return {
+        ...t,
+        voyageurData: {
+          ...t.voyageurData,
+          [voyageurId]: { valise, sac }
+        }
+      }
     })
-    await setDoc(doc(db, 'users', ownerUid), { ...data, trips })
-  } catch(e) {
+    await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
+  } catch (e) {
     console.warn('Save guest data failed:', e.message)
   }
+}
+
+// Subscribe to owner's trip for real-time updates (guest)
+export function subscribeToOwnerTrip(ownerUid, callback) {
+  return onSnapshot(doc(db, 'users', ownerUid), (snap) => {
+    if (snap.exists()) callback(snap.data())
+  }, (e) => console.warn('Guest sync error:', e.message))
 }

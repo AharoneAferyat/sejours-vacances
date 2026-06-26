@@ -1,7 +1,29 @@
 import { useState } from 'react'
 
 function makePassword(voyageurName, tripName) {
-  return (voyageurName + tripName).toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')
+  return (voyageurName + tripName)
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, '')
+}
+
+function AddEmailInline({ voyageurId, onAdd }) {
+  const [editing, setEditing] = useState(false)
+  const [email, setEmail] = useState('')
+  if (!editing) return (
+    <button onClick={() => setEditing(true)} style={{ background: 'rgba(15,110,86,.08)', border: '1px dashed rgba(15,110,86,.3)', borderRadius: 7, padding: '4px 10px', color: 'var(--green)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.72rem', fontWeight: 500, width: '100%', textAlign: 'left' }}>
+      ＋ Ajouter un email Google
+    </button>
+  )
+  return (
+    <div style={{ display: 'flex', gap: '.3rem' }}>
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="email@gmail.com" type="email"
+        style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 7, padding: '5px 8px', fontSize: '.78rem', fontFamily: 'inherit', outline: 'none' }}
+        onKeyDown={e => e.key === 'Enter' && email && onAdd(email)} autoFocus />
+      <button onClick={() => { if (email) onAdd(email); setEditing(false) }} className="btn btn-primary" style={{ fontSize: '.72rem', padding: '5px 10px' }}>OK</button>
+      <button onClick={() => setEditing(false)} className="btn" style={{ fontSize: '.72rem', padding: '5px 8px' }}>✕</button>
+    </div>
+  )
 }
 
 function Avatar({ name, size = 44, color = '#0F6E56', index = 0 }) {
@@ -19,7 +41,7 @@ function Avatar({ name, size = 44, color = '#0F6E56', index = 0 }) {
   )
 }
 
-export default function VoyageursModal({ trip, voyageurs, onAdd, onRemove, onClose }) {
+export default function VoyageursModal({ trip, voyageurs, onAdd, onRemove, onUpdateEmail, onClose }) {
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
