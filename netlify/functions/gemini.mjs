@@ -1,3 +1,11 @@
+// Models tried in order - fallback if quota exceeded or unavailable
+const MODELS = [
+  'gemini-2.5-flash-lite',
+  'gemini-2.0-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-2.5-flash',
+]
+
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -24,59 +32,60 @@ export const handler = async (event) => {
     }
   }
 
-  // Try gemini-1.5-flash first, fallback model
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`
+  let { prompt } = JSON.parse(event.body || '{}')
+  if (!prompt) {
+    return { statusCode: 400, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Missing prompt' }) }
+  }
 
-  try {
-    const { prompt } = JSON.parse(event.body)
-    if (!prompt) {
-      return { statusCode: 400, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'Missing prompt' }) }
-    }
+  let lastError = null
 
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 8000,
-          thinkingConfig: { thinkingBudget: 0 }
-        }
-      })
-    })
-
-    const text = await response.text()
-
-    if (!response.ok) {
-      console.error('Gemini error:', response.status, text)
-      return {
-        statusCode: response.status,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: `Gemini error ${response.status}`, details: text.slice(0, 500) })
-      }
-    }
-
-    // Log structure for debugging
+  for (const model of MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`
     try {
-      const parsed = JSON.parse(text)
-      const parts = parsed?.candidates?.[0]?.content?.parts || []
-      console.log('Parts count:', parts.length)
-      parts.forEach((p, i) => {
-        console.log(`Part ${i} thought:`, p.thought, 'text preview:', (p.text||'').slice(0, 100))
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 8000,
+            thinkingConfig: { thinkingBudget: 0 }
+          }
+        })
       })
-    } catch(e) {}
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: text
+      const text = await response.text()
+
+      // Skip to next model on quota/unavailable errors
+      if (response.status === 429 || response.status === 503) {
+        console.log(`${model} unavailable (${response.status}), trying next...`)
+        lastError = { status: response.status, model, text: text.slice(0, 200) }
+        continue
+      }
+
+      if (!response.ok) {
+        lastError = { status: response.status, model, text: text.slice(0, 200) }
+        continue
+      }
+
+      console.log(`Success with model: ${model}`)
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'X-Model-Used': model },
+        body: text
+      }
+    } catch (e) {
+      console.log(`${model} fetch error: ${e.message}`)
+      lastError = { status: 500, model, text: e.message }
+      continue
     }
-  } catch (e) {
-    return {
-      statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: e.message })
-    }
+  }
+
+  // All models failed
+  return {
+    statusCode: 503,
+    headers: { 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify({ error: 'Tous les modèles sont indisponibles. Réessaie dans quelques minutes.', details: lastError })
   }
 }
