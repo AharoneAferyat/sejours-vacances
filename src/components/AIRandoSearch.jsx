@@ -15,34 +15,15 @@ export default function AIRandoSearch({ destination, onSelectActivity, onClose }
     setError(null)
     setResults(null)
 
-    const prompt = `Tu es un expert en randonnées et activités outdoor en ${destination || 'France'}.
-L'utilisateur cherche : "${query}"
+    const prompt = `Tu es un expert en randonnées en ${destination || 'France'}.
+Recherche: "${query}"
 
-Propose 4 activités/randonnées adaptées. Pour chaque activité, réponds UNIQUEMENT en JSON valide (tableau), sans aucun texte avant ou après, sans markdown, sans backticks :
+Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant ou après, sans markdown.
+Les champs desc, tip et gear ne doivent pas contenir d'apostrophes ou guillemets - utilise des formulations simples.
+Format exact:
+[{"emoji":"🥾","title":"Nom","subtitle":"Court","type":"rando","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"startTime":"08:30","features":["lac"],"desc":"Description simple sans apostrophes","gear":["Item 1","Item 2"],"tip":"Conseil simple","links":[{"url":"https://www.alltrails.com","label":"AllTrails"}]}]
 
-[
-  {
-    "emoji": "🥾",
-    "title": "Nom de la rando",
-    "subtitle": "Description courte en une ligne",
-    "type": "rando",
-    "difficulty": "facile|moyen|sportif",
-    "distanceKm": 8,
-    "dplus": 400,
-    "durationMin": 180,
-    "startTime": "08:30",
-    "features": ["lac", "cascade", "faune", "vue"],
-    "desc": "Description détaillée de la randonnée avec les points d'intérêt",
-    "gear": ["Chaussures de rando", "Eau 1,5L", "Coupe-vent"],
-    "tip": "Conseil pratique pour cette rando",
-    "links": [
-      {"url": "https://www.alltrails.com/fr/...", "label": "AllTrails"},
-      {"url": "https://www.visorando.com/...", "label": "Visorando"}
-    ]
-  }
-]
-
-Sois précis sur les distances, dénivelés et durées. Les liens doivent être réels si possible.`
+Propose 3 activités adaptées à la recherche.`
 
     try {
       const r = await fetch(GEMINI_URL, {
@@ -56,13 +37,21 @@ Sois précis sur les distances, dénivelés et durées. Les liens doivent être 
       const parts = data?.candidates?.[0]?.content?.parts || []
       const text = parts.map(p => p.text || '').join('')
 
-      // Extract JSON array from response (may be wrapped in markdown or thinking text)
-      const jsonMatch = text.match(/\[\s*\{[\s\S]*?\}\s*\]/)
-      if (!jsonMatch) {
-        console.error('Raw response:', text.slice(0, 500))
+      // Extract and clean JSON from response
+      let jsonStr = text
+      // Remove markdown code blocks if present
+      jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '')
+      // Find the JSON array
+      const start = jsonStr.indexOf('[')
+      const end = jsonStr.lastIndexOf(']')
+      if (start === -1 || end === -1) {
+        console.error('No JSON array found in:', text.slice(0, 300))
         throw new Error('Réponse invalide — aucun JSON trouvé')
       }
-      const activities = JSON.parse(jsonMatch[0])
+      jsonStr = jsonStr.slice(start, end + 1)
+      // Fix common JSON issues: remove trailing commas
+      jsonStr = jsonStr.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']')
+      const activities = JSON.parse(jsonStr)
       if (!Array.isArray(activities) || activities.length === 0) throw new Error('Réponse vide')
       setResults(activities)
     } catch (e) {
