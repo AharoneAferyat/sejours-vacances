@@ -3,6 +3,84 @@ import { useState } from 'react'
 // Proxy via Netlify Function (évite les blocages CORS)
 const GEMINI_URL = '/.netlify/functions/gemini'
 
+function AIActivityCard({ act, days, targetDayId, selectedDayId, onSelectDay, onAdd }) {
+  const [open, setOpen] = useState(false)
+  const diffLabel = { facile: 'Facile', moyen: 'Intermédiaire', sportif: 'Sportif', repos: 'Repos' }[act.difficulty] || 'Intermédiaire'
+
+  return (
+    <div className="card" style={{ marginBottom: '.5rem' }}>
+      {/* Header — always visible, click to expand */}
+      <div className="act-main" onClick={() => setOpen(o => !o)} style={{ padding: '.6rem .75rem' }}>
+        <div className="act-main-icon" style={{ background: 'var(--gray-light)', fontSize: '1.2rem', width: 38, height: 38 }}>
+          {act.emoji}
+        </div>
+        <div className="act-main-info">
+          <div className="act-main-title">{act.title}</div>
+          <div className="act-main-sub">{act.subtitle}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {act.distanceKm > 0 && <span className="stat">{act.distanceKm}km</span>}
+          {act.dplus > 0 && <span className="stat">↑{act.dplus}m</span>}
+          <span className={`badge badge-${act.difficulty || 'moyen'}`}>{diffLabel}</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '.8rem' }}>{open ? '▴' : '▾'}</span>
+        </div>
+      </div>
+
+      {/* Detail — collapsed */}
+      {open && (
+        <div style={{ borderTop: '1px solid var(--border)', padding: '.75rem' }}>
+          {/* Stats */}
+          {(act.distanceKm > 0 || act.dplus > 0 || act.durationMin > 0) && (
+            <div className="stats" style={{ marginBottom: '.5rem' }}>
+              {act.distanceKm > 0 && <span className="stat">📍 {act.distanceKm} km</span>}
+              {act.dplus > 0 && <span className="stat">⬆️ {act.dplus}m D+</span>}
+              {act.durationMin > 0 && <span className="stat">⏱ {Math.floor(act.durationMin/60)}h{act.durationMin%60>0?(act.durationMin%60)+'min':''}</span>}
+              {act.startTime && <span className="stat">🕗 {act.startTime}</span>}
+            </div>
+          )}
+
+          {act.desc && <div style={{ fontSize: '.81rem', lineHeight: 1.65, marginBottom: '.5rem', color: 'var(--text)' }}>{act.desc}</div>}
+
+          {act.tip && (
+            <div className="tip" style={{ marginBottom: '.5rem' }}>💡 {act.tip}</div>
+          )}
+
+          {act.gear?.length > 0 && (
+            <div className="gear-block" style={{ marginBottom: '.5rem' }}>
+              <strong>🎒 Matériel</strong>
+              <ul>{act.gear.map((g, i) => <li key={i}>{g}</li>)}</ul>
+            </div>
+          )}
+
+          {act.links?.length > 0 && (
+            <div className="links" style={{ marginBottom: '.6rem' }}>
+              {act.links.map((l, i) => (
+                <a key={i} className="ext-link" href={l.url} target="_blank" rel="noreferrer">🗺 {l.label} ↗</a>
+              ))}
+            </div>
+          )}
+
+          {/* Day selector */}
+          {!targetDayId && days?.length > 0 && (
+            <select value={selectedDayId || ''} onChange={e => onSelectDay(e.target.value)}
+              style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 7, padding: '6px 9px', fontSize: '.8rem', fontFamily: 'inherit', marginBottom: '.4rem', background: '#fff' }}>
+              <option value="">Choisir un jour…</option>
+              {days.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
+            </select>
+          )}
+
+          <button className="btn btn-primary"
+            style={{ width: '100%', justifyContent: 'center', opacity: (!targetDayId && !selectedDayId) ? .5 : 1 }}
+            disabled={!targetDayId && !selectedDayId}
+            onClick={() => { const dayId = targetDayId || selectedDayId; if (dayId) onAdd(dayId) }}>
+            ＋ Ajouter au planning
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AIRandoSearch({ destination, days, targetDayId, onSelectActivity, onClose }) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
