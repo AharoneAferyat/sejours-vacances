@@ -46,19 +46,32 @@ Propose 3 activités adaptées à la recherche.`
 
       // Extract and clean JSON from response
       let jsonStr = text
-      // Remove markdown code blocks if present
-      jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '')
-      // Find the JSON array
+      // Remove markdown
+      jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      // Find the opening bracket
       const start = jsonStr.indexOf('[')
-      const end = jsonStr.lastIndexOf(']')
-      if (start === -1 || end === -1) {
-        console.error('No JSON array found in:', text.slice(0, 300))
-        throw new Error('Réponse invalide — aucun JSON trouvé')
-      }
-      jsonStr = jsonStr.slice(start, end + 1)
-      // Fix common JSON issues: remove trailing commas
+      if (start === -1) throw new Error('Réponse invalide — aucun JSON trouvé')
+      jsonStr = jsonStr.slice(start)
+
+      // Fix common JSON issues
       jsonStr = jsonStr.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']')
-      const activities = JSON.parse(jsonStr)
+
+      // Try full parse first
+      let activities = []
+      try {
+        activities = JSON.parse(jsonStr)
+      } catch(parseErr) {
+        // JSON might be truncated - extract individual objects
+        const objMatches = jsonStr.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g) || []
+        for (const objStr of objMatches) {
+          try {
+            const obj = JSON.parse(objStr)
+            if (obj.title) activities.push(obj)
+          } catch(e) {}
+        }
+        if (activities.length === 0) throw new Error('Réponse invalide')
+      }
+
       if (!Array.isArray(activities) || activities.length === 0) throw new Error('Réponse vide')
       setResults(activities)
     } catch (e) {
