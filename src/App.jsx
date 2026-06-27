@@ -283,7 +283,7 @@ export default function App() {
               trip={trip}
               voyageurs={store.tripVoyageurs}
               isGuest={store.isGuest}
-              guestVoyageurId={store.activeVoyageurId}
+              activeVoyageurId={vid}
               onUpdate={(changes) => store.updateTrip(trip.id, changes)}
             />
           )}
@@ -327,6 +327,9 @@ export default function App() {
       {showGlobalBudget && (
         <GlobalBudget
           trips={store.trips}
+          isOwner={!store.isGuest}
+          activeVoyageurId={vid}
+          onUpdateTrip={(tripId, changes) => store.updateTrip(tripId, changes)}
           onClose={() => setShowGlobalBudget(false)}
         />
       )}
