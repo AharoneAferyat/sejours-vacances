@@ -1,24 +1,95 @@
 import { useState, useEffect } from 'react'
 
 const TRIP_COLORS = ['#0F6E56','#185FA5','#A32D2D','#BA7517','#7C3AED','#0891B2','#BE185D','#065F46']
+// Gradient dynamique selon saison + heure
+function getHeaderGradient() {
+  const now = new Date()
+  const h = now.getHours()
+  const m = now.getMonth() // 0=jan
+
+  // Saison
+  const isSummer = m >= 5 && m <= 8    // juin-sept
+  const isAutumn = m >= 9 && m <= 10   // oct-nov
+  const isWinter = m === 11 || m <= 1  // déc-fév
+  const isSpring = m >= 2 && m <= 4    // mars-mai
+
+  // Nuit profonde 0h-5h
+  if (h >= 0 && h < 5) {
+    if (isWinter) return 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 50%, #1a0a2e 100%)'
+    return 'linear-gradient(135deg, #070714 0%, #0d1533 50%, #0a0d1f 100%)'
+  }
+  // Aube 5h-7h
+  if (h >= 5 && h < 7) {
+    if (isWinter) return 'linear-gradient(135deg, #1a1030 0%, #3d1c5e 40%, #7a3b1e 100%)'
+    if (isSpring) return 'linear-gradient(135deg, #1a1040 0%, #6b2d6b 40%, #d4722a 100%)'
+    if (isSummer) return 'linear-gradient(135deg, #1a1535 0%, #8b3a62 40%, #e8852f 100%)'
+    return 'linear-gradient(135deg, #1a1030 0%, #5c2d6b 40%, #c4622a 100%)'
+  }
+  // Matin 7h-12h
+  if (h >= 7 && h < 12) {
+    if (isWinter) return 'linear-gradient(135deg, #1e3a5f 0%, #2d5986 50%, #4a7fa8 100%)'
+    if (isSpring) return 'linear-gradient(135deg, #1a4a2e 0%, #2d7a4f 50%, #4aab72 100%)'
+    if (isSummer) return 'linear-gradient(135deg, #1a3a6e 0%, #1e6bb5 50%, #38a0d4 100%)'
+    return 'linear-gradient(135deg, #2a3a50 0%, #3d5a78 50%, #5a7fa0 100%)'
+  }
+  // Après-midi 12h-17h
+  if (h >= 12 && h < 17) {
+    if (isWinter) return 'linear-gradient(135deg, #1c3550 0%, #2a5478 50%, #1e3a5f 100%)'
+    if (isSpring) return 'linear-gradient(135deg, #0f4a2a 0%, #1a7a45 50%, #0d5e38 100%)'
+    if (isSummer) return 'linear-gradient(135deg, #0a3a7a 0%, #0f5eb5 50%, #0a4a8a 100%)'
+    return 'linear-gradient(135deg, #1e2e45 0%, #2d4a6a 50%, #1a3050 100%)'
+  }
+  // Soirée dorée 17h-20h
+  if (h >= 17 && h < 20) {
+    if (isWinter) return 'linear-gradient(135deg, #2a1a0a 0%, #6b3a0f 40%, #a05a1a 100%)'
+    if (isSpring) return 'linear-gradient(135deg, #1a2a0a 0%, #5a7a1a 40%, #c4a020 100%)'
+    if (isSummer) return 'linear-gradient(135deg, #1a1a0a 0%, #8b4a0a 40%, #d4820a 100%)'
+    return 'linear-gradient(135deg, #1a1208 0%, #5a3010 40%, #9a5818 100%)'
+  }
+  // Nuit tombante 20h-23h
+  if (h >= 20 && h < 23) {
+    if (isWinter) return 'linear-gradient(135deg, #0d0d25 0%, #1a1040 50%, #2a0a3a 100%)'
+    if (isSummer) return 'linear-gradient(135deg, #0a0a20 0%, #1a1245 50%, #2d0d30 100%)'
+    return 'linear-gradient(135deg, #0d0d22 0%, #18103c 50%, #260c2e 100%)'
+  }
+  // 23h
+  return 'linear-gradient(135deg, #07071a 0%, #0d1030 50%, #0a0820 100%)'
+}
+
+
 
 export default function AppHeader({
   trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip,
   voyageurs, onOpenVoyageurs, syncing, onSignOut, userEmail, onOpenGlobalBudget
 }) {
-  const [time, setTime] = useState({ local: '', utc: '' })
+  const [time, setTime] = useState({ local: '', utc: '', dateFR: '', dateEN: '' })
+  const [headerBg, setHeaderBg] = useState(getHeaderGradient())
   const [showTripMenu, setShowTripMenu] = useState(false)
 
   useEffect(() => {
     const tick = () => {
       const now = new Date()
+      const daysFR = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam']
+      const monthsFR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+      const daysEN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const monthsEN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      const nth = (d) => { if (d > 3 && d < 21) return 'th'; switch (d % 10) { case 1: return 'st'; case 2: return 'nd'; case 3: return 'rd'; default: return 'th' } }
+      const nowUTC = new Date(now.toISOString())
       setTime({
         local: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        utc: now.toUTCString().split(' ')[4]
+        utc: nowUTC.toUTCString().split(' ')[4],
+        dateFR: `${daysFR[now.getDay()]} ${now.getDate()} ${monthsFR[now.getMonth()]} ${now.getFullYear()}`,
+        dateEN: `${daysEN[nowUTC.getUTCDay()]} ${nowUTC.getUTCDate()}${nth(nowUTC.getUTCDate())} ${monthsEN[nowUTC.getUTCMonth()]} ${nowUTC.getUTCFullYear()}`
       })
     }
     tick()
     const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    setHeaderBg(getHeaderGradient())
+    const id = setInterval(() => setHeaderBg(getHeaderGradient()), 60000)
     return () => clearInterval(id)
   }, [])
 
@@ -28,7 +99,7 @@ export default function AppHeader({
     : userEmail?.slice(0, 10)
 
   return (
-    <header style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', color: '#fff' }}>
+    <header style={{ background: headerBg, transition: 'background 2s ease', color: '#fff' }}>
 
       {/* ── ROW 1: Séjours | Title + Clock | Déconnexion + Voyageurs ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'start', gap: 'clamp(.4rem, 2vw, 1rem)', padding: 'clamp(.5rem, 2vw, .85rem) clamp(.6rem, 2.5vw, 1.25rem)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
@@ -90,10 +161,16 @@ export default function AppHeader({
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(.95rem, 3vw, 1.5rem)', fontWeight: 700, lineHeight: 1.1 }}>
             Séjours Vacances
           </div>
-          <div style={{ marginTop: '.2rem' }}>
-            <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 'clamp(.78rem, 2vw, 1.05rem)', letterSpacing: '.05em' }}>{time.local}</span>
-            <span style={{ fontFamily: 'monospace', opacity: .4, marginLeft: '.5rem', fontSize: 'clamp(.65rem, 1.5vw, .78rem)' }}>UTC {time.utc}</span>
-            {syncing && <span style={{ opacity: .4, marginLeft: '.35rem', fontSize: '.7rem' }}>☁️</span>}
+          <div style={{ marginTop: '.3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.05rem' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem' }}>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 'clamp(1rem, 2.8vw, 1.35rem)', letterSpacing: '.06em' }}>{time.local}</span>
+              {syncing && <span style={{ opacity: .4, fontSize: '.7rem' }}>☁️</span>}
+            </div>
+            <span style={{ fontFamily: 'monospace', opacity: .55, fontSize: 'clamp(.65rem, 1.6vw, .82rem)', letterSpacing: '.02em' }}>{time.dateFR}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem', marginTop: '.15rem' }}>
+              <span style={{ fontFamily: 'monospace', opacity: .45, fontSize: 'clamp(.72rem, 1.8vw, .9rem)', fontWeight: 600, letterSpacing: '.05em' }}>UTC {time.utc}</span>
+            </div>
+            <span style={{ fontFamily: 'monospace', opacity: .35, fontSize: 'clamp(.58rem, 1.4vw, .72rem)', letterSpacing: '.02em' }}>{time.dateEN}</span>
           </div>
         </div>
 
