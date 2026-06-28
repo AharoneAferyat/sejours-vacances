@@ -14,23 +14,19 @@ function formatDate(dateStr) {
 }
 
 async function callGemini(prompt) {
-  let r
-  for (let attempt = 0; attempt < 2; attempt++) {
-    r = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
-    })
-    if (r.status !== 502) break
-    await new Promise(res => setTimeout(res, 1500))
-  }
+  const r = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
+  })
   const data = await r.json()
   if (!r.ok) {
     const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || data.details || `HTTP ${r.status}`)
     throw new Error(errMsg)
   }
+  // Le proxy retourne déjà le texte nettoyé dans candidates[0].content.parts[0].text
   const parts = data?.candidates?.[0]?.content?.parts || []
-  return parts.map(p => p.text || '').join('')
+  return parts.map(p => p.text || '').join('').trim()
 }
 
 function parseJSON(text) {
