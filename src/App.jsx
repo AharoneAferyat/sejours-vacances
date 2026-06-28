@@ -347,6 +347,7 @@ export default function App() {
 
       {showAI && trip && (
         <AIRandoSearch
+          trip={trip}
           destination={trip.destination || trip.name}
           days={trip.days}
           targetDayId={aiTargetDayId}
