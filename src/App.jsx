@@ -34,7 +34,7 @@ function LoginScreen({ onGoogleSignIn, onCodeLogin }) {
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', flexDirection:'column', gap:'1.5rem', background:'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', padding:'1.5rem' }}>
       <div style={{ fontSize:'3rem' }}>🏔</div>
-      <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'clamp(1.4rem, 5vw, 2rem)', fontWeight:700, color:'#fff', textAlign:'center' }}>🥾 Séjours Vacances</div>
+      <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'clamp(1.4rem, 5vw, 2rem)', fontWeight:700, color:'#fff', textAlign:'center' }}>Séjours Vacances</div>
       <div style={{ fontSize:'.9rem', color:'rgba(255,255,255,.7)', textAlign:'center' }}>Connecte-toi pour accéder à tes séjours</div>
 
       {!showCode ? (
@@ -106,7 +106,7 @@ export default function App() {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:'1rem', background:'#0f3460' }}>
         <div style={{ fontSize:'2rem' }}>☁️</div>
-        <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'1.4rem', color:'#fff' }}>🥾 Séjours Vacances</div>
+        <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'1.4rem', color:'#fff' }}>Séjours Vacances</div>
         <div style={{ fontSize:'.85rem', color:'rgba(255,255,255,.6)' }}>Connexion en cours…</div>
       </div>
     )
@@ -120,7 +120,7 @@ export default function App() {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:'1rem', background:'var(--bg)' }}>
         <div style={{ fontSize:'2rem' }}>☁️</div>
-        <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'1.4rem', color:'var(--green)' }}>🥾 Séjours Vacances</div>
+        <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'1.4rem', color:'var(--green)' }}>Séjours Vacances</div>
         <div style={{ fontSize:'.85rem', color:'var(--text-muted)' }}>Chargement de tes données…</div>
       </div>
     )
