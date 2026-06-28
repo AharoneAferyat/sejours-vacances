@@ -41,7 +41,7 @@ export default function AppHeader({
             fontSize: 'clamp(.72rem, 1.8vw, .82rem)', fontFamily: 'inherit', fontWeight: 500,
             display: 'flex', alignItems: 'center', gap: '.35rem', whiteSpace: 'nowrap'
           }}>
-            ✈️ Séjours
+            🏔️ Séjours
             <span style={{ fontSize: '.6rem', opacity: .65, background: 'rgba(255,255,255,.15)', borderRadius: 8, padding: '1px 5px' }}>{trips.length}</span>
             <span style={{ fontSize: '.6rem', opacity: .5 }}>{showTripMenu ? '▴' : '▾'}</span>
           </button>
@@ -88,7 +88,7 @@ export default function AppHeader({
         {/* CENTER — Title + clock */}
         <div style={{ textAlign: 'center', minWidth: 0 }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(.95rem, 3vw, 1.5rem)', fontWeight: 700, lineHeight: 1.1 }}>
-            Vacances Aharone
+            🥾 Séjours Vacances
           </div>
           <div style={{ marginTop: '.2rem' }}>
             <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 'clamp(.78rem, 2vw, 1.05rem)', letterSpacing: '.05em' }}>{time.local}</span>
