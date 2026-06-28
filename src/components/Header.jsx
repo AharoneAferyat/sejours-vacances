@@ -161,16 +161,16 @@ export default function AppHeader({
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(.95rem, 3vw, 1.5rem)', fontWeight: 700, lineHeight: 1.1 }}>
             Séjours Vacances
           </div>
-          <div style={{ marginTop: '.3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.05rem' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem' }}>
-              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 'clamp(1rem, 2.8vw, 1.35rem)', letterSpacing: '.06em' }}>{time.local}</span>
+          <div style={{ marginTop: '.3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.08rem' }}>
+            {/* Date FR — bien visible, au-dessus */}
+            <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 'clamp(.82rem, 2vw, 1rem)', letterSpacing: '.03em', opacity: .95 }}>{time.dateFR}</span>
+            {/* Heure locale — grosse */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem' }}>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 'clamp(1.2rem, 3.5vw, 1.7rem)', letterSpacing: '.08em' }}>{time.local}</span>
               {syncing && <span style={{ opacity: .4, fontSize: '.7rem' }}>☁️</span>}
             </div>
-            <span style={{ fontFamily: 'monospace', opacity: .55, fontSize: 'clamp(.65rem, 1.6vw, .82rem)', letterSpacing: '.02em' }}>{time.dateFR}</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem', marginTop: '.15rem' }}>
-              <span style={{ fontFamily: 'monospace', opacity: .45, fontSize: 'clamp(.72rem, 1.8vw, .9rem)', fontWeight: 600, letterSpacing: '.05em' }}>UTC {time.utc}</span>
-            </div>
-            <span style={{ fontFamily: 'monospace', opacity: .35, fontSize: 'clamp(.58rem, 1.4vw, .72rem)', letterSpacing: '.02em' }}>{time.dateEN}</span>
+            {/* UTC + date EN — discrets en dessous */}
+            <span style={{ fontFamily: 'monospace', opacity: .5, fontSize: 'clamp(.68rem, 1.6vw, .82rem)', fontWeight: 500, letterSpacing: '.04em', marginTop: '.1rem' }}>UTC {time.utc} · {time.dateEN}</span>
           </div>
         </div>
 
