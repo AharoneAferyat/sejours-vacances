@@ -31,19 +31,38 @@ async function callGemini(prompt) {
 }
 
 function parseJSON(text) {
-  let jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-  const start = jsonStr.indexOf('[') !== -1 ? jsonStr.indexOf('[') : jsonStr.indexOf('{')
+  // Nettoie backticks markdown
+  let s = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
+  // Trouve le début du JSON ([ ou {)
+  const arrStart = s.indexOf('[')
+  const objStart = s.indexOf('{')
+  let start = -1
+  if (arrStart === -1) start = objStart
+  else if (objStart === -1) start = arrStart
+  else start = Math.min(arrStart, objStart)
   if (start === -1) throw new Error('Réponse invalide — aucun JSON trouvé')
-  jsonStr = jsonStr.slice(start)
-  jsonStr = jsonStr.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']')
-  try { return JSON.parse(jsonStr) } catch {
-    const objMatches = jsonStr.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g) || []
-    const results = []
-    for (const objStr of objMatches) {
-      try { const o = JSON.parse(objStr); if (o.title) results.push(o) } catch {}
-    }
-    if (results.length === 0) throw new Error('Réponse invalide')
-    return results
+  s = s.slice(start)
+  // Trouve la fin du JSON en comptant les brackets
+  const openChar = s[0]
+  let depth = 0, end = -1, inStr = false, escape = false
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]
+    if (escape) { escape = false; continue }
+    if (c === '\\') { escape = true; continue }
+    if (c === '"') { inStr = !inStr; continue }
+    if (inStr) continue
+    if (c === '[' || c === '{') depth++
+    else if (c === ']' || c === '}') { depth--; if (depth === 0) { end = i; break } }
+  }
+  if (end !== -1) s = s.slice(0, end + 1)
+  // Fixe virgules trailing
+  s = s.replace(/,\s*([}\]])/g, '$1')
+  try {
+    const result = JSON.parse(s)
+    return Array.isArray(result) ? result : [result]
+  } catch(e) {
+    console.error('[parseJSON] échec:', e.message, 'texte:', s.slice(0, 200))
+    throw new Error('Réponse invalide')
   }
 }
 
