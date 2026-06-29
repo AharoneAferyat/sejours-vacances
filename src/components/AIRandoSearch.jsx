@@ -19,18 +19,12 @@ async function callGemini(prompt) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt })
   })
-  const raw = await r.text()
-  console.log('[Gemini] status:', r.status, 'raw (200chars):', raw.slice(0, 200))
-  let data
-  try { data = JSON.parse(raw) } catch(e) { throw new Error('JSON invalide: ' + e.message) }
-  if (!r.ok) {
-    const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || data.details || `HTTP ${r.status}`)
-    throw new Error(errMsg)
+  const json = await r.json()
+  if (!r.ok || !json.ok) {
+    throw new Error(json.error || `HTTP ${r.status}`)
   }
-  const parts = data?.candidates?.[0]?.content?.parts || []
-  const text = parts.map(p => p.text || '').join('').trim()
-  console.log('[Gemini] texte extrait (200chars):', text.slice(0, 200))
-  return text
+  // Le serveur renvoie { ok: true, data: [...] } — tableau déjà parsé
+  return json.data
 }
 
 function parseJSON(text) {
@@ -257,8 +251,7 @@ Format exact (3 activités):
 difficulty: facile | moyen | sportif | repos`
 
     try {
-      const text = await callGemini(prompt)
-      const activities = parseJSON(text)
+      const activities = await callGemini(prompt)
       if (!Array.isArray(activities) || activities.length === 0) throw new Error('Réponse vide')
       setResults(activities)
     } catch (e) { setError(getErrorMsg(e)) }
@@ -300,8 +293,7 @@ Réponds UNIQUEMENT avec un tableau JSON, une entrée par jour, sans texte avant
 dayIndex = index du jour (0 = premier jour). difficulty: facile | moyen | sportif | repos`
 
     try {
-      const text = await callGemini(prompt)
-      const parsed = parseJSON(text)
+      const parsed = await callGemini(prompt)
       if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Réponse vide')
 
       const result = parsed.map(item => ({
@@ -329,13 +321,9 @@ Réponds UNIQUEMENT avec un objet JSON:
 {"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":0,"dplus":0,"durationMin":120,"price":"gratuit","desc":"Description courte","tip":"Conseil","gear":[]}`
 
     try {
-      const text = await callGemini(prompt)
-      let jsonStr = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      const start = jsonStr.indexOf('{')
-      if (start === -1) throw new Error('JSON invalide')
-      jsonStr = jsonStr.slice(start)
-      const alt = JSON.parse(jsonStr)
-      if (!alt.title) throw new Error('Activité invalide')
+      const altArr = await callGemini(prompt)
+      const alt = Array.isArray(altArr) ? altArr[0] : altArr
+      if (!alt || !alt.title) throw new Error('Activité invalide')
       setAltLoading(prev => ({ ...prev, [dayId]: false }))
       setPlanAlternatives(prev => ({ ...prev, [dayId]: alt }))
       // Reset status si refusé pour permettre de valider la nouvelle
