@@ -207,7 +207,7 @@ export default function App() {
   }
 
   // Attendre que la vérification d'accès soit terminée
-  if (store.uid && !store.isGuest && store.allowedLoading) {
+  if (store.uid && !store.isGuest && !store.isAdmin && store.allowedLoading) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:'1rem', background:'var(--bg)' }}>
         <div style={{ fontSize:'2rem' }}>🔑</div>
