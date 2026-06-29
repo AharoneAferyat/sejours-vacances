@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore'
+import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore'
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
 
 const firebaseConfig = {
@@ -133,4 +133,101 @@ export function subscribeToOwnerTrip(ownerUid, callback) {
   return onSnapshot(doc(db, 'users', ownerUid), (snap) => {
     if (snap.exists()) callback(snap.data())
   }, (e) => console.warn('Guest sync error:', e.message))
+}
+
+// ─── INVITE CODES ──────────────────────────────────────────────────────────
+
+function genInviteCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'INV-'
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  return code
+}
+
+export async function createInviteCode(adminUid, note = '') {
+  const code = genInviteCode()
+  try {
+    await setDoc(doc(db, 'inviteCodes', code), {
+      code,
+      createdBy: adminUid,
+      createdAt: Date.now(),
+      note,
+      usedBy: null,
+      usedAt: null,
+      usedEmail: null,
+    })
+    return code
+  } catch (e) {
+    console.warn('Create invite failed:', e.message)
+    return null
+  }
+}
+
+export async function validateInviteCode(code) {
+  const normalized = code.toUpperCase().trim()
+  try {
+    const snap = await getDoc(doc(db, 'inviteCodes', normalized))
+    if (!snap.exists()) return { error: 'Code invalide' }
+    const data = snap.data()
+    if (data.usedBy) return { error: 'Ce code a déjà été utilisé' }
+    return { valid: true, data }
+  } catch (e) {
+    return { error: 'Erreur de vérification' }
+  }
+}
+
+export async function consumeInviteCode(code, uid, email) {
+  const normalized = code.toUpperCase().trim()
+  try {
+    const snap = await getDoc(doc(db, 'inviteCodes', normalized))
+    if (!snap.exists() || snap.data().usedBy) return false
+    await setDoc(doc(db, 'inviteCodes', normalized), {
+      ...snap.data(),
+      usedBy: uid,
+      usedEmail: email,
+      usedAt: Date.now(),
+    })
+    // Marque l'utilisateur comme autorisé
+    await setDoc(doc(db, 'allowedUsers', uid), {
+      uid,
+      email,
+      inviteCode: normalized,
+      joinedAt: Date.now(),
+    })
+    return true
+  } catch (e) {
+    console.warn('Consume invite failed:', e.message)
+    return false
+  }
+}
+
+export async function isUserAllowed(uid, email) {
+  const ADMIN_EMAILS = ['aaferyat@gmail.com', 'ahaferyat5@gmail.com', 'aharone.aferyat@ght-gpne.fr']
+  if (ADMIN_EMAILS.includes(email)) return true
+  try {
+    const snap = await getDoc(doc(db, 'allowedUsers', uid))
+    return snap.exists()
+  } catch { return false }
+}
+
+export async function getAllInviteCodes() {
+  try {
+    const snap = await getDocs(collection(db, 'inviteCodes'))
+    return snap.docs.map(d => d.data()).sort((a, b) => b.createdAt - a.createdAt)
+  } catch { return [] }
+}
+
+export async function getAllUsers() {
+  try {
+    const snap = await getDocs(collection(db, 'allowedUsers'))
+    return snap.docs.map(d => d.data()).sort((a, b) => b.joinedAt - a.joinedAt)
+  } catch { return [] }
+}
+
+export async function deleteInviteCode(code) {
+  try {
+    const { deleteDoc } = await import('firebase/firestore')
+    await deleteDoc(doc(db, 'inviteCodes', code))
+    return true
+  } catch { return false }
 }

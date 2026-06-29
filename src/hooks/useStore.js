@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   saveToCloud, loadFromCloud, subscribeToCloud,
-  onAuthChange, signInWithGoogle, signOutUser,
+  onAuthChange, signInWithGoogle, signOutUser, isUserAllowed, consumeInviteCode,
   registerGuestAccess, findGuestByCode, saveGuestData, subscribeToOwnerTrip
 } from '../firebase'
 
@@ -69,6 +69,8 @@ function clearGuestSession() {
 export function useStore() {
   const [uid, setUid] = useState(null)
   const [userEmail, setUserEmail] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isAllowed, setIsAllowed] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
   const [guestSession, setGuestSessionState] = useState(getGuestSession)
   const [state, setState] = useState({ trips: [], activeTripId: null, notes: [] })
@@ -80,9 +82,23 @@ export function useStore() {
 
   // ─── AUTH ─────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const unsub = onAuthChange(user => {
+    const ADMIN_EMAILS = ['aaferyat@gmail.com', 'ahaferyat5@gmail.com', 'aharone.aferyat@ght-gpne.fr']
+    const unsub = onAuthChange(async user => {
       setUid(user?.uid || null)
       setUserEmail(user?.email || null)
+      if (user) {
+        const admin = ADMIN_EMAILS.includes(user.email)
+        setIsAdmin(admin)
+        if (admin) {
+          setIsAllowed(true)
+        } else {
+          const allowed = await isUserAllowed(user.uid, user.email)
+          setIsAllowed(allowed)
+        }
+      } else {
+        setIsAdmin(false)
+        setIsAllowed(false)
+      }
       setAuthLoading(false)
     })
     return () => unsub()

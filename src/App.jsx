@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from './hooks/useStore'
 import { getTodayStr, genId, formatDate, displayToISO } from './utils'
+import { validateInviteCode, consumeInviteCode } from './firebase'
 import Header from './components/Header'
 import WeatherStrip from './components/WeatherStrip'
 import { useWeather } from './hooks/useWeather'
@@ -14,8 +15,87 @@ import Budget from './components/Budget'
 import GlobalBudget from './components/GlobalBudget'
 import AIRandoSearch from './components/AIRandoSearch'
 import DangerAlert from './components/DangerAlert'
+import AdminPanel from './components/AdminPanel'
 
-function LoginScreen({ onGoogleSignIn, onCodeLogin }) {
+
+function InviteScreen({ onBack, onSuccess }) {
+  const [code, setCode] = useState('')
+  const [step, setStep] = useState('enter') // 'enter' | 'valid' | 'done'
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [validatedCode, setValidatedCode] = useState(null)
+
+  const handleValidate = async () => {
+    if (!code.trim()) return
+    setLoading(true); setError('')
+    const result = await validateInviteCode(code.trim())
+    setLoading(false)
+    if (result.error) return setError(result.error)
+    setValidatedCode(code.trim().toUpperCase())
+    setStep('valid')
+  }
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true)
+    const user = await onSuccess()
+    if (user && validatedCode) {
+      await consumeInviteCode(validatedCode, user.uid, user.email)
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', flexDirection:'column', gap:'1.5rem', background:'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', padding:'1.5rem' }}>
+      <div style={{ fontSize:'3rem' }}>✉️</div>
+      <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'clamp(1.2rem, 4vw, 1.6rem)', fontWeight:700, color:'#fff', textAlign:'center' }}>Code d'invitation</div>
+
+      {step === 'enter' && (
+        <div style={{ background:'rgba(255,255,255,.08)', borderRadius:14, padding:'1.5rem', width:'100%', maxWidth:340, border:'1px solid rgba(255,255,255,.15)' }}>
+          <div style={{ fontSize:'.83rem', color:'rgba(255,255,255,.7)', marginBottom:'1rem', textAlign:'center' }}>
+            Entre le code d'invitation que tu as reçu
+          </div>
+          <input
+            value={code} onChange={e => setCode(e.target.value.toUpperCase())}
+            placeholder="INV-XXXXXX"
+            style={{ width:'100%', background:'rgba(255,255,255,.15)', border:'1px solid rgba(255,255,255,.25)', borderRadius:9, padding:'10px 12px', color:'#fff', fontFamily:'monospace', fontSize:'1.1rem', outline:'none', textAlign:'center', letterSpacing:'.1em', boxSizing:'border-box', marginBottom:'.75rem' }}
+            onKeyDown={e => e.key === 'Enter' && handleValidate()}
+          />
+          {error && <div style={{ fontSize:'.78rem', color:'#fca5a5', marginBottom:'.6rem', textAlign:'center' }}>{error}</div>}
+          <button onClick={handleValidate} disabled={loading || !code.trim()} style={{
+            width:'100%', background:'var(--green)', color:'#fff', border:'none', borderRadius:9,
+            padding:'10px', fontSize:'.9rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit'
+          }}>
+            {loading ? '⏳ Vérification…' : 'Vérifier le code'}
+          </button>
+        </div>
+      )}
+
+      {step === 'valid' && (
+        <div style={{ background:'rgba(255,255,255,.08)', borderRadius:14, padding:'1.5rem', width:'100%', maxWidth:340, border:'1px solid rgba(255,255,255,.15)', textAlign:'center' }}>
+          <div style={{ fontSize:'2rem', marginBottom:'.5rem' }}>✅</div>
+          <div style={{ color:'#fff', fontWeight:600, marginBottom:'.4rem' }}>Code valide !</div>
+          <div style={{ fontSize:'.82rem', color:'rgba(255,255,255,.65)', marginBottom:'1.25rem' }}>
+            Connecte-toi avec Google pour créer ton compte et accéder à l'application.
+          </div>
+          <button onClick={handleGoogleSignIn} disabled={loading} style={{
+            width:'100%', background:'#fff', color:'#1a1a1a', border:'none', borderRadius:10,
+            padding:'11px 24px', fontSize:'.92rem', fontWeight:600, cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center', gap:'.75rem', fontFamily:'inherit'
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            {loading ? 'Connexion…' : 'Continuer avec Google'}
+          </button>
+        </div>
+      )}
+
+      <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,.5)', cursor:'pointer', fontSize:'.83rem', fontFamily:'inherit' }}>
+        ← Retour
+      </button>
+    </div>
+  )
+}
+
+function LoginScreen({ onGoogleSignIn, onCodeLogin, onInviteLogin }) {
   const [showCode, setShowCode] = useState(false)
   const [codeName, setCodeName] = useState('')
   const [codePass, setCodePass] = useState('')
@@ -55,6 +135,13 @@ function LoginScreen({ onGoogleSignIn, onCodeLogin }) {
           }}>
             🔑 Rejoindre avec un code
           </button>
+          <button onClick={() => onInviteLogin()} style={{
+            background:'rgba(255,255,255,.06)', color:'rgba(255,255,255,.5)', border:'1px solid rgba(255,255,255,.1)',
+            borderRadius:12, padding:'10px 24px', fontSize:'.8rem', fontWeight:400, cursor:'pointer',
+            fontFamily:'inherit', width:'100%'
+          }}>
+            ✉️ J'ai un code d'invitation
+          </button>
         </div>
       ) : (
         <div style={{ background:'rgba(255,255,255,.08)', borderRadius:14, padding:'1.25rem', width:'100%', maxWidth:320, border:'1px solid rgba(255,255,255,.15)' }}>
@@ -93,6 +180,8 @@ export default function App() {
   const [showVoyageurs, setShowVoyageurs] = useState(false)
   const [showAI, setShowAI] = useState(false)
   const [showGlobalBudget, setShowGlobalBudget] = useState(false)
+  const [showAdmin, setShowAdmin] = useState(false)
+  const [showInviteScreen, setShowInviteScreen] = useState(false)
   const [aiTargetDayId, setAiTargetDayId] = useState(null)
 
   const trip = store.activeTrip
@@ -113,7 +202,24 @@ export default function App() {
   }
 
   if (!store.uid && !store.isGuest) {
-    return <LoginScreen onGoogleSignIn={store.signIn} onCodeLogin={store.loginWithCode} />
+    if (showInviteScreen) return <InviteScreen onBack={() => setShowInviteScreen(false)} onSuccess={store.signIn} />
+    return <LoginScreen onGoogleSignIn={store.signIn} onCodeLogin={store.loginWithCode} onInviteLogin={() => setShowInviteScreen(true)} />
+  }
+
+  // Utilisateur connecté mais pas autorisé (pas de code invite)
+  if (store.uid && !store.isAdmin && !store.isAllowed && !store.isGuest) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', flexDirection:'column', gap:'1.5rem', background:'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', padding:'1.5rem' }}>
+        <div style={{ fontSize:'3rem' }}>🔒</div>
+        <div style={{ fontFamily:\"'Playfair Display', serif\", fontSize:'clamp(1.2rem, 4vw, 1.6rem)', fontWeight:700, color:'#fff', textAlign:'center' }}>Accès restreint</div>
+        <div style={{ fontSize:'.88rem', color:'rgba(255,255,255,.7)', textAlign:'center', maxWidth:320 }}>
+          Cette application est sur invitation uniquement. Contacte l'administrateur pour obtenir un code d'invitation.
+        </div>
+        <button onClick={store.signOut} style={{ background:'rgba(255,255,255,.1)', color:'rgba(255,255,255,.7)', border:'1px solid rgba(255,255,255,.2)', borderRadius:12, padding:'10px 24px', fontSize:'.88rem', cursor:'pointer', fontFamily:'inherit' }}>
+          Se déconnecter
+        </button>
+      </div>
+    )
   }
 
   if (!store.dataLoaded) {
@@ -177,6 +283,8 @@ export default function App() {
         onOpenGlobalBudget={!store.isGuest || store.trips?.length > 1 ? () => setShowGlobalBudget(true) : null}
         userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail}
         onSignOut={store.signOut}
+        isAdmin={store.isAdmin}
+        onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
       />
 
       {/* DANGER ALERT — shown on load if extreme conditions */}
@@ -343,6 +451,10 @@ export default function App() {
           onUpdateEmail={(vid, email) => store.updateVoyageurEmail(trip.id, vid, email)}
           onClose={() => setShowVoyageurs(false)}
         />
+      )}
+
+      {showAdmin && store.isAdmin && (
+        <AdminPanel uid={store.uid} onClose={() => setShowAdmin(false)} />
       )}
 
       {showAI && trip && (

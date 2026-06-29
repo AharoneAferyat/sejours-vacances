@@ -60,7 +60,7 @@ function getHeaderGradient() {
 
 export default function AppHeader({
   trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip,
-  voyageurs, onOpenVoyageurs, syncing, onSignOut, userEmail, onOpenGlobalBudget
+  voyageurs, onOpenVoyageurs, syncing, onSignOut, userEmail, onOpenGlobalBudget, isAdmin, onOpenAdmin
 }) {
   const [time, setTime] = useState({ local: '', utc: '', dateFR: '', dateEN: '' })
   const [headerBg, setHeaderBg] = useState(getHeaderGradient())
@@ -176,6 +176,18 @@ export default function AppHeader({
 
         {/* RIGHT — Déconnexion (top) + Voyageurs (below) */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.3rem' }}>
+          {/* Bouton admin — visible uniquement pour l'admin */}
+          {isAdmin && onOpenAdmin && (
+            <button onClick={onOpenAdmin} style={{
+              background: 'rgba(255,200,0,.15)', border: '1px solid rgba(255,200,0,.3)',
+              borderRadius: 8, padding: '5px 11px', color: 'rgba(255,220,80,.95)', cursor: 'pointer',
+              fontSize: 'clamp(.68rem, 1.6vw, .75rem)', fontFamily: 'inherit', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: '.3rem', whiteSpace: 'nowrap'
+            }}>
+              ⚙️ Admin
+            </button>
+          )}
+
           {/* Déconnexion — top right, most visible */}
           {onSignOut && (
             <button onClick={onSignOut} style={{
