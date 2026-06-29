@@ -206,18 +206,8 @@ export default function App() {
     return <LoginScreen onGoogleSignIn={store.signIn} onCodeLogin={store.loginWithCode} onInviteLogin={() => setShowInviteScreen(true)} />
   }
 
-  // Attendre que la vérification d'accès soit terminée
-  if (store.uid && !store.isGuest && !store.isAdmin && store.allowedLoading) {
-    return (
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:'1rem', background:'var(--bg)' }}>
-        <div style={{ fontSize:'2rem' }}>🔑</div>
-        <div style={{ fontSize:'.85rem', color:'var(--text-muted)' }}>Vérification de l'accès…</div>
-      </div>
-    )
-  }
-
-  // Utilisateur connecté mais pas autorisé (pas de code invite)
-  if (store.uid && !store.isAdmin && !store.isAllowed && !store.isGuest) {
+  // Utilisateur connecté mais pas autorisé — attend que le check soit fini
+  if (store.uid && !store.isGuest && !store.allowedLoading && !store.isAdmin && !store.isAllowed) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', flexDirection:'column', gap:'1.5rem', background:'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', padding:'1.5rem' }}>
         <div style={{ fontSize:'3rem' }}>🔒</div>
