@@ -211,7 +211,7 @@ export default function App() {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', flexDirection:'column', gap:'1.5rem', background:'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', padding:'1.5rem' }}>
         <div style={{ fontSize:'3rem' }}>🔒</div>
-        <div style={{ fontFamily:\"'Playfair Display', serif\", fontSize:'clamp(1.2rem, 4vw, 1.6rem)', fontWeight:700, color:'#fff', textAlign:'center' }}>Accès restreint</div>
+        <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'clamp(1.2rem, 4vw, 1.6rem)', fontWeight:700, color:'#fff', textAlign:'center' }}>Accès restreint</div>
         <div style={{ fontSize:'.88rem', color:'rgba(255,255,255,.7)', textAlign:'center', maxWidth:320 }}>
           Cette application est sur invitation uniquement. Contacte l'administrateur pour obtenir un code d'invitation.
         </div>
