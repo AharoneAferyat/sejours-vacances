@@ -67,7 +67,12 @@ async function tryModel(model, api, key, prompt) {
       signal: controller.signal,
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1500 }
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 4000,
+          // Désactive le thinking pour gemini-2.5 (évite de gaspiller les tokens)
+          ...(model.includes('2.5') ? { thinkingConfig: { thinkingBudget: 0 } } : {})
+        }
       })
     })
     clearTimeout(timer)
