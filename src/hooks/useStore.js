@@ -85,18 +85,18 @@ export function useStore() {
   useEffect(() => {
     const ADMIN_EMAILS = ['aaferyat@gmail.com', 'ahaferyat5@gmail.com', 'aharone.aferyat@ght-gpne.fr']
     const unsub = onAuthChange(async user => {
-      console.log('[AUTH] user:', user?.email, 'uid:', user?.uid)
       setUid(user?.uid || null)
       setUserEmail(user?.email || null)
       if (user) {
-        const admin = ADMIN_EMAILS.includes(user.email)
-        console.log('[AUTH] isAdmin:', admin, 'email match:', user.email)
+        // Vérifie admin via email ET via providerData (Google peut mettre l'email dans providerData)
+        const emailFromProvider = user.providerData?.[0]?.email || user.email || ''
+        const admin = ADMIN_EMAILS.includes(emailFromProvider) || ADMIN_EMAILS.includes(user.email)
         setIsAdmin(admin)
         if (admin) {
           setIsAllowed(true)
           setAllowedLoading(false)
         } else {
-          const allowed = await isUserAllowed(user.uid, user.email)
+          const allowed = await isUserAllowed(user.uid, emailFromProvider)
           setIsAllowed(allowed)
           setAllowedLoading(false)
         }
