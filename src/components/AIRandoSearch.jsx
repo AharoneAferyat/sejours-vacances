@@ -19,14 +19,17 @@ async function callGemini(prompt) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt })
   })
-  const data = await r.json()
+  const raw = await r.text()
+  console.log('[Gemini] status:', r.status, 'raw (200chars):', raw.slice(0, 200))
+  let data
+  try { data = JSON.parse(raw) } catch(e) { throw new Error('JSON invalide: ' + e.message) }
   if (!r.ok) {
     const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || data.details || `HTTP ${r.status}`)
     throw new Error(errMsg)
   }
   const parts = data?.candidates?.[0]?.content?.parts || []
   const text = parts.map(p => p.text || '').join('').trim()
-  console.log('[Gemini] texte reçu (100 premiers chars):', text.slice(0, 100))
+  console.log('[Gemini] texte extrait (200chars):', text.slice(0, 200))
   return text
 }
 
