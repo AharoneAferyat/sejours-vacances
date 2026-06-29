@@ -4,30 +4,28 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// Modèles disponibles en v1beta, du plus rapide au plus lent
+// Modèles avec leur version d'API respective
 const MODELS = [
-  'gemini-2.0-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-2.5-flash-lite-preview-06-17',
-  'gemini-2.5-flash',
+  { model: 'gemini-1.5-flash',      api: 'v1' },
+  { model: 'gemini-1.5-flash-8b',   api: 'v1' },
+  { model: 'gemini-2.0-flash-lite',  api: 'v1beta' },
+  { model: 'gemini-2.0-flash',       api: 'v1beta' },
+  { model: 'gemini-2.5-flash',       api: 'v1beta' },
 ]
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
-// Nettoie la réponse Gemini : extrait le texte brut depuis candidates[]
 function extractText(data) {
   const parts = data?.candidates?.[0]?.content?.parts || []
   return parts.map(p => p.text || '').join('')
 }
 
-// Nettoie les backticks markdown que Gemini ajoute parfois
 function stripMarkdown(text) {
   return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
 }
 
-async function tryModel(model, key, prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
-
+async function tryModel(model, api, key, prompt) {
+  const url = `https://generativelanguage.googleapis.com/${api}/models/${model}:generateContent?key=${key}`
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 22000)
 
@@ -44,14 +42,13 @@ async function tryModel(model, key, prompt) {
     clearTimeout(timer)
 
     const raw = await res.text()
-    console.log(`[${model}] status=${res.status} preview=${raw.slice(0, 150)}`)
+    console.log(`[${model}] status=${res.status} preview=${raw.slice(0, 120)}`)
 
     if (res.status === 429) return { error: 'quota', status: 429 }
     if (res.status === 503) return { error: 'overloaded', status: 503 }
     if (res.status === 404) return { error: 'not_found', status: 404 }
     if (!res.ok) return { error: `HTTP ${res.status}`, status: res.status }
 
-    // Parse la réponse Gemini et extrait le texte proprement
     let data
     try { data = JSON.parse(raw) } catch { return { error: 'invalid_json', status: 500 } }
 
@@ -89,13 +86,11 @@ export const handler = async (event) => {
   }
 
   const errors = []
-  for (const model of MODELS) {
+  for (const { model, api } of MODELS) {
     for (const key of keys) {
-      const result = await tryModel(model, key, prompt)
+      const result = await tryModel(model, api, key, prompt)
 
       if (result.ok) {
-        // On retourne le texte extrait directement dans un format simple
-        // Le client n'a plus à parser candidates[] lui-même
         return {
           statusCode: 200,
           headers: { ...CORS, 'Content-Type': 'application/json' },
@@ -106,15 +101,9 @@ export const handler = async (event) => {
       }
 
       errors.push(`${model}: ${result.error}`)
-      console.log(`Skipping ${model} (${result.error}), trying next...`)
-
-      // 404 = modèle inexistant, inutile d'essayer les autres clés
       if (result.error === 'not_found') break
-      // quota = essaie la clé suivante
       if (result.error === 'quota') continue
-      // timeout/overload = passe au modèle suivant
       if (result.error === 'timeout' || result.error === 'overloaded') break
-
       await sleep(200)
     }
   }
@@ -122,10 +111,8 @@ export const handler = async (event) => {
   console.error('All attempts failed:', errors.join(' | '))
   const isQuota = errors.every(e => e.includes('quota'))
   const isTimeout = errors.some(e => e.includes('timeout'))
-  const status = isQuota ? 429 : isTimeout ? 408 : 502
-
   return {
-    statusCode: status,
+    statusCode: isQuota ? 429 : isTimeout ? 408 : 502,
     headers: { ...CORS, 'Content-Type': 'application/json' },
     body: JSON.stringify({ error: errors[errors.length - 1], attempts: errors })
   }

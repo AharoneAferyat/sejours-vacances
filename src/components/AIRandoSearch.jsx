@@ -24,9 +24,10 @@ async function callGemini(prompt) {
     const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || data.details || `HTTP ${r.status}`)
     throw new Error(errMsg)
   }
-  // Le proxy retourne déjà le texte nettoyé dans candidates[0].content.parts[0].text
   const parts = data?.candidates?.[0]?.content?.parts || []
-  return parts.map(p => p.text || '').join('').trim()
+  const text = parts.map(p => p.text || '').join('').trim()
+  console.log('[Gemini] texte reçu (100 premiers chars):', text.slice(0, 100))
+  return text
 }
 
 function parseJSON(text) {
