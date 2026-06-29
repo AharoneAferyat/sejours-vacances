@@ -81,7 +81,7 @@ async function tryModel(model, api, key, prompt) {
 
     const parsed = extractAndParseJSON(raw)
     if (!parsed || parsed.length === 0) {
-      console.log(`[${model}] parse failed, raw preview: ${raw.slice(0, 200)}`)
+      console.log(`[${model}] parse failed, full raw: ${raw.slice(0, 800)}`)
       return { error: 'parse_failed' }
     }
     console.log(`[${model}] OK - ${parsed.length} items`)
