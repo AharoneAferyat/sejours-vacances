@@ -89,8 +89,9 @@ export function useStore() {
       setUserEmail(user?.email || null)
       if (user) {
         // Vérifie admin via email ET via providerData (Google peut mettre l'email dans providerData)
+        const ADMIN_UIDS = ['lecSvR1xE5Ni17pngVfODqJ0XBs1']
         const emailFromProvider = user.providerData?.[0]?.email || user.email || ''
-        const admin = ADMIN_EMAILS.includes(emailFromProvider) || ADMIN_EMAILS.includes(user.email)
+        const admin = ADMIN_UIDS.includes(user.uid) || ADMIN_EMAILS.includes(emailFromProvider) || ADMIN_EMAILS.includes(user.email)
         setIsAdmin(admin)
         if (admin) {
           setIsAllowed(true)
