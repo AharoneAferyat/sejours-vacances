@@ -71,6 +71,7 @@ export function useStore() {
   const [userEmail, setUserEmail] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isAllowed, setIsAllowed] = useState(false)
+  const [allowedLoading, setAllowedLoading] = useState(true)
   const [authLoading, setAuthLoading] = useState(true)
   const [guestSession, setGuestSessionState] = useState(getGuestSession)
   const [state, setState] = useState({ trips: [], activeTripId: null, notes: [] })
@@ -91,13 +92,16 @@ export function useStore() {
         setIsAdmin(admin)
         if (admin) {
           setIsAllowed(true)
+          setAllowedLoading(false)
         } else {
           const allowed = await isUserAllowed(user.uid, user.email)
           setIsAllowed(allowed)
+          setAllowedLoading(false)
         }
       } else {
         setIsAdmin(false)
         setIsAllowed(false)
+        setAllowedLoading(false)
       }
       setAuthLoading(false)
     })
