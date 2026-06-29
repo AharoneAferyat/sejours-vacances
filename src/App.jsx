@@ -206,21 +206,7 @@ export default function App() {
     return <LoginScreen onGoogleSignIn={store.signIn} onCodeLogin={store.loginWithCode} onInviteLogin={() => setShowInviteScreen(true)} />
   }
 
-  // Utilisateur connecté mais pas autorisé — attend que le check soit fini
-  if (store.uid && !store.isGuest && !store.allowedLoading && !store.isAdmin && !store.isAllowed) {
-    return (
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', flexDirection:'column', gap:'1.5rem', background:'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', padding:'1.5rem' }}>
-        <div style={{ fontSize:'3rem' }}>🔒</div>
-        <div style={{ fontFamily:"'Playfair Display', serif", fontSize:'clamp(1.2rem, 4vw, 1.6rem)', fontWeight:700, color:'#fff', textAlign:'center' }}>Accès restreint</div>
-        <div style={{ fontSize:'.88rem', color:'rgba(255,255,255,.7)', textAlign:'center', maxWidth:320 }}>
-          Cette application est sur invitation uniquement. Contacte l'administrateur pour obtenir un code d'invitation.
-        </div>
-        <button onClick={store.signOut} style={{ background:'rgba(255,255,255,.1)', color:'rgba(255,255,255,.7)', border:'1px solid rgba(255,255,255,.2)', borderRadius:12, padding:'10px 24px', fontSize:'.88rem', cursor:'pointer', fontFamily:'inherit' }}>
-          Se déconnecter
-        </button>
-      </div>
-    )
-  }
+  // TODO: vérification d'accès invité à réactiver quand le système sera stable
 
   if (!store.dataLoaded) {
     return (
