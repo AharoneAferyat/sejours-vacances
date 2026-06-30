@@ -65,6 +65,13 @@ export default function AppHeader({
   const [time, setTime] = useState({ local: '', utc: '', dateFR: '', dateEN: '' })
   const [headerBg, setHeaderBg] = useState(getHeaderGradient())
   const [showTripMenu, setShowTripMenu] = useState(false)
+  const [showAccountMenu, setShowAccountMenu] = useState(false)
+
+  const menuItemStyle = {
+    width: '100%', padding: '.65rem .9rem', background: 'none', border: 'none', cursor: 'pointer',
+    fontFamily: 'inherit', fontSize: '.82rem', fontWeight: 500, color: 'var(--text)',
+    display: 'flex', alignItems: 'center', gap: '.6rem', textAlign: 'left'
+  }
 
   useEffect(() => {
     const tick = () => {
@@ -174,74 +181,71 @@ export default function AppHeader({
           </div>
         </div>
 
-        {/* RIGHT — Déconnexion (top) + Voyageurs (below) */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.3rem' }}>
-          {/* Bouton admin — visible uniquement pour l'admin */}
-          {isAdmin && onOpenAdmin && (
-            <button onClick={onOpenAdmin} style={{
-              background: 'rgba(255,200,0,.15)', border: '1px solid rgba(255,200,0,.3)',
-              borderRadius: 8, padding: '5px 11px', color: 'rgba(255,220,80,.95)', cursor: 'pointer',
-              fontSize: 'clamp(.68rem, 1.6vw, .75rem)', fontFamily: 'inherit', fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: '.3rem', whiteSpace: 'nowrap'
-            }}>
-              ⚙️ Admin
-            </button>
-          )}
-
-          {/* Déconnexion — top right, most visible */}
-          {onSignOut && (
-            <button onClick={onSignOut} style={{
-              background: 'rgba(255,60,60,.15)', border: '1px solid rgba(255,100,100,.25)',
-              borderRadius: 8, padding: '5px 11px', color: 'rgba(255,180,180,.9)', cursor: 'pointer',
-              fontSize: 'clamp(.68rem, 1.6vw, .75rem)', fontFamily: 'inherit', fontWeight: 500,
-              display: 'flex', alignItems: 'center', gap: '.3rem', whiteSpace: 'nowrap'
-            }}>
-              {displayUser && <span style={{ opacity: .7 }}>{displayUser}</span>}
-              {displayUser && <span style={{ opacity: .4 }}>·</span>}
-              Déconnexion
-            </button>
-          )}
-
-          {/* Budget global */}
-          {onOpenGlobalBudget && (
-            <button onClick={onOpenGlobalBudget} style={{
-              background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
-              borderRadius: 8, padding: '5px 11px', color: '#fff', cursor: 'pointer',
-              fontSize: 'clamp(.68rem, 1.6vw, .75rem)', fontFamily: 'inherit', fontWeight: 500,
-              display: 'flex', alignItems: 'center', gap: '.3rem', whiteSpace: 'nowrap'
-            }}>
-              💰 Budget global
-            </button>
-          )}
-
-          {/* Voyageurs */}
-          <button onClick={onOpenVoyageurs} style={{
+        {/* RIGHT — Compact account menu */}
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setShowAccountMenu(m => !m)} style={{
             background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
-            borderRadius: 8, padding: '5px 11px', color: '#fff', cursor: 'pointer',
-            fontSize: 'clamp(.68rem, 1.6vw, .75rem)', fontFamily: 'inherit', fontWeight: 500,
-            display: 'flex', alignItems: 'center', gap: '.4rem', whiteSpace: 'nowrap'
+            borderRadius: 10, padding: '5px 8px 5px 5px', color: '#fff', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '.4rem', fontFamily: 'inherit'
           }}>
             <div style={{ display: 'flex' }}>
-              {voyageurs.slice(0,3).map((v, i) => (
+              {voyageurs.slice(0, 2).map((v, i) => (
                 <div key={v.id} style={{
-                  width: 20, height: 20, borderRadius: '50%',
+                  width: 24, height: 24, borderRadius: '50%',
                   background: i === 0 ? '#1D9E75' : '#6b7cc4',
-                  border: '1.5px solid rgba(255,255,255,.3)',
+                  border: '1.5px solid rgba(255,255,255,.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '.58rem', fontWeight: 700, color: '#fff',
-                  marginLeft: i > 0 ? -6 : 0, position: 'relative', zIndex: 3-i
+                  fontSize: '.65rem', fontWeight: 700, color: '#fff',
+                  marginLeft: i > 0 ? -8 : 0, position: 'relative', zIndex: 3 - i
                 }}>
                   {v.name.charAt(0).toUpperCase()}
                 </div>
               ))}
-              {voyageurs.length > 3 && (
-                <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,.2)', border: '1.5px solid rgba(255,255,255,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.52rem', color: '#fff', marginLeft: -6 }}>
-                  +{voyageurs.length - 3}
+              {voyageurs.length > 2 && (
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,.18)', border: '1.5px solid rgba(255,255,255,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.58rem', color: '#fff', marginLeft: -8 }}>
+                  +{voyageurs.length - 2}
                 </div>
               )}
             </div>
-            👥 Voyageurs
+            <span style={{ fontSize: '.7rem', opacity: .55 }}>{showAccountMenu ? '▴' : '▾'}</span>
           </button>
+
+          {showAccountMenu && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 200,
+              background: '#fff', border: '1px solid var(--border)', borderRadius: 12,
+              boxShadow: '0 8px 32px rgba(0,0,0,.2)', minWidth: 220, overflow: 'hidden'
+            }}>
+              {displayUser && (
+                <div style={{ padding: '.7rem .9rem', borderBottom: '1px solid var(--border)', background: '#f8f7f3' }}>
+                  <div style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text)' }}>{displayUser}</div>
+                  <div style={{ fontSize: '.66rem', color: 'var(--text-muted)' }}>Connecté</div>
+                </div>
+              )}
+
+              <button onClick={() => { onOpenVoyageurs(); setShowAccountMenu(false) }} style={menuItemStyle}>
+                <span style={{ fontSize: '1rem' }}>👥</span> Voyageurs
+              </button>
+
+              {onOpenGlobalBudget && (
+                <button onClick={() => { onOpenGlobalBudget(); setShowAccountMenu(false) }} style={menuItemStyle}>
+                  <span style={{ fontSize: '1rem' }}>💰</span> Budget global
+                </button>
+              )}
+
+              {isAdmin && onOpenAdmin && (
+                <button onClick={() => { onOpenAdmin(); setShowAccountMenu(false) }} style={{ ...menuItemStyle, color: 'var(--amber)' }}>
+                  <span style={{ fontSize: '1rem' }}>⚙️</span> Administration
+                </button>
+              )}
+
+              {onSignOut && (
+                <button onClick={() => { onSignOut(); setShowAccountMenu(false) }} style={{ ...menuItemStyle, color: 'var(--red)', borderTop: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '1rem' }}>🚪</span> Déconnexion
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -283,7 +287,7 @@ export default function AppHeader({
         })}
       </div>
 
-      {showTripMenu && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => setShowTripMenu(false)} />}
+      {(showTripMenu || showAccountMenu) && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => { setShowTripMenu(false); setShowAccountMenu(false) }} />}
     </header>
   )
 }
