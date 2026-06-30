@@ -242,19 +242,23 @@ export async function getAllUsersWithTrips() {
     ])
     const allowedMap = {}
     allowedSnap.docs.forEach(d => { allowedMap[d.id] = d.data() })
+    const ADMIN_EMAILS_LIST = ['aaferyat@gmail.com', 'ahaferyat5@gmail.com', 'aharone.aferyat@ght-gpne.fr']
 
-    return usersSnap.docs.map(d => {
-      const data = d.data()
-      const allowed = allowedMap[d.id]
-      return {
-        uid: d.id,
-        email: allowed?.email || null,
-        joinedAt: allowed?.joinedAt || null,
-        inviteCode: allowed?.inviteCode || null,
-        trips: data.trips || [],
-        updatedAt: data.updatedAt || null,
-      }
-    }).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+    return usersSnap.docs
+      // Filtre les faux UIDs générés localement (genId('user') au lieu d'un vrai Firebase UID)
+      .filter(d => !d.id.startsWith('user_'))
+      .map(d => {
+        const data = d.data()
+        const allowed = allowedMap[d.id]
+        return {
+          uid: d.id,
+          email: allowed?.email || null,
+          joinedAt: allowed?.joinedAt || null,
+          inviteCode: allowed?.inviteCode || null,
+          trips: data.trips || [],
+          updatedAt: data.updatedAt || null,
+        }
+      }).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
   } catch (e) {
     console.warn('getAllUsersWithTrips failed:', e.message)
     return []
