@@ -440,7 +440,11 @@ export default function App() {
       )}
 
       {showAdmin && store.isAdmin && (
-        <AdminPanel uid={store.uid} onClose={() => setShowAdmin(false)} />
+        <AdminPanel
+          uid={store.uid}
+          onClose={() => setShowAdmin(false)}
+          onManageTrip={(user, trip) => alert(`Gestion directe du séjour "${trip.name}" de ${user.email} — fonctionnalité à venir dans une prochaine session !`)}
+        />
       )}
 
       {showAI && trip && (

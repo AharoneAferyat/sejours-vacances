@@ -231,3 +231,43 @@ export async function deleteInviteCode(code) {
     return true
   } catch { return false }
 }
+
+// ─── ADMIN: TOUS LES UTILISATEURS + SÉJOURS ────────────────────────────────
+
+export async function getAllUsersWithTrips() {
+  try {
+    const [usersSnap, allowedSnap] = await Promise.all([
+      getDocs(collection(db, 'users')),
+      getDocs(collection(db, 'allowedUsers')),
+    ])
+    const allowedMap = {}
+    allowedSnap.docs.forEach(d => { allowedMap[d.id] = d.data() })
+
+    return usersSnap.docs.map(d => {
+      const data = d.data()
+      const allowed = allowedMap[d.id]
+      return {
+        uid: d.id,
+        email: allowed?.email || null,
+        joinedAt: allowed?.joinedAt || null,
+        inviteCode: allowed?.inviteCode || null,
+        trips: data.trips || [],
+        updatedAt: data.updatedAt || null,
+      }
+    }).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+  } catch (e) {
+    console.warn('getAllUsersWithTrips failed:', e.message)
+    return []
+  }
+}
+
+export async function adminDeleteTrip(uid, tripId) {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid))
+    if (!snap.exists()) return false
+    const data = snap.data()
+    const trips = (data.trips || []).filter(t => t.id !== tripId)
+    await setDoc(doc(db, 'users', uid), { ...data, trips, updatedAt: Date.now() })
+    return true
+  } catch { return false }
+}
