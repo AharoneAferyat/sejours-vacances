@@ -55,14 +55,53 @@ function TripDetailView({ trip, ownerEmail, onBack, onManage, onDelete }) {
 
       {trip.voyageurs?.length > 0 && (
         <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '.5rem' }}>Voyageurs</div>
-          <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
-            {trip.voyageurs.map(v => (
-              <div key={v.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: '.4rem .8rem', fontSize: '.82rem' }}>
-                {v.name} {v.email && <span style={{ color: 'var(--text-muted)', fontSize: '.72rem' }}>({v.email})</span>}
+          <div style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '.5rem' }}>Voyageurs & leurs données perso</div>
+          {trip.voyageurs.map(v => {
+            const vd = trip.voyageurData?.[v.id] || {}
+            const valise = vd.valise || []
+            const sac = vd.sac || []
+            const depenses = vd.depenses || []
+            const totalDepenses = depenses.reduce((s, d) => s + (d.amount || 0), 0)
+            return (
+              <div key={v.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.8rem 1rem', marginBottom: '.5rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '.85rem', marginBottom: '.4rem' }}>
+                  {v.name} {v.email && <span style={{ color: 'var(--text-muted)', fontSize: '.72rem', fontWeight: 400 }}>({v.email})</span>}
+                </div>
+                <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', fontSize: '.78rem', color: 'var(--text-muted)' }}>
+                  <span>🧳 Valise : {valise.filter(i => i.done).length}/{valise.length}</span>
+                  <span>🎒 Sac : {sac.filter(i => i.done).length}/{sac.length}</span>
+                  <span>💸 Dépenses perso : {totalDepenses.toFixed(2)}€ ({depenses.length} ligne{depenses.length > 1 ? 's' : ''})</span>
+                </div>
+                {(valise.length > 0 || sac.length > 0) && (
+                  <details style={{ marginTop: '.5rem' }}>
+                    <summary style={{ cursor: 'pointer', fontSize: '.74rem', color: 'var(--text-muted)' }}>Voir le détail</summary>
+                    <div style={{ marginTop: '.4rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                      {valise.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: '.7rem', fontWeight: 600, marginBottom: '.2rem' }}>🧳 Valise</div>
+                          {valise.map(i => (
+                            <div key={i.id} style={{ fontSize: '.72rem', color: i.done ? 'var(--text-muted)' : 'var(--text)', textDecoration: i.done ? 'line-through' : 'none' }}>
+                              {i.qty > 1 ? `×${i.qty} ` : ''}{i.text}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {sac.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: '.7rem', fontWeight: 600, marginBottom: '.2rem' }}>🎒 Sac à dos</div>
+                          {sac.map(i => (
+                            <div key={i.id} style={{ fontSize: '.72rem', color: i.done ? 'var(--text-muted)' : 'var(--text)', textDecoration: i.done ? 'line-through' : 'none' }}>
+                              {i.qty > 1 ? `×${i.qty} ` : ''}{i.text}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                )}
               </div>
-            ))}
-          </div>
+            )
+          })}
         </div>
       )}
 
@@ -109,7 +148,9 @@ function UsersTree({ users, loading, onSelectTrip }) {
           }}>
             <span style={{ fontSize: '1.1rem' }}>{expanded[u.uid] ? '📂' : '📁'}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: '.88rem' }}>{u.email || `UID: ${u.uid.slice(0, 12)}…`}</div>
+              <div style={{ fontWeight: 600, fontSize: '.88rem' }}>
+                {u.email || (u.trips[0]?.voyageurs?.[0]?.name ? `${u.trips[0].voyageurs[0].name} (sans email)` : `Utilisateur anonyme · ${u.uid.slice(0, 8)}…`)}
+              </div>
               <div style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>
                 {u.trips.length} séjour{u.trips.length > 1 ? 's' : ''}
                 {u.joinedAt && ` · rejoint le ${fmtDate(u.joinedAt)}`}
@@ -146,7 +187,7 @@ function UsersTree({ users, loading, onSelectTrip }) {
   )
 }
 
-export default function AdminPanel({ uid, onClose, onManageTrip }) {
+export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip }) {
   const [tab, setTab] = useState('users')
   const [users, setUsers] = useState([])
   const [codes, setCodes] = useState([])
@@ -161,7 +202,12 @@ export default function AdminPanel({ uid, onClose, onManageTrip }) {
 
   const loadData = async () => {
     setLoading(true)
-    if (tab === 'users') setUsers(await getAllUsersWithTrips())
+    if (tab === 'users') {
+      const data = await getAllUsersWithTrips()
+      // Affiche ton propre email même si tu n'as jamais consommé de code (tu es admin)
+      const enriched = data.map(u => u.uid === uid ? { ...u, email: u.email || adminEmail } : u)
+      setUsers(enriched)
+    }
     if (tab === 'codes') setCodes(await getAllInviteCodes())
     setLoading(false)
   }
