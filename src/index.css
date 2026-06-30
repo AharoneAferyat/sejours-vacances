@@ -845,11 +845,9 @@ body {
 
 /* ─── MOBILE BOTTOM NAV ──────────────────────────────────────────────────── */
 
-.app-header-desktop { display: block; }
 .bottom-nav { display: none; }
 
 @media (max-width: 600px) {
-  .app-header-desktop { display: none; }
   .bottom-nav {
     display: flex;
     position: fixed;
@@ -864,6 +862,11 @@ body {
   }
   /* Push page content above the bottom nav */
   body { padding-bottom: 64px; }
+
+  /* Header: compact spacing + hide secondary clock text on tiny screens */
+  .header-row1 { grid-template-columns: auto 1fr auto !important; }
+  .trips-label-full { display: none; }
+  .hide-on-tiny { display: none; }
 }
 
 .bn-item {
@@ -915,21 +918,3 @@ body {
   color: var(--text); text-align: left;
 }
 .bn-sheet-item span:first-child { font-size: 1.15rem; }
-
-/* Mobile top strip — minimal trip name + clock, replaces full header */
-.mobile-top-strip { display: none; }
-@media (max-width: 600px) {
-  .mobile-top-strip {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: .6rem .85rem;
-    color: #fff;
-    transition: background 2s ease;
-  }
-}
-
-.mobile-only-flex { display: none; }
-@media (max-width: 600px) {
-  .mobile-only-flex { display: flex; }
-}

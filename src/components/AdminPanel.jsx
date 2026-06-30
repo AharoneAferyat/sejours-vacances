@@ -187,6 +187,72 @@ function UsersTree({ users, loading, onSelectTrip }) {
   )
 }
 
+function fmtEUR(n) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n || 0)
+}
+
+function GlobalBudgetView({ users, loading }) {
+  if (loading) return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Chargement…</div>
+
+  const allTrips = users.flatMap(u => (u.trips || []).map(t => ({ ...t, ownerEmail: u.email, ownerUid: u.uid })))
+  const tripStats = allTrips.map(t => {
+    const expenses = t.expenses || []
+    const perso = Object.values(t.voyageurData || {}).flatMap(vd => vd.depenses || [])
+    const total = [...expenses, ...perso].reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+    const budget = t.budget || 0
+    const pct = budget > 0 ? Math.round(total / budget * 100) : null
+    return { trip: t, total, budget, pct }
+  })
+
+  const grandTotal = tripStats.reduce((s, t) => s + t.total, 0)
+  const grandBudget = tripStats.reduce((s, t) => s + t.budget, 0)
+  const grandPct = grandBudget > 0 ? Math.round(grandTotal / grandBudget * 100) : null
+
+  if (allTrips.length === 0) {
+    return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '.88rem' }}>Aucun séjour avec budget trouvé</div>
+  }
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '.65rem', marginBottom: '1.5rem' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.85rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginBottom: '.25rem' }}>Budget total prévu</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>{grandBudget > 0 ? fmtEUR(grandBudget) : '—'}</div>
+        </div>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.85rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginBottom: '.25rem' }}>Dépensé (tous séjours)</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: grandPct >= 100 ? 'var(--red)' : 'var(--text)' }}>{fmtEUR(grandTotal)}</div>
+        </div>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.85rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginBottom: '.25rem' }}>Séjours avec budget</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>{tripStats.filter(t => t.budget > 0).length} / {allTrips.length}</div>
+        </div>
+      </div>
+
+      {tripStats.map(({ trip, total, budget, pct }) => (
+        <div key={trip.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.8rem 1rem', marginBottom: '.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.65rem', marginBottom: budget > 0 ? '.5rem' : 0 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: trip.color || 'var(--green)', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: '.85rem' }}>{trip.name}</div>
+              <div style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>{trip.ownerEmail || 'Email inconnu'} · {trip.destination}</div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: '.9rem' }}>{fmtEUR(total)}</div>
+              {budget > 0 && <div style={{ fontSize: '.71rem', color: pct >= 100 ? 'var(--red)' : 'var(--text-muted)' }}>{pct}% / {fmtEUR(budget)}</div>}
+            </div>
+          </div>
+          {budget > 0 && (
+            <div style={{ height: 6, background: 'var(--gray-light)', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: pct >= 100 ? 'var(--red)' : 'var(--green)', borderRadius: 3 }} />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip }) {
   const [tab, setTab] = useState('users')
   const [users, setUsers] = useState([])
@@ -202,7 +268,7 @@ export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip }) {
 
   const loadData = async () => {
     setLoading(true)
-    if (tab === 'users') {
+    if (tab === 'users' || tab === 'budget') {
       const data = await getAllUsersWithTrips()
       // Affiche ton propre email même si tu n'as jamais consommé de code (tu es admin)
       const enriched = data.map(u => u.uid === uid ? { ...u, email: u.email || adminEmail } : u)
@@ -264,7 +330,7 @@ export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip }) {
         {!selected ? (
           <>
             <div style={{ maxWidth: 900, margin: '0 auto 1.5rem', display: 'flex', gap: '.4rem', background: 'var(--gray-light)', borderRadius: 10, padding: '3px' }}>
-              {[['users', '👥 Utilisateurs & séjours'], ['codes', "🔑 Codes d'invitation"]].map(([key, label]) => (
+              {[['users', '👥 Utilisateurs & séjours'], ['budget', '💰 Budget global'], ['codes', "🔑 Codes d'invitation"]].map(([key, label]) => (
                 <button key={key} onClick={() => setTab(key)} style={{
                   flex: 1, padding: '8px 0', border: 'none', borderRadius: 8, cursor: 'pointer',
                   fontSize: '.85rem', fontWeight: 500, fontFamily: 'inherit',
@@ -278,6 +344,10 @@ export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip }) {
 
             {tab === 'users' && (
               <UsersTree users={users} loading={loading} onSelectTrip={(user, trip) => setSelected({ user, trip })} />
+            )}
+
+            {tab === 'budget' && (
+              <GlobalBudgetView users={users} loading={loading} />
             )}
 
             {tab === 'codes' && (
