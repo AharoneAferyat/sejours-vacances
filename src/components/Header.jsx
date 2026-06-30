@@ -177,7 +177,6 @@ export default function AppHeader({
         {/* RIGHT — Déconnexion (top) + Voyageurs (below) */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.3rem' }}>
           {/* Bouton admin — visible uniquement pour l'admin */}
-          {console.log('[Header] isAdmin:', isAdmin, 'onOpenAdmin:', !!onOpenAdmin)}
           {isAdmin && onOpenAdmin && (
             <button onClick={onOpenAdmin} style={{
               background: 'rgba(255,200,0,.15)', border: '1px solid rgba(255,200,0,.3)',

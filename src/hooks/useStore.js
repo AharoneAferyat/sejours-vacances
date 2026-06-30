@@ -493,6 +493,7 @@ export function useStore() {
   return {
     ...state,
     uid, userEmail, authLoading, dataLoaded,
+    isAdmin, isAllowed, allowedLoading,
     isGuest, guestSession,
     signIn: signInWithGoogle,
     signOut,
