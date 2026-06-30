@@ -91,6 +91,7 @@ export function useStore() {
       if (user) {
         const emailFromProvider = user.providerData?.[0]?.email || user.email || ''
         const admin = ADMIN_UIDS.includes(user.uid) || ADMIN_EMAILS.includes(emailFromProvider)
+        alert('UID: ' + user.uid + ' | Email: ' + emailFromProvider + ' | Admin: ' + admin)
         setIsAdmin(admin)
         setIsAllowed(admin ? true : await isUserAllowed(user.uid, emailFromProvider))
         setAllowedLoading(false)
