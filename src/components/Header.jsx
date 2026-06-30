@@ -106,21 +106,68 @@ export default function AppHeader({
     : userEmail?.slice(0, 10)
 
   return (
-    <header style={{ background: headerBg, transition: 'background 2s ease', color: '#fff' }}>
+    <>
+    {/* MOBILE — minimal top strip (header desktop hidden via CSS under 600px) */}
+    <div className="mobile-top-strip" style={{ background: headerBg }}>
+      <button onClick={() => setShowTripMenu(m => !m)} style={{
+        background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.18)',
+        borderRadius: 9, padding: '5px 10px', color: '#fff', cursor: 'pointer',
+        fontSize: '.74rem', fontFamily: 'inherit', fontWeight: 500,
+        display: 'flex', alignItems: 'center', gap: '.3rem'
+      }}>
+        {activeTrip?.name || 'Séjours'}
+        <span style={{ fontSize: '.6rem', opacity: .5 }}>{showTripMenu ? '▴' : '▾'}</span>
+      </button>
+      <div style={{ fontFamily: 'monospace', fontSize: '.85rem', fontWeight: 600, letterSpacing: '.02em' }}>
+        {time.local}
+      </div>
+    </div>
+    {showTripMenu && (
+      <div className="bn-sheet-overlay mobile-only-flex" onClick={e => e.target === e.currentTarget && setShowTripMenu(false)}>
+        <div className="bn-sheet">
+          <div className="bn-sheet-handle" />
+          <div style={{ padding: '.3rem 1.1rem .6rem', fontSize: '.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)' }}>
+            Mes séjours
+          </div>
+          {trips.map((t, i) => {
+            const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
+            const isActive = t.id === activeTrip?.id
+            return (
+              <div key={t.id} className="bn-sheet-item" style={{ background: isActive ? '#f8f7f3' : 'transparent' }}
+                onClick={() => { onSelectTrip(t.id); setShowTripMenu(false) }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                <span style={{ fontWeight: isActive ? 600 : 400 }}>{t.name}</span>
+              </div>
+            )
+          })}
+          <button className="bn-sheet-item" style={{ color: 'var(--green)', fontWeight: 600, borderTop: '1px solid var(--border)', marginTop: '.3rem' }}
+            onClick={() => { onNewTrip(); setShowTripMenu(false) }}>
+            <span>＋</span> Nouveau séjour
+          </button>
+        </div>
+      </div>
+    )}
 
-      {/* ── ROW 1: Séjours | Title + Clock | Déconnexion + Voyageurs ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'start', gap: 'clamp(.4rem, 2vw, 1rem)', padding: 'clamp(.5rem, 2vw, .85rem) clamp(.6rem, 2.5vw, 1.25rem)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+    <header className="app-header-desktop" style={{ background: headerBg, transition: 'background 2s ease', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+
+      {/* Ambient glow accent */}
+      <div style={{ position: 'absolute', top: '-60%', right: '-10%', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+      {/* ── ROW 1: Séjours | Title + Clock | Compte ── */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'start', gap: 'clamp(.4rem, 2vw, 1rem)', padding: 'clamp(.65rem, 2vw, 1rem) clamp(.6rem, 2.5vw, 1.25rem)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
 
         {/* LEFT — Séjours dropdown */}
         <div style={{ position: 'relative' }}>
           <button onClick={() => setShowTripMenu(m => !m)} style={{
-            background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
-            borderRadius: 10, padding: '7px 12px', color: '#fff', cursor: 'pointer',
+            background: 'rgba(255,255,255,.08)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,.15)',
+            borderRadius: 12, padding: '8px 14px', color: '#fff', cursor: 'pointer',
             fontSize: 'clamp(.72rem, 1.8vw, .82rem)', fontFamily: 'inherit', fontWeight: 500,
-            display: 'flex', alignItems: 'center', gap: '.35rem', whiteSpace: 'nowrap'
+            display: 'flex', alignItems: 'center', gap: '.4rem', whiteSpace: 'nowrap',
+            transition: 'background .15s'
           }}>
             🏔️ Séjours
-            <span style={{ fontSize: '.6rem', opacity: .65, background: 'rgba(255,255,255,.15)', borderRadius: 8, padding: '1px 5px' }}>{trips.length}</span>
+            <span style={{ fontSize: '.62rem', opacity: .7, background: 'rgba(255,255,255,.15)', borderRadius: 8, padding: '1px 6px' }}>{trips.length}</span>
             <span style={{ fontSize: '.6rem', opacity: .5 }}>{showTripMenu ? '▴' : '▾'}</span>
           </button>
 
@@ -163,37 +210,45 @@ export default function AppHeader({
           )}
         </div>
 
-        {/* CENTER — Title + clock */}
-        <div style={{ textAlign: 'center', minWidth: 0 }}>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(.95rem, 3vw, 1.5rem)', fontWeight: 700, lineHeight: 1.1 }}>
+        {/* CENTER — Title + clock, glass pill */}
+        <div style={{ textAlign: 'center', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{
+            fontFamily: "'Playfair Display', serif", fontSize: 'clamp(.95rem, 3vw, 1.5rem)', fontWeight: 700, lineHeight: 1.1,
+            marginBottom: '.55rem',
+            background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,.75) 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'
+          }}>
             Séjours Vacances
           </div>
-          <div style={{ marginTop: '.3rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.08rem' }}>
-            {/* Date FR — bien visible, au-dessus */}
-            <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 'clamp(.82rem, 2vw, 1rem)', letterSpacing: '.03em', opacity: .95 }}>{time.dateFR}</span>
-            {/* Heure locale — grosse */}
+          <div style={{
+            display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '.1rem',
+            background: 'rgba(255,255,255,.06)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,.1)', borderRadius: 16,
+            padding: 'clamp(.4rem, 1.2vw, .6rem) clamp(.9rem, 3vw, 1.5rem)'
+          }}>
+            <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 'clamp(.78rem, 1.8vw, .92rem)', letterSpacing: '.03em', opacity: .9 }}>{time.dateFR}</span>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem' }}>
-              <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 'clamp(1.2rem, 3.5vw, 1.7rem)', letterSpacing: '.08em' }}>{time.local}</span>
+              <span style={{ fontFamily: 'monospace', fontWeight: 300, fontSize: 'clamp(1.15rem, 3.2vw, 1.6rem)', letterSpacing: '.04em' }}>{time.local}</span>
               {syncing && <span style={{ opacity: .4, fontSize: '.7rem' }}>☁️</span>}
             </div>
-            {/* UTC + date EN — discrets en dessous */}
-            <span style={{ fontFamily: 'monospace', opacity: .5, fontSize: 'clamp(.68rem, 1.6vw, .82rem)', fontWeight: 500, letterSpacing: '.04em', marginTop: '.1rem' }}>UTC {time.utc} · {time.dateEN}</span>
+            <span style={{ fontFamily: 'monospace', opacity: .45, fontSize: 'clamp(.62rem, 1.4vw, .74rem)', fontWeight: 500, letterSpacing: '.03em', marginTop: '.05rem' }}>UTC {time.utc} · {time.dateEN}</span>
           </div>
         </div>
 
-        {/* RIGHT — Compact account menu */}
+        {/* RIGHT — Compact account menu, glass pill */}
         <div style={{ position: 'relative' }}>
           <button onClick={() => setShowAccountMenu(m => !m)} style={{
-            background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
-            borderRadius: 10, padding: '5px 8px 5px 5px', color: '#fff', cursor: 'pointer',
+            background: 'rgba(255,255,255,.08)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,.15)',
+            borderRadius: 30, padding: '5px 10px 5px 5px', color: '#fff', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: '.4rem', fontFamily: 'inherit'
           }}>
             <div style={{ display: 'flex' }}>
               {voyageurs.slice(0, 2).map((v, i) => (
                 <div key={v.id} style={{
-                  width: 24, height: 24, borderRadius: '50%',
+                  width: 26, height: 26, borderRadius: '50%',
                   background: i === 0 ? '#1D9E75' : '#6b7cc4',
-                  border: '1.5px solid rgba(255,255,255,.35)',
+                  border: '2px solid rgba(255,255,255,.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '.65rem', fontWeight: 700, color: '#fff',
                   marginLeft: i > 0 ? -8 : 0, position: 'relative', zIndex: 3 - i
@@ -202,7 +257,7 @@ export default function AppHeader({
                 </div>
               ))}
               {voyageurs.length > 2 && (
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,.18)', border: '1.5px solid rgba(255,255,255,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.58rem', color: '#fff', marginLeft: -8 }}>
+                <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.58rem', color: '#fff', marginLeft: -8 }}>
                   +{voyageurs.length - 2}
                 </div>
               )}
@@ -213,11 +268,11 @@ export default function AppHeader({
           {showAccountMenu && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 200,
-              background: '#fff', border: '1px solid var(--border)', borderRadius: 12,
-              boxShadow: '0 8px 32px rgba(0,0,0,.2)', minWidth: 220, overflow: 'hidden'
+              background: '#fff', border: '1px solid var(--border)', borderRadius: 14,
+              boxShadow: '0 12px 40px rgba(0,0,0,.22)', minWidth: 220, overflow: 'hidden'
             }}>
               {displayUser && (
-                <div style={{ padding: '.7rem .9rem', borderBottom: '1px solid var(--border)', background: '#f8f7f3' }}>
+                <div style={{ padding: '.75rem .9rem', borderBottom: '1px solid var(--border)', background: 'linear-gradient(135deg, #f8f7fc 0%, #f3f0f8 100%)' }}>
                   <div style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--text)' }}>{displayUser}</div>
                   <div style={{ fontSize: '.66rem', color: 'var(--text-muted)' }}>Connecté</div>
                 </div>
@@ -250,7 +305,7 @@ export default function AppHeader({
       </div>
 
       {/* ── ROW 2: Trip tabs with edit/delete ── */}
-      <div style={{ display: 'flex', gap: '.35rem', padding: '.5rem clamp(.6rem, 2.5vw, 1.25rem)', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', alignItems: 'center' }}>
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '.35rem', padding: '.5rem clamp(.6rem, 2.5vw, 1.25rem)', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', alignItems: 'center' }}>
         {trips.map((t, i) => {
           const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
           const isActive = t.id === activeTrip?.id
@@ -287,7 +342,8 @@ export default function AppHeader({
         })}
       </div>
 
-      {(showTripMenu || showAccountMenu) && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => { setShowTripMenu(false); setShowAccountMenu(false) }} />}
+      {(showTripMenu || showAccountMenu) && <div className="app-header-desktop" style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => { setShowTripMenu(false); setShowAccountMenu(false) }} />}
     </header>
+    </>
   )
 }

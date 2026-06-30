@@ -842,3 +842,94 @@ body {
   flex-wrap: wrap;
   flex-shrink: 0;
 }
+
+/* ─── MOBILE BOTTOM NAV ──────────────────────────────────────────────────── */
+
+.app-header-desktop { display: block; }
+.bottom-nav { display: none; }
+
+@media (max-width: 600px) {
+  .app-header-desktop { display: none; }
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 500;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0,0,0,.06);
+  }
+  /* Push page content above the bottom nav */
+  body { padding-bottom: 64px; }
+}
+
+.bn-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-muted);
+  font-size: .62rem;
+  font-weight: 500;
+}
+.bn-item.active { color: var(--green); }
+.bn-icon { font-size: 1.25rem; line-height: 1; }
+
+.bn-sheet-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(0,0,0,.35);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.bn-sheet {
+  background: #fff;
+  border-radius: 18px 18px 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: .5rem 0 calc(.5rem + env(safe-area-inset-bottom));
+  animation: bn-slide-up .2s ease;
+}
+@keyframes bn-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.bn-sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border-strong, #ddd);
+  margin: 8px auto 4px;
+}
+.bn-sheet-item {
+  width: 100%;
+  display: flex; align-items: center; gap: .7rem;
+  padding: .8rem 1.1rem;
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: .9rem; font-weight: 500;
+  color: var(--text); text-align: left;
+}
+.bn-sheet-item span:first-child { font-size: 1.15rem; }
+
+/* Mobile top strip — minimal trip name + clock, replaces full header */
+.mobile-top-strip { display: none; }
+@media (max-width: 600px) {
+  .mobile-top-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .6rem .85rem;
+    color: #fff;
+    transition: background 2s ease;
+  }
+}
+
+.mobile-only-flex { display: none; }
+@media (max-width: 600px) {
+  .mobile-only-flex { display: flex; }
+}

@@ -3,6 +3,7 @@ import { useStore } from './hooks/useStore'
 import { getTodayStr, genId, formatDate, displayToISO } from './utils'
 import { validateInviteCode, consumeInviteCode } from './firebase'
 import Header from './components/Header'
+import BottomNav from './components/BottomNav'
 import WeatherStrip from './components/WeatherStrip'
 import { useWeather } from './hooks/useWeather'
 import TodayZone from './components/TodayZone'
@@ -271,6 +272,20 @@ export default function App() {
         onSignOut={store.signOut}
         isAdmin={store.isAdmin}
         onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
+      />
+
+      {/* MOBILE BOTTOM NAV */}
+      <BottomNav
+        tab={tab}
+        setTab={setTab}
+        onOpenVoyageurs={() => setShowVoyageurs(true)}
+        onOpenGlobalBudget={!store.isGuest || store.trips?.length > 1 ? () => setShowGlobalBudget(true) : null}
+        onOpenAI={() => { setAiTargetDayId(null); setShowAI(true) }}
+        isAdmin={store.isAdmin}
+        onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
+        onSignOut={store.signOut}
+        userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail}
+        trip={trip}
       />
 
       {/* DANGER ALERT — shown on load if extreme conditions */}
