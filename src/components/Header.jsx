@@ -31,6 +31,32 @@ function getHourOverlay() {
   return 'rgba(20,35,58,0.35)'                             // Nuit
 }
 
+
+// Détecte le type de paysage depuis le nom/destination du séjour
+function getLandscapeKeywords(tripName = '', destination = '') {
+  const text = (tripName + ' ' + destination).toLowerCase()
+  if (/mont|alp|isère|savoie|chamonix|montagne|col|sommet|pic|massif|alti|ski|neige|glacier/.test(text))
+    return 'mountain,alps,snow,peak'
+  if (/mer|océan|plage|côte|bord de mer|méditerranée|atlantique|beach|sea|île|corse|bretagne/.test(text))
+    return 'beach,ocean,sea,coast'
+  if (/paris|lyon|marseille|bordeaux|ville|city|urban|tour|cathédrale|musée|avenue/.test(text))
+    return 'city,architecture,urban,travel'
+  if (/forêt|bois|nature|campagne|verdure|parc|jungle|arbre/.test(text))
+    return 'forest,nature,green,trees'
+  if (/désert|sahara|dune|sable|aride/.test(text))
+    return 'desert,sand,dunes,dry'
+  if (/lac|rivière|fleuve|gorge|canyon|cascade|waterfall/.test(text))
+    return 'lake,river,waterfall,nature'
+  if (/provenc|luberon|lavande|campagne/.test(text))
+    return 'lavender,provence,countryside,france'
+  return 'travel,landscape,nature,scenic'
+}
+
+function getUnsplashUrl(tripName, destination) {
+  const keywords = getLandscapeKeywords(tripName, destination)
+  return `https://source.unsplash.com/featured/480x900/?${keywords}`
+}
+
 export default function AppHeader({
   trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip,
   voyageurs, onOpenVoyageurs, syncing, onSignOut, userEmail,
@@ -38,6 +64,7 @@ export default function AppHeader({
 }) {
   const [time, setTime] = useState({ local: '', dateFR: '', utc: '' })
   const [theme, setTheme] = useState(getSeasonTheme())
+  const [bgImage, setBgImage] = useState(null)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [showMobileTrips, setShowMobileTrips] = useState(false)
   const mobileRef = useRef(null)
@@ -61,6 +88,17 @@ export default function AppHeader({
     return () => clearInterval(id)
   }, [])
 
+  // Charge l'image Unsplash quand le séjour change
+  useEffect(() => {
+    if (!activeTrip) return
+    setBgImage(null)
+    const url = getUnsplashUrl(activeTrip.name || '', activeTrip.destination || '')
+    const img = new Image()
+    img.onload = () => setBgImage(url)
+    img.onerror = () => setBgImage(null)
+    img.src = url
+  }, [activeTrip?.id])
+
   // Ferme menus mobile au clic dehors
   useEffect(() => {
     const handler = (e) => {
@@ -78,9 +116,16 @@ export default function AppHeader({
 
   // ── SIDEBAR DESKTOP ──────────────────────────────────────────────────────
   const Sidebar = () => (
-    <aside className="app-sidebar" style={{ background: bg }}>
-      <div style={{ position: 'absolute', inset: 0, background: getHourOverlay(), pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: '-30%', right: '-20%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+    <aside className="app-sidebar" style={{ background: bgImage ? '#1a1a2e' : bg }}>
+      {/* Image de fond Unsplash */}
+      {bgImage && (
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: .35, transition: 'opacity .8s ease' }} />
+      )}
+      {/* Overlay gradient pour lisibilité */}
+      <div style={{ position: 'absolute', inset: 0, background: bgImage
+        ? `linear-gradient(180deg, rgba(0,0,0,.3) 0%, ${bg.replace('linear-gradient(160deg,', 'linear-gradient(180deg,').replace('100%)', '80%)')} 60%, rgba(0,0,0,.6) 100%)`
+        : getHourOverlay(), pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '-30%', right: '-20%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
       <div className="app-sidebar-inner" style={{ position: 'relative', zIndex: 1 }}>
 
         {/* Logo */}

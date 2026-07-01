@@ -65,23 +65,28 @@ body {
   padding: 1.5rem 1rem;
   overflow-y: auto;
   transition: background 2s ease;
+  overflow: hidden;
 }
 
 .app-sidebar-inner {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 /* Le contenu principal est décalé à droite de la sidebar */
 .app-main {
   margin-left: 240px;
+  min-width: 0;
+  flex: 1;
 }
 
-/* Sur mobile, sidebar cachée, top bar visible */
+/* Sur mobile : sidebar cachée, top bar + bottom nav visibles */
 @media (max-width: 768px) {
-  .app-sidebar { display: none; }
-  .app-main { margin-left: 0; }
+  .app-sidebar { display: none !important; }
+  .app-main { margin-left: 0 !important; }
 }
 
 /* ─── 3 COLONNES CONTENU ────────────────────────────────────────────────── */
