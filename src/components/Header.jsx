@@ -111,7 +111,7 @@ export default function AppHeader({
             fontSize: 'clamp(.7rem, 1.8vw, .82rem)', fontFamily: 'inherit', fontWeight: 500,
             display: 'flex', alignItems: 'center', gap: '.4rem', whiteSpace: 'nowrap'
           }}>
-            🏔️ <span className="trips-label-full">Séjours</span>
+            🥾 <span className="trips-label-full">Séjours</span>
             <span style={{ fontSize: '.62rem', opacity: .7, background: 'rgba(255,255,255,.15)', borderRadius: 8, padding: '1px 6px' }}>{trips.length}</span>
             <span style={{ fontSize: '.6rem', opacity: .5 }}>{showTripMenu ? '▴' : '▾'}</span>
           </button>
@@ -212,9 +212,9 @@ export default function AppHeader({
 
           {showAccountMenu && (
             <div style={{
-              position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 250,
+              position: 'fixed', top: 60, right: 12, zIndex: 250,
               background: '#fff', border: '1px solid var(--border)', borderRadius: 14,
-              boxShadow: '0 12px 40px rgba(0,0,0,.22)', minWidth: 200, maxWidth: '85vw', overflow: 'hidden'
+              boxShadow: '0 12px 40px rgba(0,0,0,.22)', minWidth: 200, maxWidth: 'calc(100vw - 24px)', overflow: 'hidden'
             }}>
               {displayUser && (
                 <div style={{ padding: '.75rem .9rem', borderBottom: '1px solid var(--border)', background: 'linear-gradient(135deg, #f8f7fc 0%, #f3f0f8 100%)' }}>
