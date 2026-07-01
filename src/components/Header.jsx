@@ -33,28 +33,56 @@ function getHourOverlay() {
 
 
 // Détecte le type de paysage depuis le nom/destination du séjour
-function getLandscapeKeywords(tripName = '', destination = '') {
-  const text = (tripName + ' ' + destination).toLowerCase()
-  if (/mont|alp|isère|savoie|chamonix|montagne|col|sommet|pic|massif|alti|ski|neige|glacier/.test(text))
-    return 'mountain,alps,snow,peak'
-  if (/mer|océan|plage|côte|bord de mer|méditerranée|atlantique|beach|sea|île|corse|bretagne/.test(text))
-    return 'beach,ocean,sea,coast'
-  if (/paris|lyon|marseille|bordeaux|ville|city|urban|tour|cathédrale|musée|avenue/.test(text))
-    return 'city,architecture,urban,travel'
-  if (/forêt|bois|nature|campagne|verdure|parc|jungle|arbre/.test(text))
-    return 'forest,nature,green,trees'
-  if (/désert|sahara|dune|sable|aride/.test(text))
-    return 'desert,sand,dunes,dry'
-  if (/lac|rivière|fleuve|gorge|canyon|cascade|waterfall/.test(text))
-    return 'lake,river,waterfall,nature'
-  if (/provenc|luberon|lavande|campagne/.test(text))
-    return 'lavender,provence,countryside,france'
-  return 'travel,landscape,nature,scenic'
+// Photos Unsplash stables par type de paysage (IDs directs, pas de clé API)
+const LANDSCAPE_PHOTOS = {
+  mountain: [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=480&q=80',
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=480&q=80',
+    'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=480&q=80',
+  ],
+  beach: [
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=480&q=80',
+    'https://images.unsplash.com/photo-1471922694854-ff1b63b20054?w=480&q=80',
+    'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=480&q=80',
+  ],
+  city: [
+    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=480&q=80',
+    'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=480&q=80',
+    'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=480&q=80',
+  ],
+  forest: [
+    'https://images.unsplash.com/photo-1448375240586-882707db888b?w=480&q=80',
+    'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=480&q=80',
+    'https://images.unsplash.com/photo-1425913397330-cf8af2ff40a1?w=480&q=80',
+  ],
+  lake: [
+    'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=480&q=80',
+    'https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=480&q=80',
+    'https://images.unsplash.com/photo-1490077476659-095159692ab5?w=480&q=80',
+  ],
+  default: [
+    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=480&q=80',
+    'https://images.unsplash.com/photo-1527004013197-933b2b1d10cf?w=480&q=80',
+    'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=480&q=80',
+  ]
 }
 
-function getUnsplashUrl(tripName, destination) {
-  const keywords = getLandscapeKeywords(tripName, destination)
-  return `https://source.unsplash.com/featured/480x900/?${keywords}`
+function getLandscapeType(tripName = '', destination = '') {
+  const text = (tripName + ' ' + destination).toLowerCase()
+  if (/mont|alp|isère|savoie|chamonix|montagne|col|sommet|pic|massif|ski|neige|glacier|alti/.test(text)) return 'mountain'
+  if (/mer|océan|plage|côte|méditerranée|atlantique|beach|sea|île|corse|bretagne/.test(text)) return 'beach'
+  if (/paris|lyon|marseille|bordeaux|ville|city|urban|tour|cathédrale|musée|avenue/.test(text)) return 'city'
+  if (/forêt|bois|nature|campagne|verdure|parc|jungle|arbre/.test(text)) return 'forest'
+  if (/lac|rivière|fleuve|gorge|canyon|cascade/.test(text)) return 'lake'
+  return 'default'
+}
+
+function getLandscapeUrl(tripName, destination) {
+  const type = getLandscapeType(tripName, destination)
+  const photos = LANDSCAPE_PHOTOS[type]
+  // Choisit une photo selon le hash du nom pour avoir toujours la même pour un séjour
+  const idx = (tripName + destination).split('').reduce((a, c) => a + c.charCodeAt(0), 0) % photos.length
+  return photos[idx]
 }
 
 export default function AppHeader({
@@ -92,7 +120,7 @@ export default function AppHeader({
   useEffect(() => {
     if (!activeTrip) return
     setBgImage(null)
-    const url = getUnsplashUrl(activeTrip.name || '', activeTrip.destination || '')
+    const url = getLandscapeUrl(activeTrip.name || '', activeTrip.destination || '')
     const img = new Image()
     img.onload = () => setBgImage(url)
     img.onerror = () => setBgImage(null)
