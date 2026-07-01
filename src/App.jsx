@@ -272,6 +272,8 @@ export default function App() {
         onSignOut={store.signOut}
         isAdmin={store.isAdmin}
         onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
+        tab={tab}
+        setTab={setTab}
       />
 
       <div className="app-main">
@@ -313,112 +315,93 @@ export default function App() {
         </>
       )}
 
-      {/* MAIN 3-COL LAYOUT */}
-      <div className="app-layout">
+      {/* MAIN CONTENT — selon onglet actif */}
+      <div className="app-content">
 
-        {/* LEFT: SAC À DOS */}
-        <div className="col-side" id="section-sac">
-          <div className="col-head"><h2>🎒 Sac à dos</h2></div>
-          {visibleVoyageurs.length > 1 && (
-            <div className="tabs" style={{ marginBottom: '.5rem' }}>
-              {visibleVoyageurs.map(v => (
-                <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`}
-                  onClick={() => store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
-              ))}
+        {/* PLANNING */}
+        {tab === 'planning' && trip && (
+          <div className="content-pane">
+            <div className="progress-wrap">
+              <div className="progress-bar"><div className="progress-bar-fill" style={{ width: pct + '%' }} /></div>
+              <div className="progress-text">{validatedDays} / {totalDays} validées</div>
             </div>
-          )}
-          <CheckList
-            items={store.currentSac}
-            onToggle={id => store.toggleSacItem(trip?.id, vid, id)}
-            onAdd={text => store.addSacItem(trip?.id, vid, text)}
-            onRemove={id => store.removeSacItem(trip?.id, vid, id)}
-            onUpdateQty={(id, qty) => store.updateSacItemQty(trip?.id, vid, id, qty)}
-            emptyEmoji="🎒"
-          />
-        </div>
-
-        {/* CENTER: PLANNING / INFOS */}
-        <div className="col-center" id="section-planning">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.75rem' }}>
-            <div className="tabs" style={{ flex: 1, marginBottom: 0 }}>
-              <button className={`tab-btn${tab === 'planning' ? ' active' : ''}`} onClick={() => setTab('planning')}>📋 Planning</button>
-              <button className={`tab-btn${tab === 'infos' ? ' active' : ''}`} onClick={() => setTab('infos')}>ℹ️ Infos</button>
-              <button className={`tab-btn${tab === 'budget' ? ' active' : ''}`} onClick={() => setTab('budget')}>💰 Budget</button>
-            </div>
-            {/* AI Button */}
-            <button className="btn btn-primary" style={{ whiteSpace: 'nowrap', fontSize: '.75rem' }}
-              onClick={() => { setAiTargetDayId(null); setShowAI(true) }}>
-              🤖 IA Randos
-            </button>
-          </div>
-
-          {tab === 'planning' && trip && (
-            <>
-              <div className="progress-wrap">
-                <div className="progress-bar">
-                  <div className="progress-bar-fill" style={{ width: pct + '%' }} />
-                </div>
-                <div className="progress-text">{validatedDays} / {totalDays} validées</div>
+            {trip.days.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '.85rem' }}>
+                Aucun jour dans ce séjour. Modifie le séjour pour définir les dates.
               </div>
+            )}
+            {trip.days.map(day => (
+              <DayCard
+                key={day.id} day={day} tripId={trip.id} isToday={day.date === today}
+                onValidateDay={() => store.validateDay(trip.id, day.id)}
+                onDeleteDay={() => store.deleteDay(trip.id, day.id)}
+                onAddActivity={(dayId, act) => store.addActivity(trip.id, dayId, act)}
+                onUpdateActivity={(dayId, actId, ch) => store.updateActivity(trip.id, dayId, actId, ch)}
+                onDeleteActivity={(dayId, actId) => store.deleteActivity(trip.id, dayId, actId)}
+                onMoveActivity={(dayId, actId, date) => store.moveActivity(trip.id, dayId, actId, date)}
+                onValidateActivity={(dayId, actId) => store.validateActivity(trip.id, dayId, actId)}
+                onAISearch={(dayId) => { setAiTargetDayId(dayId); setShowAI(true) }}
+              />
+            ))}
+          </div>
+        )}
 
-              {trip.days.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '.85rem' }}>
-              Aucun jour dans ce séjour. Modifie le séjour pour définir les dates.
-            </div>
-          )}
-          {trip.days.map(day => (
-                <DayCard
-                  key={day.id}
-                  day={day}
-                  tripId={trip.id}
-                  isToday={day.date === today}
-                  onValidateDay={() => store.validateDay(trip.id, day.id)}
-                  onDeleteDay={() => store.deleteDay(trip.id, day.id)}
-                  onAddActivity={(dayId, act) => store.addActivity(trip.id, dayId, act)}
-                  onUpdateActivity={(dayId, actId, ch) => store.updateActivity(trip.id, dayId, actId, ch)}
-                  onDeleteActivity={(dayId, actId) => store.deleteActivity(trip.id, dayId, actId)}
-                  onMoveActivity={(dayId, actId, date) => store.moveActivity(trip.id, dayId, actId, date)}
-                  onValidateActivity={(dayId, actId) => store.validateActivity(trip.id, dayId, actId)}
-                  onAISearch={(dayId) => { setAiTargetDayId(dayId); setShowAI(true) }}
-                />
-              ))}
+        {/* INFOS */}
+        {tab === 'infos' && (
+          <div className="content-pane">
+            <InfosTab trip={trip} onUpdateTrip={(changes) => store.updateTrip(trip.id, changes)} />
+          </div>
+        )}
 
+        {/* BUDGET */}
+        {tab === 'budget' && trip && (
+          <div className="content-pane">
+            <Budget trip={trip} voyageurs={store.tripVoyageurs} isGuest={store.isGuest} activeVoyageurId={vid} onUpdate={(changes) => store.updateTrip(trip.id, changes)} />
+          </div>
+        )}
 
-            </>
-          )}
+        {/* VALISE */}
+        {tab === 'valise' && (
+          <div className="content-pane">
+            <div className="col-head"><h2>🧳 Valise</h2></div>
+            {visibleVoyageurs.length > 1 && (
+              <div className="tabs" style={{ marginBottom: '.5rem' }}>
+                {visibleVoyageurs.map(v => (
+                  <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`} onClick={() => store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
+                ))}
+              </div>
+            )}
+            <CheckList items={store.currentValise} onToggle={id => store.toggleValiseItem(trip?.id, vid, id)} onAdd={text => store.addValiseItem(trip?.id, vid, text)} onRemove={id => store.removeValiseItem(trip?.id, vid, id)} onUpdateQty={(id, qty) => store.updateValiseItemQty(trip?.id, vid, id, qty)} emptyEmoji="🧳" />
+          </div>
+        )}
 
-          {tab === 'infos' && <InfosTab trip={trip} onUpdateTrip={(changes) => store.updateTrip(trip.id, changes)} />}
-          {tab === 'budget' && trip && (
-            <Budget
-              trip={trip}
-              voyageurs={store.tripVoyageurs}
-              isGuest={store.isGuest}
-              activeVoyageurId={vid}
-              onUpdate={(changes) => store.updateTrip(trip.id, changes)}
+        {/* SAC À DOS */}
+        {tab === 'sac' && (
+          <div className="content-pane">
+            <div className="col-head"><h2>🎒 Sac à dos</h2></div>
+            {visibleVoyageurs.length > 1 && (
+              <div className="tabs" style={{ marginBottom: '.5rem' }}>
+                {visibleVoyageurs.map(v => (
+                  <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`} onClick={() => store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
+                ))}
+              </div>
+            )}
+            <CheckList items={store.currentSac} onToggle={id => store.toggleSacItem(trip?.id, vid, id)} onAdd={text => store.addSacItem(trip?.id, vid, text)} onRemove={id => store.removeSacItem(trip?.id, vid, id)} onUpdateQty={(id, qty) => store.updateSacItemQty(trip?.id, vid, id, qty)} emptyEmoji="🎒" />
+          </div>
+        )}
+
+        {/* IA RANDOS */}
+        {tab === 'ai' && trip && (
+          <div className="content-pane">
+            <AIRandoSearch
+              trip={trip} destination={trip.destination || trip.name} days={trip.days}
+              targetDayId={null}
+              onSelectActivity={(activity, targetDayId) => { store.addActivity(trip.id, targetDayId, { ...activity, id: undefined }); setTab('planning') }}
+              onClose={() => setTab('planning')}
+              inline={true}
             />
-          )}
-        </div>
-
-        {/* RIGHT: VALISE */}
-        <div className="col-side">
-          <div className="col-head"><h2>🧳 Valise</h2></div>
-          {visibleVoyageurs.length > 1 && (
-            <div className="tabs" style={{ marginBottom: '.5rem' }}>
-              {visibleVoyageurs.map(v => (
-                <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`}
-                  onClick={() => store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
-              ))}
-            </div>
-          )}
-          <CheckList
-            items={store.currentValise}
-            onToggle={id => store.toggleValiseItem(trip?.id, vid, id)}
-            onAdd={text => store.addValiseItem(trip?.id, vid, text)}
-            onRemove={id => store.removeValiseItem(trip?.id, vid, id)}
-            onUpdateQty={(id, qty) => store.updateValiseItemQty(trip?.id, vid, id, qty)}
-            emptyEmoji="🧳"
-          />
-        </div>
+          </div>
+        )}
       </div>
 
       {/* MODALS */}

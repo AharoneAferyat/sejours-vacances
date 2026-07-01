@@ -54,18 +54,32 @@ body {
 
 /* ─── LAYOUT ─────────────────────────────────────────────────────────────── */
 
-/* Desktop : sidebar fixe gauche, contenu décalé */
-.app-sidebar { display: flex; } /* visible desktop */
-.app-main { margin-left: 220px; min-width: 0; }
+/* Sidebar fixe desktop */
+.app-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 220px;
+  z-index: 100; overflow: hidden; overflow-y: auto;
+  display: flex; flex-direction: column;
+  transition: background 2s ease;
+}
+/* Contenu principal décalé */
+.app-main { margin-left: 220px; min-width: 0; min-height: 100vh; }
 
-/* Mobile : sidebar cachée, mobile bar visible */
+/* Mobile bar cachée par défaut */
 .app-mobile-bar { display: none; }
 
+/* Pane contenu */
+.app-content { padding: 1.25rem 1.5rem 2rem; max-width: 860px; }
+.content-pane { width: 100%; }
+
 @media (max-width: 768px) {
+  /* Sidebar cachée sur mobile */
   .app-sidebar { display: none !important; }
+  /* Contenu sans marge */
   .app-main { margin-left: 0 !important; }
+  /* Mobile bar visible */
   .app-mobile-bar { display: block !important; }
-  .app-layout { padding: .6rem .6rem 5.5rem !important; gap: .5rem !important; }
+  /* Contenu mobile */
+  .app-content { padding: .75rem .75rem 5.5rem; max-width: 100%; }
   .form-row { grid-template-columns: 1fr !important; }
   .modal { padding: .9rem !important; }
   .modal-overlay { padding: .5rem !important; align-items: flex-end !important; }
