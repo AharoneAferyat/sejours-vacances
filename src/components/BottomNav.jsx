@@ -75,7 +75,7 @@ export default function BottomNav({
             )}
 
             <button className="bn-sheet-item" style={{ color: 'var(--red)', borderTop: '1px solid var(--border)', marginTop: '.25rem' }}
-              onClick={() => { if (onSignOut) { onSignOut(); setShowMore(false) } }}>
+              onClick={() => { setShowMore(false); if (onSignOut) onSignOut() }}>
               <span>🚪</span> Déconnexion
             </button>
           </div>
