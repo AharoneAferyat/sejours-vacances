@@ -255,8 +255,8 @@ export default function App() {
   const tripColor = trip?.color || '#0F6E56'
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* SIDEBAR + MOBILE TOPBAR */}
+    <div>
+      {/* HEADER */}
       <Header
         trips={store.trips}
         activeTrip={trip}
@@ -273,9 +273,6 @@ export default function App() {
         isAdmin={store.isAdmin}
         onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
       />
-
-      {/* CONTENU PRINCIPAL */}
-      <div className="app-main" style={{ flex: 1, minWidth: 0 }}>
 
       {/* MOBILE BOTTOM NAV */}
       <BottomNav
@@ -476,7 +473,6 @@ export default function App() {
           onClose={() => setShowAI(false)}
         />
       )}
-      </div>{/* end app-main */}
     </div>
   )
 }

@@ -52,38 +52,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── LAYOUT AVEC SIDEBAR ───────────────────────────────────────────────── */
-
-/* La sidebar est le nouveau Header sur desktop */
-.app-sidebar {
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  width: 240px;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: background 2s ease;
-}
-
-.app-sidebar-inner {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-/* Le contenu principal est décalé à droite de la sidebar */
-.app-main {
-  margin-left: 240px;
-}
-
-/* Sur mobile, sidebar cachée, top bar visible */
-@media (max-width: 768px) {
-  .app-sidebar { display: none; }
-  .app-main { margin-left: 0; }
-}
+/* ─── LAYOUT ──────────────────────────────────────────────────────────────── */
 
 /* ─── 3 COLONNES CONTENU ────────────────────────────────────────────────── */
 .app-layout {
@@ -107,16 +76,13 @@ body {
   letter-spacing: .09em; color: var(--text-muted);
 }
 
-@media (max-width: 900px) { .app-layout { grid-template-columns: 1fr 1.4fr 1fr !important; } }
+@media (max-width: 900px) { .app-layout { grid-template-columns: 1fr 1.4fr !important; } }
 @media (max-width: 768px) { .app-layout { grid-template-columns: 1fr !important; } }
 @media (max-width: 768px) {
-  .app-layout { padding: .75rem .75rem 6rem !important; gap: .6rem !important; }
+  .app-layout { padding: .5rem .5rem 5rem !important; gap: .5rem !important; }
   .form-row { grid-template-columns: 1fr !important; }
-  .modal { padding: 1rem !important; }
+  .modal { padding: .85rem !important; }
   .modal-overlay { padding: .5rem !important; align-items: flex-end !important; }
-  /* Empêche le contenu de déborder horizontalement */
-  * { max-width: 100%; }
-  img { max-width: 100%; height: auto; }
 }
 .col-side, .col-center { width: 100%; }
 .check-item { width: 100%; box-sizing: border-box; }
@@ -284,8 +250,7 @@ body {
 .bn-sheet-item:hover { background: var(--bg); }
 .bn-sheet-item span:first-child { font-size: 1.1rem; width: 24px; text-align: center; }
 
-/* ─── HEADER LEGACY (fallback si sidebar non utilisée) ──────────────────── */
-.app-header { background: var(--accent); color: #fff; padding: 1rem 1.25rem; }
+/* ─── HEADER ──────────────────────────────────────────────────────────────── */
 
 /* ─── WEATHER ────────────────────────────────────────────────────────────── */
 .weather-strip {
