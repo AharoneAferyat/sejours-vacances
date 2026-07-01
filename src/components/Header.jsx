@@ -32,57 +32,23 @@ function getHourOverlay() {
 }
 
 
-// Détecte le type de paysage depuis le nom/destination du séjour
-// Photos Unsplash stables par type de paysage (IDs directs, pas de clé API)
 const LANDSCAPE_PHOTOS = {
-  mountain: [
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=480&q=80',
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=480&q=80',
-    'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=480&q=80',
-  ],
-  beach: [
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=480&q=80',
-    'https://images.unsplash.com/photo-1471922694854-ff1b63b20054?w=480&q=80',
-    'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=480&q=80',
-  ],
-  city: [
-    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=480&q=80',
-    'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=480&q=80',
-    'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=480&q=80',
-  ],
-  forest: [
-    'https://images.unsplash.com/photo-1448375240586-882707db888b?w=480&q=80',
-    'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=480&q=80',
-    'https://images.unsplash.com/photo-1425913397330-cf8af2ff40a1?w=480&q=80',
-  ],
-  lake: [
-    'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=480&q=80',
-    'https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=480&q=80',
-    'https://images.unsplash.com/photo-1490077476659-095159692ab5?w=480&q=80',
-  ],
-  default: [
-    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=480&q=80',
-    'https://images.unsplash.com/photo-1527004013197-933b2b1d10cf?w=480&q=80',
-    'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=480&q=80',
-  ]
+  mountain: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=720&q=85&fit=crop',
+  beach: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=720&q=85&fit=crop',
+  city: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=720&q=85&fit=crop',
+  forest: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=720&q=85&fit=crop',
+  lake: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=720&q=85&fit=crop',
+  default: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=720&q=85&fit=crop',
 }
 
-function getLandscapeType(tripName = '', destination = '') {
-  const text = (tripName + ' ' + destination).toLowerCase()
-  if (/mont|alp|isère|savoie|chamonix|montagne|col|sommet|pic|massif|ski|neige|glacier|alti/.test(text)) return 'mountain'
-  if (/mer|océan|plage|côte|méditerranée|atlantique|beach|sea|île|corse|bretagne/.test(text)) return 'beach'
-  if (/paris|lyon|marseille|bordeaux|ville|city|urban|tour|cathédrale|musée|avenue/.test(text)) return 'city'
-  if (/forêt|bois|nature|campagne|verdure|parc|jungle|arbre/.test(text)) return 'forest'
-  if (/lac|rivière|fleuve|gorge|canyon|cascade/.test(text)) return 'lake'
-  return 'default'
-}
-
-function getLandscapeUrl(tripName, destination) {
-  const type = getLandscapeType(tripName, destination)
-  const photos = LANDSCAPE_PHOTOS[type]
-  // Choisit une photo selon le hash du nom pour avoir toujours la même pour un séjour
-  const idx = (tripName + destination).split('').reduce((a, c) => a + c.charCodeAt(0), 0) % photos.length
-  return photos[idx]
+function getLandscapeUrl(name = '', dest = '') {
+  const t = (name + ' ' + dest).toLowerCase()
+  if (/mont|alp|isère|savoie|chamonix|montagne|col|ski|neige|glacier/.test(t)) return LANDSCAPE_PHOTOS.mountain
+  if (/mer|plage|côte|méditerranée|atlantique|sea|corse|bretagne/.test(t)) return LANDSCAPE_PHOTOS.beach
+  if (/paris|lyon|marseille|bordeaux|ville|city|urban/.test(t)) return LANDSCAPE_PHOTOS.city
+  if (/forêt|bois|nature|parc|arbre/.test(t)) return LANDSCAPE_PHOTOS.forest
+  if (/lac|rivière|cascade|gorge/.test(t)) return LANDSCAPE_PHOTOS.lake
+  return LANDSCAPE_PHOTOS.default
 }
 
 export default function AppHeader({
@@ -116,12 +82,10 @@ export default function AppHeader({
     return () => clearInterval(id)
   }, [])
 
-  // Charge l'image Unsplash quand le séjour change
   useEffect(() => {
     if (!activeTrip) return
-    setBgImage(null)
     const url = getLandscapeUrl(activeTrip.name || '', activeTrip.destination || '')
-    const img = new Image()
+    const img = new window.Image()
     img.onload = () => setBgImage(url)
     img.onerror = () => setBgImage(null)
     img.src = url
@@ -144,15 +108,18 @@ export default function AppHeader({
 
   // ── SIDEBAR DESKTOP ──────────────────────────────────────────────────────
   const Sidebar = () => (
-    <aside className="app-sidebar" style={{ background: bgImage ? '#1a1a2e' : bg }}>
-      {/* Image de fond Unsplash */}
+    <aside className="app-sidebar" style={{ background: bgImage ? '#0a1a0f' : bg }}>
+      {/* Photo de fond adaptée au séjour */}
       {bgImage && (
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: .35, transition: 'opacity .8s ease' }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          opacity: .38, transition: 'opacity 1.2s ease',
+        }} />
       )}
-      {/* Overlay gradient pour lisibilité */}
-      <div style={{ position: 'absolute', inset: 0, background: bgImage
-        ? `linear-gradient(180deg, rgba(0,0,0,.3) 0%, ${bg.replace('linear-gradient(160deg,', 'linear-gradient(180deg,').replace('100%)', '80%)')} 60%, rgba(0,0,0,.6) 100%)`
-        : getHourOverlay(), pointerEvents: 'none' }} />
+      {/* Gradient overlay pour lisibilité */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 100%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', top: '-30%', right: '-20%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
       <div className="app-sidebar-inner" style={{ position: 'relative', zIndex: 1 }}>
 
