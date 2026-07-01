@@ -2,39 +2,33 @@ import { useState, useEffect, useRef } from 'react'
 
 const TRIP_COLORS = ['#0F6E56','#185FA5','#A32D2D','#BA7517','#7C3AED','#0891B2','#BE185D','#065F46']
 
-function getHeaderGradient() {
-  const now = new Date()
-  const h = now.getHours()
-  const m = now.getMonth()
-  const isSummer = m >= 5 && m <= 8
-  const isWinter = m === 11 || m <= 1
-  const isSpring = m >= 2 && m <= 4
-  if (h < 5) return isWinter ? 'linear-gradient(135deg,#0a0a1a,#0d1b3e,#1a0a2e)' : 'linear-gradient(135deg,#070714,#0d1533,#0a0d1f)'
-  if (h < 7) {
-    if (isSpring) return 'linear-gradient(135deg,#1a1040,#6b2d6b,#d4722a)'
-    if (isSummer) return 'linear-gradient(135deg,#1a1535,#8b3a62,#e8852f)'
-    return isWinter ? 'linear-gradient(135deg,#1a1030,#3d1c5e,#7a3b1e)' : 'linear-gradient(135deg,#1a1030,#5c2d6b,#c4622a)'
+function getSeasonTheme() {
+  const m = new Date().getMonth()
+  if (m >= 2 && m <= 4) return { // Printemps
+    bg: 'linear-gradient(160deg, #2F8F6B 0%, #3aaa80 40%, #4fc49a 100%)',
+    accent: '#2F8F6B', card: 'rgba(234,248,238,0.15)'
   }
-  if (h < 12) {
-    if (isSpring) return 'linear-gradient(135deg,#1a4a2e,#2d7a4f,#4aab72)'
-    if (isSummer) return 'linear-gradient(135deg,#1a3a6e,#1e6bb5,#38a0d4)'
-    return isWinter ? 'linear-gradient(135deg,#1e3a5f,#2d5986,#4a7fa8)' : 'linear-gradient(135deg,#2a3a50,#3d5a78,#5a7fa0)'
+  if (m >= 5 && m <= 8) return { // Été
+    bg: 'linear-gradient(160deg, #0A7EA4 0%, #1a9eca 40%, #2db8e8 100%)',
+    accent: '#0A7EA4', card: 'rgba(216,240,255,0.15)'
   }
-  if (h < 17) {
-    if (isSpring) return 'linear-gradient(135deg,#0f4a2a,#1a7a45,#0d5e38)'
-    if (isSummer) return 'linear-gradient(135deg,#0a3a7a,#0f5eb5,#0a4a8a)'
-    return isWinter ? 'linear-gradient(135deg,#1c3550,#2a5478,#1e3a5f)' : 'linear-gradient(135deg,#1e2e45,#2d4a6a,#1a3050)'
+  if (m >= 9 && m <= 10) return { // Automne
+    bg: 'linear-gradient(160deg, #8F4E20 0%, #b56228 40%, #d4883c 100%)',
+    accent: '#8F4E20', card: 'rgba(255,241,220,0.15)'
   }
-  if (h < 20) {
-    if (isSpring) return 'linear-gradient(135deg,#1a2a0a,#5a7a1a,#c4a020)'
-    if (isSummer) return 'linear-gradient(135deg,#1a1a0a,#8b4a0a,#d4820a)'
-    return isWinter ? 'linear-gradient(135deg,#2a1a0a,#6b3a0f,#a05a1a)' : 'linear-gradient(135deg,#1a1208,#5a3010,#9a5818)'
+  return { // Hiver
+    bg: 'linear-gradient(160deg, #275D9C 0%, #3572ba 40%, #4d8ed6 100%)',
+    accent: '#275D9C', card: 'rgba(238,245,255,0.15)'
   }
-  if (h < 23) {
-    if (isSummer) return 'linear-gradient(135deg,#0a0a20,#1a1245,#2d0d30)'
-    return isWinter ? 'linear-gradient(135deg,#0d0d25,#1a1040,#2a0a3a)' : 'linear-gradient(135deg,#0d0d22,#18103c,#260c2e)'
-  }
-  return 'linear-gradient(135deg,#07071a,#0d1030,#0a0820)'
+}
+
+function getHourOverlay() {
+  const h = new Date().getHours()
+  if (h >= 5 && h < 8) return 'rgba(255,246,229,0.12)'   // Aube
+  if (h >= 8 && h < 12) return 'rgba(255,255,255,0.06)'  // Matin
+  if (h >= 12 && h < 17) return 'rgba(0,0,0,0)'          // Midi
+  if (h >= 17 && h < 20) return 'rgba(255,180,80,0.12)'  // Soir
+  return 'rgba(20,35,58,0.35)'                             // Nuit
 }
 
 export default function AppHeader({
@@ -42,208 +36,194 @@ export default function AppHeader({
   voyageurs, onOpenVoyageurs, syncing, onSignOut, userEmail,
   onOpenGlobalBudget, isAdmin, onOpenAdmin
 }) {
-  const [time, setTime] = useState({ local: '', utc: '', dateFR: '', dateEN: '' })
-  const [headerBg, setHeaderBg] = useState(getHeaderGradient())
-  const [openMenu, setOpenMenu] = useState(null) // 'trips' | 'account' | null
-  const tripsRef = useRef(null)
-  const accountRef = useRef(null)
+  const [time, setTime] = useState({ local: '', dateFR: '', utc: '' })
+  const [theme, setTheme] = useState(getSeasonTheme())
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showMobileTrips, setShowMobileTrips] = useState(false)
+  const mobileRef = useRef(null)
 
   useEffect(() => {
     const tick = () => {
       const now = new Date()
-      const daysFR = ['dim','lun','mar','mer','jeu','ven','sam']
-      const monthsFR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']
-      const daysEN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-      const monthsEN = ['January','February','March','April','May','June','July','August','September','October','November','December']
-      const nth = d => { if (d>3&&d<21) return 'th'; switch(d%10){case 1:return 'st';case 2:return 'nd';case 3:return 'rd';default:return 'th'} }
-      const u = new Date(now.toISOString())
+      const days = ['dim','lun','mar','mer','jeu','ven','sam']
+      const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']
       setTime({
-        local: now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
-        utc: u.toUTCString().split(' ')[4],
-        dateFR: `${daysFR[now.getDay()]} ${now.getDate()} ${monthsFR[now.getMonth()]} ${now.getFullYear()}`,
-        dateEN: `${daysEN[u.getUTCDay()]} ${u.getUTCDate()}${nth(u.getUTCDate())} ${monthsEN[u.getUTCMonth()]} ${u.getUTCFullYear()}`
+        local: now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }),
+        dateFR: `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`,
+        utc: new Date(now.toISOString()).toUTCString().split(' ')[4]
       })
     }
-    tick(); const id = setInterval(tick,1000); return ()=>clearInterval(id)
-  },[])
+    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
-    setHeaderBg(getHeaderGradient())
-    const id = setInterval(()=>setHeaderBg(getHeaderGradient()),60000)
-    return ()=>clearInterval(id)
-  },[])
+    const id = setInterval(() => setTheme(getSeasonTheme()), 60000)
+    return () => clearInterval(id)
+  }, [])
 
-  // Ferme les menus si clic en dehors
+  // Ferme menus mobile au clic dehors
   useEffect(() => {
     const handler = (e) => {
-      if (tripsRef.current && !tripsRef.current.contains(e.target)) {
-        if (accountRef.current && !accountRef.current.contains(e.target)) {
-          setOpenMenu(null)
-        }
+      if (mobileRef.current && !mobileRef.current.contains(e.target)) {
+        setShowMobileMenu(false)
+        setShowMobileTrips(false)
       }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  },[])
+  }, [])
 
-  const toggle = (menu) => setOpenMenu(prev => prev === menu ? null : menu)
+  const displayUser = userEmail?.includes('@') ? userEmail.split('@')[0] : userEmail?.slice(0, 14)
+  const bg = `${theme.bg}`
 
-  const displayUser = userEmail?.includes('@') ? userEmail.split('@')[0] : userEmail?.slice(0,12)
+  // ── SIDEBAR DESKTOP ──────────────────────────────────────────────────────
+  const Sidebar = () => (
+    <aside className="app-sidebar" style={{ background: bg }}>
+      <div style={{ position: 'absolute', inset: 0, background: getHourOverlay(), pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '-30%', right: '-20%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div className="app-sidebar-inner" style={{ position: 'relative', zIndex: 1 }}>
 
-  const glassBtn = {
-    background: 'rgba(255,255,255,.1)', backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255,255,255,.18)', borderRadius: 10,
-    padding: '6px 12px', color: '#fff', cursor: 'pointer',
-    fontFamily: 'inherit', fontWeight: 500, fontSize: 'clamp(.7rem,1.8vw,.82rem)',
-    display: 'flex', alignItems: 'center', gap: '.35rem', whiteSpace: 'nowrap'
-  }
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">🥾</div>
+          <div className="sidebar-logo-text">Séjours<br/>Vacances</div>
+        </div>
 
-  const menuBox = {
-    position: 'absolute', top: 'calc(100% + 6px)', zIndex: 999,
-    background: '#fff', borderRadius: 12, border: '1px solid var(--border)',
-    boxShadow: '0 8px 32px rgba(0,0,0,.18)', minWidth: 220, overflow: 'hidden'
-  }
+        {/* Horloge */}
+        <div className="sidebar-clock">
+          <div className="sidebar-date">{time.dateFR}</div>
+          <div className="sidebar-time">{time.local}</div>
+          <div className="sidebar-utc">UTC {time.utc}</div>
+        </div>
 
-  const menuItem = {
-    width:'100%', padding:'.65rem .9rem', background:'none', border:'none',
-    cursor:'pointer', fontFamily:'inherit', fontSize:'.83rem', fontWeight:500,
-    color:'var(--text)', display:'flex', alignItems:'center', gap:'.55rem', textAlign:'left'
-  }
+        {/* Séjours */}
+        <div className="sidebar-trip-section">
+          <div className="sidebar-section-label">Séjours</div>
+          {trips.map((t, i) => {
+            const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
+            const isActive = t.id === activeTrip?.id
+            return (
+              <div key={t.id} className={`sidebar-trip-item${isActive ? ' active' : ''}`}
+                onClick={() => onSelectTrip(t.id)}>
+                <div className="sidebar-trip-dot" style={{ background: color }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="sidebar-trip-name">{t.name}</div>
+                  {t.startDate && <div className="sidebar-trip-date">
+                    {new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})} → {new Date(t.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}
+                  </div>}
+                </div>
+                <div className="sidebar-trip-actions">
+                  <button className="sidebar-trip-action" onClick={e => { e.stopPropagation(); onEditTrip(t) }}>✏️</button>
+                  {trips.length > 1 && <button className="sidebar-trip-action" onClick={e => { e.stopPropagation(); confirm(`Supprimer "${t.name}" ?`) && onDeleteTrip(t.id) }}>🗑</button>}
+                </div>
+              </div>
+            )
+          })}
+          <button className="sidebar-new-trip" onClick={onNewTrip}>＋ Nouveau séjour</button>
+        </div>
+
+        {/* Navigation */}
+        <div className="sidebar-nav">
+          <button className="sidebar-nav-item" onClick={onOpenVoyageurs}>
+            <span className="sidebar-nav-icon">👥</span> Voyageurs
+          </button>
+          {onOpenGlobalBudget && (
+            <button className="sidebar-nav-item" onClick={onOpenGlobalBudget}>
+              <span className="sidebar-nav-icon">💰</span> Budget global
+            </button>
+          )}
+          {isAdmin && onOpenAdmin && (
+            <button className="sidebar-nav-item admin" onClick={onOpenAdmin}>
+              <span className="sidebar-nav-icon">⚙️</span> Administration
+            </button>
+          )}
+          <button className="sidebar-nav-item danger" onClick={onSignOut}>
+            <span className="sidebar-nav-icon">→</span> Déconnexion
+          </button>
+
+          {/* User */}
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{displayUser?.charAt(0).toUpperCase()}</div>
+            <div>
+              <div className="sidebar-username">{displayUser}</div>
+              <div className="sidebar-userstatus">Connecté{syncing ? ' · ☁️' : ''}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  )
+
+  // ── TOP BAR MOBILE ───────────────────────────────────────────────────────
+  const MobileTopBar = () => (
+    <div ref={mobileRef}>
+      <div className="mobile-topbar" style={{ background: bg }}>
+        <div style={{ position: 'absolute', inset: 0, background: getHourOverlay(), pointerEvents: 'none' }} />
+        <div className="mobile-topbar-left" style={{ position: 'relative', zIndex: 1 }}>
+          <button className="mobile-topbar-trip" onClick={() => { setShowMobileTrips(m => !m); setShowMobileMenu(false) }}>
+            🥾 {activeTrip?.name || 'Séjours'}
+            <span style={{ fontSize: '.6rem', opacity: .6 }}>{showMobileTrips ? '▴' : '▾'}</span>
+          </button>
+        </div>
+        <div className="mobile-topbar-time" style={{ position: 'relative', zIndex: 1 }}>{time.local}</div>
+        <button className="mobile-topbar-avatar" style={{ position: 'relative', zIndex: 1 }}
+          onClick={() => { setShowMobileMenu(m => !m); setShowMobileTrips(false) }}>
+          {displayUser?.charAt(0).toUpperCase()}
+        </button>
+      </div>
+
+      {/* Dropdown séjours mobile */}
+      {showMobileTrips && (
+        <div style={{ position: 'fixed', top: 52, left: 12, right: 12, zIndex: 800, background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,.15)', overflow: 'hidden', border: '1px solid rgba(0,0,0,.08)' }}>
+          <div style={{ padding: '.45rem .85rem', fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Mes séjours</div>
+          {trips.map((t, i) => {
+            const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
+            const isActive = t.id === activeTrip?.id
+            return (
+              <div key={t.id}
+                style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.6rem .85rem', background: isActive ? '#f8f7f3' : '#fff', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                onClick={() => { onSelectTrip(t.id); setShowMobileTrips(false) }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '.85rem', fontWeight: isActive ? 600 : 400 }}>{t.name}</div>
+                  {t.startDate && <div style={{ fontSize: '.68rem', color: 'var(--text-muted)' }}>{new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})} → {new Date(t.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</div>}
+                </div>
+              </div>
+            )
+          })}
+          <button style={{ width: '100%', padding: '.6rem .85rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.85rem', fontWeight: 600, color: 'var(--accent)', textAlign: 'left' }}
+            onClick={() => { onNewTrip(); setShowMobileTrips(false) }}>＋ Nouveau séjour</button>
+        </div>
+      )}
+
+      {/* Dropdown compte mobile */}
+      {showMobileMenu && (
+        <div style={{ position: 'fixed', top: 52, right: 12, zIndex: 800, background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,.15)', overflow: 'hidden', border: '1px solid rgba(0,0,0,.08)', minWidth: 220 }}>
+          <div style={{ padding: '.65rem .9rem', borderBottom: '1px solid var(--border)', background: '#f8f7f3' }}>
+            <div style={{ fontSize: '.83rem', fontWeight: 600 }}>{displayUser}</div>
+            <div style={{ fontSize: '.67rem', color: 'var(--text-muted)' }}>Connecté</div>
+          </div>
+          {[
+            { icon: '👥', label: 'Voyageurs', action: onOpenVoyageurs },
+            onOpenGlobalBudget && { icon: '💰', label: 'Budget global', action: onOpenGlobalBudget },
+            isAdmin && onOpenAdmin && { icon: '⚙️', label: 'Administration', action: onOpenAdmin, color: 'var(--amber)' },
+            { icon: '→', label: 'Déconnexion', action: onSignOut, color: 'var(--red)' },
+          ].filter(Boolean).map((item, i) => (
+            <button key={i}
+              style={{ width: '100%', padding: '.65rem .9rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.85rem', fontWeight: 500, color: item.color || 'var(--text)', display: 'flex', alignItems: 'center', gap: '.55rem', textAlign: 'left', borderTop: item.color === 'var(--red)' ? '1px solid var(--border)' : 'none' }}
+              onClick={() => { item.action?.(); setShowMobileMenu(false) }}>
+              <span style={{ width: 22, textAlign: 'center' }}>{item.icon}</span>{item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 
   return (
-    <header style={{ background: headerBg, transition:'background 2s ease', color:'#fff', position:'relative', overflow:'visible' }}>
-
-      {/* Ambient glow */}
-      <div style={{ position:'absolute', top:'-60%', right:'-10%', width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,255,255,.07) 0%,transparent 70%)', pointerEvents:'none', zIndex:0 }} />
-
-      {/* ROW 1 */}
-      <div style={{ position:'relative', zIndex:1, display:'grid', gridTemplateColumns:'auto 1fr auto', alignItems:'center', gap:'clamp(.4rem,2vw,1rem)', padding:'clamp(.6rem,2vw,1rem) clamp(.75rem,2.5vw,1.25rem)', borderBottom:'1px solid rgba(255,255,255,.08)' }}>
-
-        {/* LEFT — Séjours */}
-        <div ref={tripsRef} style={{ position:'relative' }}>
-          <button style={glassBtn} onClick={() => toggle('trips')}>
-            🥾 Séjours
-            <span style={{ fontSize:'.62rem', opacity:.7, background:'rgba(255,255,255,.15)', borderRadius:8, padding:'1px 6px' }}>{trips.length}</span>
-            <span style={{ fontSize:'.6rem', opacity:.5 }}>{openMenu==='trips' ? '▴' : '▾'}</span>
-          </button>
-
-          {openMenu === 'trips' && (
-            <div style={{ ...menuBox, left:0 }}>
-              <div style={{ padding:'.45rem .85rem', fontSize:'.68rem', fontWeight:600, textTransform:'uppercase', letterSpacing:'.07em', color:'var(--text-muted)', borderBottom:'1px solid var(--border)' }}>
-                Mes séjours
-              </div>
-              {trips.map((t,i) => {
-                const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
-                const isActive = t.id === activeTrip?.id
-                return (
-                  <div key={t.id}
-                    style={{ display:'flex', alignItems:'center', padding:'.5rem .85rem', gap:'.5rem', background: isActive ? '#f8f7f3' : '#fff', borderBottom:'1px solid var(--border)', cursor:'pointer' }}
-                    onClick={() => { onSelectTrip(t.id); setOpenMenu(null) }}>
-                    <div style={{ width:8, height:8, borderRadius:'50%', background:color, flexShrink:0 }} />
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:'.83rem', fontWeight: isActive ? 600 : 400, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'var(--text)' }}>{t.name}</div>
-                      {t.startDate && <div style={{ fontSize:'.68rem', color:'var(--text-muted)' }}>
-                        {new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})} → {new Date(t.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}
-                      </div>}
-                    </div>
-                    <div style={{ display:'flex', gap:3 }}>
-                      <button onClick={e=>{e.stopPropagation();onEditTrip(t);setOpenMenu(null)}} style={{ background:'none',border:'none',cursor:'pointer',fontSize:'.72rem',padding:'2px 4px',color:'var(--text-muted)' }}>✏️</button>
-                      {trips.length > 1 && <button onClick={e=>{e.stopPropagation();confirm(`Supprimer "${t.name}" ?`)&&onDeleteTrip(t.id);setOpenMenu(null)}} style={{ background:'none',border:'none',cursor:'pointer',fontSize:'.72rem',padding:'2px 4px',color:'var(--text-muted)' }}>🗑</button>}
-                    </div>
-                  </div>
-                )
-              })}
-              <button style={{ width:'100%', padding:'.6rem .85rem', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:'.82rem', fontWeight:600, color:'var(--green)', textAlign:'left' }}
-                onClick={() => { onNewTrip(); setOpenMenu(null) }}>
-                ＋ Nouveau séjour
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* CENTER — Titre + horloge */}
-        <div style={{ textAlign:'center', minWidth:0, display:'flex', flexDirection:'column', alignItems:'center' }}>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:'clamp(.9rem,3vw,1.45rem)', fontWeight:700, marginBottom:'.45rem', background:'linear-gradient(135deg,#fff 0%,rgba(255,255,255,.75) 100%)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
-            Séjours Vacances
-          </div>
-          <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'center', gap:'.08rem', background:'rgba(255,255,255,.07)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,.1)', borderRadius:14, padding:'clamp(.3rem,1vw,.55rem) clamp(.7rem,2.5vw,1.4rem)' }}>
-            <span style={{ fontFamily:'monospace', fontWeight:600, fontSize:'clamp(.7rem,1.6vw,.88rem)', opacity:.9, letterSpacing:'.02em' }}>{time.dateFR}</span>
-            <div style={{ display:'flex', alignItems:'baseline', gap:'.35rem' }}>
-              <span style={{ fontFamily:'monospace', fontWeight:300, fontSize:'clamp(1rem,3vw,1.55rem)', letterSpacing:'.04em' }}>{time.local}</span>
-              {syncing && <span style={{ opacity:.35, fontSize:'.7rem' }}>☁️</span>}
-            </div>
-            <span style={{ fontFamily:'monospace', opacity:.4, fontSize:'clamp(.58rem,1.3vw,.72rem)', fontWeight:500 }}>UTC {time.utc} · {time.dateEN}</span>
-          </div>
-        </div>
-
-        {/* RIGHT — Compte */}
-        <div ref={accountRef} style={{ position:'relative' }}>
-          <button style={{ ...glassBtn, borderRadius:30, padding:'5px 10px 5px 5px' }} onClick={() => toggle('account')}>
-            <div style={{ display:'flex' }}>
-              {voyageurs.slice(0,2).map((v,i) => (
-                <div key={v.id} style={{ width:26,height:26,borderRadius:'50%', background:i===0?'#1D9E75':'#6b7cc4', border:'2px solid rgba(255,255,255,.25)', display:'flex',alignItems:'center',justifyContent:'center', fontSize:'.65rem',fontWeight:700,color:'#fff', marginLeft:i>0?-8:0, zIndex:3-i, position:'relative' }}>
-                  {v.name.charAt(0).toUpperCase()}
-                </div>
-              ))}
-              {voyageurs.length > 2 && (
-                <div style={{ width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.15)',border:'2px solid rgba(255,255,255,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'.58rem',color:'#fff',marginLeft:-8 }}>
-                  +{voyageurs.length-2}
-                </div>
-              )}
-            </div>
-            <span style={{ fontSize:'.7rem', opacity:.55 }}>{openMenu==='account'?'▴':'▾'}</span>
-          </button>
-
-          {openMenu === 'account' && (
-            <div style={{ ...menuBox, right:0 }}>
-              {displayUser && (
-                <div style={{ padding:'.7rem .9rem', borderBottom:'1px solid var(--border)', background:'linear-gradient(135deg,#f8f7fc,#f3f0f8)' }}>
-                  <div style={{ fontSize:'.8rem', fontWeight:600, color:'var(--text)' }}>{displayUser}</div>
-                  <div style={{ fontSize:'.66rem', color:'var(--text-muted)' }}>Connecté</div>
-                </div>
-              )}
-              <button style={menuItem} onClick={() => { onOpenVoyageurs(); setOpenMenu(null) }}>
-                <span>👥</span> Voyageurs
-              </button>
-              {onOpenGlobalBudget && (
-                <button style={menuItem} onClick={() => { onOpenGlobalBudget(); setOpenMenu(null) }}>
-                  <span>💰</span> Budget global
-                </button>
-              )}
-              {isAdmin && onOpenAdmin && (
-                <button style={{ ...menuItem, color:'var(--amber)' }} onClick={() => { onOpenAdmin(); setOpenMenu(null) }}>
-                  <span>⚙️</span> Administration
-                </button>
-              )}
-              {onSignOut && (
-                <button style={{ ...menuItem, color:'var(--red)', borderTop:'1px solid var(--border)' }} onClick={() => { onSignOut(); setOpenMenu(null) }}>
-                  <span>🚪</span> Déconnexion
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ROW 2 — Trip tabs */}
-      <div style={{ position:'relative', zIndex:1, display:'flex', gap:'.35rem', padding:'.5rem clamp(.75rem,2.5vw,1.25rem)', overflowX:'auto', scrollbarWidth:'none', alignItems:'center' }}>
-        {trips.map((t,i) => {
-          const color = t.color || TRIP_COLORS[i%TRIP_COLORS.length]
-          const isActive = t.id === activeTrip?.id
-          return (
-            <div key={t.id} style={{ display:'flex', alignItems:'center', gap:2, flexShrink:0 }}>
-              <button onClick={()=>onSelectTrip(t.id)} style={{ background:isActive?color:'rgba(255,255,255,.08)', border:`1.5px solid ${isActive?color:'rgba(255,255,255,.15)'}`, borderRadius:8, padding:'5px 12px', color:'#fff', cursor:'pointer', fontSize:'clamp(.7rem,1.8vw,.8rem)', fontFamily:'inherit', fontWeight:isActive?600:400, transition:'all .15s', display:'flex', flexDirection:'column', alignItems:'flex-start' }}>
-                <span>{t.name}</span>
-                {t.startDate && <span style={{ fontSize:'.58rem', opacity:.72 }}>{new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})} → {new Date(t.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</span>}
-              </button>
-              <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-                <button onClick={()=>onEditTrip(t)} style={{ background:'none',border:'none',cursor:'pointer',fontSize:'.65rem',padding:'2px 3px',color:'rgba(255,255,255,.4)',lineHeight:1 }}>✏️</button>
-                {trips.length>1 && <button onClick={()=>confirm(`Supprimer "${t.name}" ?`)&&onDeleteTrip(t.id)} style={{ background:'none',border:'none',cursor:'pointer',fontSize:'.65rem',padding:'2px 3px',color:'rgba(255,255,255,.3)',lineHeight:1 }}>🗑</button>}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </header>
+    <>
+      <Sidebar />
+      <MobileTopBar />
+    </>
   )
 }
