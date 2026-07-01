@@ -1,25 +1,49 @@
 import { useState } from 'react'
 
+function scrollTo(id, extraTab) {
+  // Change tab first if needed
+  if (extraTab) extraTab()
+  // Then scroll to section
+  setTimeout(() => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, 50)
+}
+
 export default function BottomNav({
   tab, setTab, onOpenVoyageurs, onOpenGlobalBudget, onOpenAI,
-  isAdmin, onOpenAdmin, onSignOut, userEmail, trip
+  isAdmin, onOpenAdmin, onSignOut, userEmail
 }) {
   const [showMore, setShowMore] = useState(false)
 
   const displayUser = userEmail?.includes('@') ? userEmail.split('@')[0] : userEmail?.slice(0, 10)
 
+  const goPlanning = () => {
+    setTab('planning')
+    scrollTo('section-planning')
+  }
+
+  const goVoyageurs = () => {
+    onOpenVoyageurs()
+  }
+
+  const goBudget = () => {
+    setTab('budget')
+    scrollTo('section-planning')
+  }
+
   return (
     <>
       <nav className="bottom-nav">
-        <button className={`bn-item${tab === 'planning' ? ' active' : ''}`} onClick={() => setTab('planning')}>
+        <button className={`bn-item${tab === 'planning' ? ' active' : ''}`} onClick={goPlanning}>
           <span className="bn-icon">📋</span>
           Planning
         </button>
-        <button className="bn-item" onClick={onOpenVoyageurs}>
+        <button className="bn-item" onClick={goVoyageurs}>
           <span className="bn-icon">👥</span>
           Voyageurs
         </button>
-        <button className={`bn-item${tab === 'budget' ? ' active' : ''}`} onClick={() => setTab('budget')}>
+        <button className={`bn-item${tab === 'budget' ? ' active' : ''}`} onClick={goBudget}>
           <span className="bn-icon">💰</span>
           Budget
         </button>
@@ -41,7 +65,7 @@ export default function BottomNav({
               </div>
             )}
 
-            <button className="bn-sheet-item" onClick={() => { setTab('infos'); setShowMore(false) }}>
+            <button className="bn-sheet-item" onClick={() => { setTab('infos'); scrollTo('section-planning'); setShowMore(false) }}>
               <span>ℹ️</span> Infos du séjour
             </button>
 

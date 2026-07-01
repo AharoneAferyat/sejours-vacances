@@ -118,9 +118,9 @@ export default function AppHeader({
 
           {showTripMenu && (
             <div style={{
-              position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 250,
+              position: 'fixed', top: 56, left: 10, zIndex: 300,
               background: '#fff', border: '1px solid var(--border)', borderRadius: 12,
-              boxShadow: '0 8px 32px rgba(0,0,0,.2)', minWidth: 220, maxWidth: '88vw', overflow: 'hidden'
+              boxShadow: '0 8px 32px rgba(0,0,0,.2)', minWidth: 220, maxWidth: 'calc(100vw - 20px)', overflow: 'hidden'
             }}>
               <div style={{ padding: '.5rem .8rem', fontSize: '.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
                 Mes séjours
@@ -212,7 +212,7 @@ export default function AppHeader({
 
           {showAccountMenu && (
             <div style={{
-              position: 'fixed', top: 60, right: 12, zIndex: 250,
+              position: 'fixed', top: 56, right: 10, zIndex: 300,
               background: '#fff', border: '1px solid var(--border)', borderRadius: 14,
               boxShadow: '0 12px 40px rgba(0,0,0,.22)', minWidth: 200, maxWidth: 'calc(100vw - 24px)', overflow: 'hidden'
             }}>
@@ -286,7 +286,7 @@ export default function AppHeader({
         })}
       </div>
 
-      {(showTripMenu || showAccountMenu) && <div style={{ position: 'fixed', inset: 0, zIndex: 240 }} onClick={() => { setShowTripMenu(false); setShowAccountMenu(false) }} />}
+      {(showTripMenu || showAccountMenu) && <div style={{ position: 'fixed', inset: 0, zIndex: 299 }} onClick={() => { setShowTripMenu(false); setShowAccountMenu(false) }} />}
     </header>
   )
 }

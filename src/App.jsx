@@ -316,7 +316,7 @@ export default function App() {
       <div className="app-layout">
 
         {/* LEFT: SAC À DOS */}
-        <div className="col-side">
+        <div className="col-side" id="section-sac">
           <div className="col-head"><h2>🎒 Sac à dos</h2></div>
           {visibleVoyageurs.length > 1 && (
             <div className="tabs" style={{ marginBottom: '.5rem' }}>
@@ -337,7 +337,7 @@ export default function App() {
         </div>
 
         {/* CENTER: PLANNING / INFOS */}
-        <div className="col-center">
+        <div className="col-center" id="section-planning">
           <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.75rem' }}>
             <div className="tabs" style={{ flex: 1, marginBottom: 0 }}>
               <button className={`tab-btn${tab === 'planning' ? ' active' : ''}`} onClick={() => setTab('planning')}>📋 Planning</button>

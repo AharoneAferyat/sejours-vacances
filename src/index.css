@@ -918,3 +918,9 @@ body {
   color: var(--text); text-align: left;
 }
 .bn-sheet-item span:first-child { font-size: 1.15rem; }
+
+/* Cacher les onglets du centre sur mobile (bottom bar les remplace) */
+@media (max-width: 600px) {
+  .tabs { display: none !important; }
+  .tabs + button { display: none !important; } /* bouton IA Randos à côté des onglets */
+}
