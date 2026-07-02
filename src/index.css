@@ -76,11 +76,8 @@ body {
 /* Header zone prend toute la largeur */
 .app-header-zone { width: 100%; flex-shrink: 0; }
 
-/* MainHeader desktop — caché sur mobile */
+/* MainHeader visible partout */
 .main-header-desktop { display: block; }
-@media (max-width: 768px) {
-  .main-header-desktop { display: none !important; }
-}
 
 /* Header zone (bandeau séjour + météo) */
 .app-header-zone { width: 100%; }
@@ -89,8 +86,8 @@ body {
 .app-content { padding: 1.25rem 1.5rem 2rem; width: 100%; }
 .content-pane { width: 100%; }
 
-/* Mobile bar cachée par défaut */
-.app-mobile-bar { display: none; }
+/* Mobile bar supprimée — MainHeader gère tout */
+.app-mobile-bar { display: none !important; }
 
 @media (max-width: 768px) {
   .app-shell { overflow-x: hidden; display: block !important; }

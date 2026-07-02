@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from './hooks/useStore'
 import { getTodayStr, genId, formatDate, displayToISO } from './utils'
 import { validateInviteCode, consumeInviteCode } from './firebase'
@@ -183,6 +183,8 @@ export default function App() {
   const [showAI, setShowAI] = useState(false)
   const [showGlobalBudget, setShowGlobalBudget] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
+  // Sync showAdmin avec tab admin
+  useEffect(() => { if (tab === 'admin') setShowAdmin(true) }, [tab])
   const [showInviteScreen, setShowInviteScreen] = useState(false)
   const [aiTargetDayId, setAiTargetDayId] = useState(null)
 
@@ -315,6 +317,20 @@ export default function App() {
 
         {/* ── CONTENU selon onglet ── */}
         <div className="app-content">
+          {/* ADMIN */}
+          {tab === 'admin' && (
+            <div className="content-pane">
+              {showAdmin && store.isAdmin && (
+                <AdminPanel
+                  uid={store.uid}
+                  adminEmail={store.userEmail}
+                  onClose={() => setTab('dashboard')}
+                  onManageTrip={(user, trip) => alert(`Gestion du séjour "${trip.name}" — à venir !`)}
+                />
+              )}
+            </div>
+          )}
+
           {/* TABLEAU DE BORD — Hype Up (uniquement sur dashboard) */}
           {tab === 'dashboard' && trip && (
             <div className="content-pane">

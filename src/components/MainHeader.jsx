@@ -97,22 +97,22 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(0,0,0,.2) 0%,rgba(0,0,0,.5) 100%)', pointerEvents:'none' }} />
 
       {/* Titre + horloge centrés */}
-      <div style={{ position:'relative', zIndex:1, textAlign:'center', padding:'1rem 1.5rem .8rem', borderBottom:'1px solid rgba(255,255,255,.08)', display:'flex', flexDirection:'column', alignItems:'center', gap:'.4rem' }}>
-        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:'clamp(1.1rem,2.5vw,1.6rem)', fontWeight:700, background:'linear-gradient(135deg,#fff,rgba(255,255,255,.78))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
+      <div style={{ position:'relative', zIndex:1, textAlign:'center', padding:'clamp(.75rem,2vw,1rem) 1.5rem clamp(.6rem,1.5vw,.8rem)', borderBottom:'1px solid rgba(255,255,255,.08)', display:'flex', flexDirection:'column', alignItems:'center', gap:'.35rem' }}>
+        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:'clamp(.95rem,3vw,1.6rem)', fontWeight:700, background:'linear-gradient(135deg,#fff,rgba(255,255,255,.78))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
           Séjours Vacances
         </div>
-        <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'center', background:'rgba(255,255,255,.08)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,.12)', borderRadius:14, padding:'.4rem 1.4rem', gap:'.05rem' }}>
-          <span style={{ fontFamily:'monospace', fontSize:'.75rem', opacity:.82, fontWeight:500 }}>{time.dateFR}</span>
+        <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'center', background:'rgba(255,255,255,.08)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,.12)', borderRadius:14, padding:'clamp(.3rem,1vw,.45rem) clamp(.8rem,3vw,1.4rem)', gap:'.04rem' }}>
+          <span style={{ fontFamily:'monospace', fontSize:'clamp(.65rem,2vw,.78rem)', opacity:.82, fontWeight:500 }}>{time.dateFR}</span>
           <div style={{ display:'flex', alignItems:'baseline', gap:'.3rem' }}>
-            <span style={{ fontFamily:'monospace', fontSize:'1.55rem', fontWeight:300, letterSpacing:'.04em' }}>{time.local}</span>
+            <span style={{ fontFamily:'monospace', fontSize:'clamp(1.1rem,5vw,1.6rem)', fontWeight:300, letterSpacing:'.04em' }}>{time.local}</span>
             {syncing && <span style={{ opacity:.35, fontSize:'.7rem' }}>☁️</span>}
           </div>
-          <span style={{ fontFamily:'monospace', opacity:.38, fontSize:'.62rem', fontWeight:500 }}>UTC {time.utc} · {time.dateEN}</span>
+          <span style={{ fontFamily:'monospace', opacity:.38, fontSize:'clamp(.55rem,1.5vw,.65rem)', fontWeight:500 }}>UTC {time.utc} · {time.dateEN}</span>
         </div>
       </div>
 
       {/* Onglets séjours redesignés */}
-      <div style={{ position:'relative', zIndex:1, display:'flex', gap:'.4rem', padding:'.55rem 1.5rem', overflowX:'auto', scrollbarWidth:'none', alignItems:'center' }}>
+      <div style={{ position:'relative', zIndex:1, display:'flex', gap:'.35rem', padding:'.45rem clamp(.75rem,3vw,1.5rem)', overflowX:'auto', scrollbarWidth:'none', WebkitOverflowScrolling:'touch', alignItems:'center' }}>
         {trips.map((t, i) => {
           const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
           const active = t.id === activeTrip?.id

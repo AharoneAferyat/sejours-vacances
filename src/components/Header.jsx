@@ -67,6 +67,7 @@ export default function AppHeader({
     {id:'valise',   icon:'🧳', label:'Valise'},
     {id:'sac',      icon:'🎒', label:'Sac à dos'},
     {id:'ai',       icon:'🤖', label:'IA Activités'},
+    ...(isAdmin ? [{id:'admin', icon:'⚙️', label:'Administration', color:'rgba(255,200,80,.85)'}] : []),
   ]
 
   const dd={
@@ -107,7 +108,7 @@ export default function AppHeader({
         {[
           {icon:'👥',label:'Voyageurs',fn:onOpenVoyageurs},
           onOpenGlobalBudget&&{icon:'💰',label:'Budget global',fn:onOpenGlobalBudget},
-          isAdmin&&onOpenAdmin&&{icon:'⚙️',label:'Administration',fn:onOpenAdmin,color:'rgba(255,200,80,.85)'},
+
           {icon:'→',label:'Déconnexion',fn:()=>{setMobileMenu(null);onSignOut()},color:'rgba(255,110,90,.85)'},
         ].filter(Boolean).map((item,i)=>(
           <button key={i} onClick={item.fn}
