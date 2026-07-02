@@ -226,10 +226,9 @@ export async function getAllUsers() {
 
 export async function deleteInviteCode(code) {
   try {
-    const { deleteDoc } = await import('firebase/firestore')
     await deleteDoc(doc(db, 'inviteCodes', code))
     return true
-  } catch { return false }
+  } catch (e) { console.error('deleteInviteCode failed:', e); return false }
 }
 
 // ─── ADMIN: TOUS LES UTILISATEURS + SÉJOURS ────────────────────────────────
@@ -268,31 +267,42 @@ export async function getAllUsersWithTrips() {
 export async function adminDeleteTrip(uid, tripId) {
   try {
     const snap = await getDoc(doc(db, 'users', uid))
-    if (!snap.exists()) return false
+    if (!snap.exists()) { console.error('User not found:', uid); return false }
     const data = snap.data()
     const trips = (data.trips || []).filter(t => t.id !== tripId)
     await setDoc(doc(db, 'users', uid), { ...data, trips, updatedAt: Date.now() })
     return true
-  } catch { return false }
+  } catch (e) { console.error('adminDeleteTrip failed:', e); return false }
 }
 
 // Supprimer accès utilisateur (révoque invitation, garde les données)
 export async function adminRevokeUser(uid) {
   try {
-    const { deleteDoc } = await import('firebase/firestore')
     await deleteDoc(doc(db, 'allowedUsers', uid))
     return true
-  } catch { return false }
+  } catch (e) { console.error('adminRevokeUser failed:', e); return false }
 }
 
 // Supprimer utilisateur complètement (accès + données)
 export async function adminDeleteUser(uid) {
   try {
-    const { deleteDoc } = await import('firebase/firestore')
-    await Promise.all([
-      deleteDoc(doc(db, 'allowedUsers', uid)),
-      deleteDoc(doc(db, 'users', uid)),
-    ])
+    // Supprimer dans les deux collections
+    try { await deleteDoc(doc(db, 'allowedUsers', uid)) } catch {}
+    try { await deleteDoc(doc(db, 'users', uid)) } catch {}
     return true
-  } catch { return false }
+  } catch (e) { console.error('adminDeleteUser failed:', e); return false }
+}
+
+
+// Générer un code de partage pour un séjour
+export async function generateShareCode(uid, tripId) {
+  const code = 'SHR-' + Array.from({length:6}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('')
+  // Stocker dans guestAccess pour que n'importe qui puisse le trouver
+  await setDoc(doc(db, 'guestAccess', code), {
+    ownerUid: uid,
+    tripId: tripId,
+    createdAt: Date.now(),
+    type: 'share-link'
+  })
+  return code
 }

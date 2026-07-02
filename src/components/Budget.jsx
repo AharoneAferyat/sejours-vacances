@@ -136,7 +136,14 @@ function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId }) 
             </div>
             <div className="form-group">
               <label>Pour qui</label>
-              <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', marginTop: '.3rem' }}>
+              <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', marginTop: '.3rem', alignItems: 'center' }}>
+                <button onClick={() => set('participants', form.participants.length === voyageurs.length ? [] : voyageurs.map(v => v.id))} style={{
+                  padding: '5px 12px', borderRadius: 20,
+                  border: `1.5px solid ${form.participants.length === voyageurs.length ? 'var(--green)' : 'var(--border)'}`,
+                  background: form.participants.length === voyageurs.length ? 'var(--green)' : 'transparent',
+                  color: form.participants.length === voyageurs.length ? '#fff' : 'var(--text-muted)',
+                  cursor: 'pointer', fontFamily: 'inherit', fontSize: '.78rem', fontWeight: 600
+                }}>👥 Tous</button>
                 {voyageurs.map(v => (
                   <button key={v.id} onClick={() => toggleParticipant(v.id)} style={{
                     padding: '5px 12px', borderRadius: 20,

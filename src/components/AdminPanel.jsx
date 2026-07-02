@@ -163,7 +163,7 @@ function UsersTree({ users, loading, onSelectTrip, onRefresh }) {
           <div style={{
             display: 'flex', alignItems: 'center', gap: '.65rem',
             background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.75rem 1rem'
-          }}>
+          }} className="admin-user-row">
             <span style={{ fontSize: '1.1rem', cursor: 'pointer' }} onClick={() => toggle(u.uid)}>{expanded[u.uid] ? '📂' : '📁'}</span>
             <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggle(u.uid)}>
               <div style={{ fontWeight: 600, fontSize: '.88rem' }}>
@@ -176,7 +176,7 @@ function UsersTree({ users, loading, onSelectTrip, onRefresh }) {
               </div>
             </div>
             {/* Actions utilisateur */}
-            <div style={{ display: 'flex', gap: '.35rem', flexShrink: 0 }}>
+            <div className="admin-actions" style={{ display: 'flex', gap: '.35rem', flexShrink: 0 }}>
               <button onClick={() => handleRevokeUser(u)}
                 title="Révoquer l'accès (garde les séjours)"
                 style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 7, padding: '4px 9px', cursor: 'pointer', fontSize: '.72rem', fontWeight: 500, color: 'var(--amber)', fontFamily: 'inherit' }}>
@@ -376,7 +376,7 @@ export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip, inl
       <div style={{ padding: '1.5rem' }}>
         {!selected ? (
           <>
-            <div style={{ maxWidth: 900, margin: '0 auto 1.5rem', display: 'flex', gap: '.4rem', background: 'var(--gray-light)', borderRadius: 10, padding: '3px' }}>
+            <div className="admin-tabs" style={{ maxWidth: 900, margin: '0 auto 1.5rem', display: 'flex', gap: '.4rem', background: 'var(--gray-light)', borderRadius: 10, padding: '3px' }}>
               {[['users', '👥 Utilisateurs & séjours'], ['budget', '💰 Budget global'], ['codes', "🔑 Codes d'invitation"]].map(([key, label]) => (
                 <button key={key} onClick={() => setTab(key)} style={{
                   flex: 1, padding: '8px 0', border: 'none', borderRadius: 8, cursor: 'pointer',

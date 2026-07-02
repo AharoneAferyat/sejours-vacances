@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { generateShareCode } from '../firebase'
 
 const ICONS = ['📋','🏕','🚄','📞','🗺','🛡','🚌','🍽','💊','🏥','💰','🔑','⚠️','📸','🎒','🌤','🏊','⛷','🦌','🌿','🏔','🌊','🎯','📍','🗓','💡']
 
@@ -55,6 +56,54 @@ function renderContent(text) {
     const rendered = parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)
     return <div key={i}>{rendered.some(Boolean) ? rendered : '\u00A0'}</div>
   })
+}
+
+
+function ShareLink({ tripId, tripName }) {
+  const [shareUrl, setShareUrl] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      // Pour l'instant on génère un code simple
+      const code = 'SHR-' + Array.from({length:6}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('')
+      const url = window.location.origin + '?share=' + code
+      setShareUrl(url)
+    } catch (e) {
+      alert('Erreur lors de la création du lien')
+    }
+    setLoading(false)
+  }
+
+  const copy = () => {
+    navigator.clipboard.writeText(shareUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (!shareUrl) {
+    return (
+      <button onClick={generate} disabled={loading} className="btn btn-primary" style={{ marginTop: '.5rem' }}>
+        {loading ? '⏳ Génération...' : '🔗 Générer un lien d\'invitation'}
+      </button>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: '.5rem' }}>
+      <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
+        <input value={shareUrl} readOnly style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.78rem', background: 'var(--bg)', fontFamily: 'monospace' }} onClick={e => e.target.select()} />
+        <button onClick={copy} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
+          {copied ? '✅ Copié !' : '📋 Copier'}
+        </button>
+      </div>
+      <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginTop: '.3rem' }}>
+        Partage ce lien avec tes compagnons de voyage
+      </div>
+    </div>
+  )
 }
 
 export default function InfosTab({ trip, onUpdateTrip }) {
@@ -118,6 +167,14 @@ export default function InfosTab({ trip, onUpdateTrip }) {
           </button>
         )
       }
-    </div>
+    
+      {/* Section partage */}
+      <div className="info-card" style={{ borderLeft: '3px solid var(--green)' }}>
+        <h3>🔗 Inviter des participants</h3>
+        <p>Génère un lien de partage pour ce séjour. Toute personne avec le lien pourra voir et participer.</p>
+        <ShareLink tripId={trip.id} tripName={trip.name} />
+      </div>
+
+</div>
   )
 }

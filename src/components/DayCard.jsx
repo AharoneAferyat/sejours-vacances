@@ -168,18 +168,20 @@ export default function DayCard({ day, tripId, isToday, onValidateDay, onDeleteD
   const [showForm, setShowForm] = useState(false)
 
   const stats = calcDayStats(day.activities)
+  const isVoyage = day.activities.some(a => a.type === 'voyage')
 
   return (
     <>
-      <div className={`card${isToday ? ' today' : ''}`}>
+      <div className={`card${isToday ? ' today' : ''}`} style={isVoyage ? { borderLeft: '4px solid var(--blue)', background: 'linear-gradient(90deg, var(--blue-light) 0%, var(--card) 15%)' } : {}}>
         <div className="card-header" style={{ cursor: 'default' }}>
-          <div className="card-icon" style={{ background: 'var(--blue-light)', fontSize: '.9rem' }}>
-            {isToday ? '📍' : '📅'}
+          <div className="card-icon" style={{ background: isVoyage ? 'var(--blue)' : 'var(--blue-light)', color: isVoyage ? '#fff' : 'inherit', fontSize: '.9rem' }}>
+            {isVoyage ? '🚄' : isToday ? '📍' : '📅'}
           </div>
           <div className="card-info">
             <div className="card-title">
               {isToday && <span style={{ color: 'var(--green-mid)' }}>▶ </span>}
               {day.label}
+              {isVoyage && <span style={{ marginLeft: '.4rem', fontSize: '.62rem', fontWeight: 600, color: 'var(--blue)', background: 'var(--blue-light)', padding: '1px 7px', borderRadius: 12, verticalAlign: 'middle' }}>TRAJET</span>}
             </div>
             {(stats.totalKm > 0 || stats.totalMin > 0) && (
               <div className="card-sub">
