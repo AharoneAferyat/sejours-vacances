@@ -89,35 +89,6 @@ export default function AppHeader({
 
       </div>
 
-      {/* Séjours */}
-      <div style={{padding:'.75rem .9rem',borderBottom:'1px solid rgba(255,255,255,.08)'}}>
-        <div style={{fontSize:'.58rem',fontWeight:600,textTransform:'uppercase',letterSpacing:'.09em',color:'rgba(255,255,255,.38)',marginBottom:'.35rem'}}>Séjours</div>
-        {trips.map((t,i)=>{
-          const color=t.color||TRIP_COLORS[i%TRIP_COLORS.length]
-          const active=t.id===activeTrip?.id
-          return(
-            <div key={t.id}
-              style={{display:'flex',alignItems:'center',gap:'.4rem',padding:'.42rem .5rem',borderRadius:9,cursor:'pointer',background:active?'rgba(255,255,255,.18)':'transparent',color:active?'#fff':'rgba(255,255,255,.72)',marginBottom:'.06rem',transition:'background .15s'}}
-              onClick={()=>onSelectTrip(t.id)}
-              onMouseEnter={e=>{if(!active)e.currentTarget.style.background='rgba(255,255,255,.1)'}}
-              onMouseLeave={e=>{if(!active)e.currentTarget.style.background='transparent'}}>
-              <div style={{width:6,height:6,borderRadius:'50%',background:color,flexShrink:0}}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:'.79rem',fontWeight:active?600:400,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.name}</div>
-                {t.startDate&&<div style={{fontSize:'.6rem',opacity:.5}}>{new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})} → {new Date(t.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</div>}
-              </div>
-              <button onClick={e=>{e.stopPropagation();onEditTrip(t)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:'.6rem',padding:'2px',color:'rgba(255,255,255,.35)',opacity:0,transition:'opacity .15s'}}
-                onMouseEnter={e=>e.target.style.opacity=1} onMouseLeave={e=>e.target.style.opacity=0}>✏️</button>
-            </div>
-          )
-        })}
-        <button onClick={onNewTrip} style={{width:'100%',background:'rgba(255,255,255,.07)',border:'1px dashed rgba(255,255,255,.18)',borderRadius:9,padding:'.38rem',color:'rgba(255,255,255,.48)',cursor:'pointer',fontFamily:'inherit',fontSize:'.74rem',fontWeight:500,marginTop:'.3rem',transition:'all .15s'}}
-          onMouseEnter={e=>{e.target.style.background='rgba(255,255,255,.15)';e.target.style.color='#fff'}}
-          onMouseLeave={e=>{e.target.style.background='rgba(255,255,255,.07)';e.target.style.color='rgba(255,255,255,.48)'}}>
-          ＋ Nouveau séjour
-        </button>
-      </div>
-
       {/* Onglets navigation */}
       <div style={{flex:1,padding:'.65rem .9rem',overflowY:'auto'}}>
         <div style={{fontSize:'.58rem',fontWeight:600,textTransform:'uppercase',letterSpacing:'.09em',color:'rgba(255,255,255,.38)',marginBottom:'.35rem'}}>Navigation</div>
