@@ -86,12 +86,7 @@ export default function AppHeader({
           <span style={{fontSize:'1.2rem'}}>🥾</span>
           <span style={{fontFamily:"'Playfair Display',serif",fontSize:'.9rem',fontWeight:700,color:'#fff',lineHeight:1.15}}>Séjours<br/>Vacances</span>
         </div>
-        {/* Horloge */}
-        <div style={{background:'rgba(255,255,255,.09)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,.12)',borderRadius:12,padding:'.7rem .85rem',color:'#fff'}}>
-          <div style={{fontSize:'.62rem',opacity:.58,marginBottom:'.1rem'}}>{time.dateFR}</div>
-          <div style={{fontFamily:'monospace',fontSize:'1.4rem',fontWeight:300,letterSpacing:'.04em',lineHeight:1}}>{time.local}</div>
-          <div style={{fontFamily:'monospace',fontSize:'.55rem',opacity:.32,marginTop:'.1rem'}}>UTC {time.utc}</div>
-        </div>
+
       </div>
 
       {/* Séjours */}
