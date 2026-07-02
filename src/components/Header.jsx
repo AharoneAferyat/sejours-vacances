@@ -130,62 +130,10 @@ export default function AppHeader({
     </aside>
   )
 
-  // ── MOBILE TOP BAR ────────────────────────────────────────────────────────
-  const MobileBar = () => (
-    <div className="app-mobile-bar" style={{background:bg,transition:'background 2s ease'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.65rem .9rem'}}>
-        {/* Séjour actif */}
-        <div ref={refTrips} style={{position:'relative'}}>
-          <button style={glassBtn} onClick={()=>tog('trips')}>
-            🥾 <span style={{maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{activeTrip?.name||'Séjours'}</span>
-            <span style={{fontSize:'.55rem',opacity:.5}}>{mobileMenu==='trips'?'▴':'▾'}</span>
-          </button>
-          {mobileMenu==='trips'&&(
-            <div style={{...dd,left:0,maxWidth:'calc(100vw - 1.8rem)'}}>
-              <div style={{padding:'.4rem .85rem',fontSize:'.62rem',fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em',color:'var(--text-muted)',borderBottom:'1px solid var(--border)'}}>Mes séjours</div>
-              {trips.map((t,i)=>{
-                const color=t.color||TRIP_COLORS[i%TRIP_COLORS.length],active=t.id===activeTrip?.id
-                return(
-                  <div key={t.id} style={{display:'flex',alignItems:'center',gap:'.45rem',padding:'.5rem .85rem',background:active?'#f5f4f0':'#fff',borderBottom:'1px solid var(--border)',cursor:'pointer'}} onClick={()=>{onSelectTrip(t.id);setMobileMenu(null)}}>
-                    <div style={{width:7,height:7,borderRadius:'50%',background:color,flexShrink:0}}/>
-                    <span style={{fontSize:'.83rem',fontWeight:active?600:400,color:'var(--text)'}}>{t.name}</span>
-                  </div>
-                )
-              })}
-              <button style={{width:'100%',padding:'.52rem .85rem',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'.83rem',fontWeight:600,color:'var(--green)',textAlign:'left'}} onClick={()=>{onNewTrip();setMobileMenu(null)}}>＋ Nouveau séjour</button>
-            </div>
-          )}
-        </div>
-
-        {/* Heure */}
-        <div style={{fontFamily:'monospace',color:'#fff',fontSize:'.88rem',fontWeight:500}}>{time.local}</div>
-
-        {/* Compte */}
-        <div ref={refAccount} style={{position:'relative'}}>
-          <button style={{...glassBtn,borderRadius:'50%',width:32,height:32,padding:0,justifyContent:'center',fontSize:'.8rem'}} onClick={()=>tog('account')}>
-            {user?.charAt(0).toUpperCase()}
-          </button>
-          {mobileMenu==='account'&&(
-            <div style={{...dd,right:0}}>
-              <div style={{padding:'.62rem .92rem',borderBottom:'1px solid var(--border)',background:'#f8f7fc'}}>
-                <div style={{fontSize:'.82rem',fontWeight:600}}>{user}</div>
-                <div style={{fontSize:'.64rem',color:'var(--text-muted)'}}>Connecté</div>
-              </div>
-              <button style={mi} onClick={()=>{onOpenVoyageurs();setMobileMenu(null)}}><span>👥</span>Voyageurs</button>
-              {onOpenGlobalBudget&&<button style={mi} onClick={()=>{onOpenGlobalBudget();setMobileMenu(null)}}><span>💰</span>Budget global</button>}
-              {isAdmin&&onOpenAdmin&&<button style={{...mi,color:'#8F4E20'}} onClick={()=>{onOpenAdmin();setMobileMenu(null)}}><span>⚙️</span>Administration</button>}
-              {onSignOut&&<button style={{...mi,color:'var(--red)',borderTop:'1px solid var(--border)'}} onClick={()=>{setMobileMenu(null);onSignOut()}}><span>🚪</span>Déconnexion</button>}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
 
   return (
     <>
       <Sidebar />
-      <MobileBar />
     </>
   )
 }

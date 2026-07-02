@@ -34,6 +34,7 @@ export default function BottomNav({ tab, setTab, onOpenVoyageurs, onOpenGlobalBu
               </div>
             )}
             <button className="bn-sheet-item" onClick={()=>go('infos')}><span>ℹ️</span>Infos du séjour</button>
+            <button className="bn-sheet-item" onClick={()=>go('valise')}><span>🧳</span>Valise</button>
             <button className="bn-sheet-item" onClick={()=>go('sac')}><span>🎒</span>Sac à dos</button>
             <button className="bn-sheet-item" onClick={()=>go('ai')}><span>🤖</span>IA Activités</button>
             {onOpenVoyageurs && <button className="bn-sheet-item" onClick={()=>{onOpenVoyageurs();setShowMore(false)}}><span>👥</span>Voyageurs</button>}
