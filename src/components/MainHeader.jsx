@@ -142,8 +142,8 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
       return
     }
     
-    // Si le séjour a déjà une photo stockée, l'utiliser directement
-    if (activeTrip.headerPhoto) {
+    // Si le séjour a déjà une photo smart-croppée, l'utiliser directement
+    if (activeTrip.headerPhoto && activeTrip.headerPhoto.includes('crop=entropy')) {
       setPhoto(activeTrip.headerPhoto)
       return
     }
@@ -204,7 +204,7 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
   return (
     <div className="main-header-desktop" style={{ position:'relative', overflow:'hidden', background:bg, transition:'background 2s ease', color:'#fff' }}>
       {/* Photo de fond */}
-      {photo && <div style={{ position:'absolute', inset:0, backgroundImage:`url(${photo})`, backgroundSize:'cover', backgroundPosition:'center 65%', opacity:.32, transition:'opacity 1.5s' }} />}
+      {photo && <div style={{ position:'absolute', inset:0, backgroundImage:`url(${photo})`, backgroundSize:'cover', backgroundPosition:'center', opacity:.32, transition:'opacity 1.5s' }} />}
       {/* Gradient overlay */}
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,rgba(0,0,0,.2) 0%,rgba(0,0,0,.5) 100%)', pointerEvents:'none' }} />
 

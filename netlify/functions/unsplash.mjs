@@ -36,8 +36,9 @@ export default async function handler(req) {
         return new Response(JSON.stringify({ url: null }), { headers: { 'Content-Type': 'application/json' } })
       }
       const pick = data2.results[Math.floor(Math.random() * data2.results.length)]
+      const smartUrl2 = pick.urls.raw + '&w=1600&h=500&fit=crop&crop=entropy&auto=format&q=80'
       return new Response(JSON.stringify({
-        url: pick.urls.regular,
+        url: smartUrl2,
         thumb: pick.urls.small,
         credit: pick.user.name,
         creditUrl: pick.user.links.html,
@@ -47,8 +48,10 @@ export default async function handler(req) {
     // Choisir une photo au hasard parmi les résultats
     const pick = data.results[Math.floor(Math.random() * data.results.length)]
     
+    // URL custom : smart crop centré sur le sujet, format header (large et court)
+    const smartUrl = pick.urls.raw + '&w=1600&h=500&fit=crop&crop=entropy&auto=format&q=80'
     return new Response(JSON.stringify({
-      url: pick.urls.regular,
+      url: smartUrl,
       thumb: pick.urls.small,
       credit: pick.user.name,
       creditUrl: pick.user.links.html,
