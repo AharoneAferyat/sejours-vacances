@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { genId } from '../utils'
 import {
   saveToCloud, loadFromCloud, subscribeToCloud,
   onAuthChange, signInWithGoogle, signOutUser, isUserAllowed, consumeInviteCode,
@@ -286,10 +287,12 @@ export function useStore() {
 
   // ─── ACTIVITIES ────────────────────────────────────────────────────────────
   const addActivity = useCallback((tripId, dayId, activity) => {
+    // Toujours s'assurer que l'activité a un id unique
+    const actWithId = { ...activity, id: activity.id || genId('act'), notes: activity.notes || [], done: activity.done || false }
     update(s => ({
       ...s,
       trips: s.trips.map(t => t.id === tripId
-        ? { ...t, days: t.days.map(d => d.id === dayId ? { ...d, activities: [...d.activities, activity] } : d) }
+        ? { ...t, days: t.days.map(d => d.id === dayId ? { ...d, activities: [...d.activities, actWithId] } : d) }
         : t)
     }))
   }, [update])

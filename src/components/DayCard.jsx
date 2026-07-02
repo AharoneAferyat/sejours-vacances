@@ -3,6 +3,14 @@ import { DIFFICULTY } from '../data/defaults'
 import { calcDayStats, formatDuration, formatDateShort, displayToISO } from '../utils'
 import ActivityForm from './ActivityForm'
 
+// Convertit **gras** et _italique_ en HTML
+function renderMd(text) {
+  if (!text) return ''
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+}
+
 const FEATURE_MAP = {
   lac: ['pill-lac', '🏞 Lac'],
   cascade: ['pill-cascade', '💦 Cascade'],
@@ -117,11 +125,11 @@ function ActivityDetail({ act, onUpdate, onDelete, onMove, onValidate }) {
 
           {/* Desc */}
           {act.desc && (
-            <div className="desc" dangerouslySetInnerHTML={{ __html: act.desc }} />
+            <div className="desc" dangerouslySetInnerHTML={{ __html: renderMd(act.desc) }} />
           )}
 
           {/* Tip */}
-          {act.tip && <div className="tip">💡 {act.tip}</div>}
+          {act.tip && <div className="tip" dangerouslySetInnerHTML={{ __html: '💡 ' + renderMd(act.tip) }} />}
 
           {/* Actions */}
           <div className="card-actions">
