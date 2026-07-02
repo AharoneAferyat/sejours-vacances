@@ -106,6 +106,20 @@ export function useStore() {
     return () => unsub()
   }, [])
 
+  // Re-vérifier si l'utilisateur est toujours autorisé au focus de la page
+  useEffect(() => {
+    if (!uid || ADMIN_UIDS.includes(uid)) return
+    const checkAllowed = async () => {
+      const still = await isUserAllowed(uid, userEmail || '')
+      if (!still) {
+        setIsAllowed(false)
+        signOutUser()
+      }
+    }
+    window.addEventListener('focus', checkAllowed)
+    return () => window.removeEventListener('focus', checkAllowed)
+  }, [uid, userEmail])
+
   // ─── LOAD DATA ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (authLoading) return
