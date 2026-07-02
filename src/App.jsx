@@ -3,6 +3,7 @@ import { useStore } from './hooks/useStore'
 import { getTodayStr, genId, formatDate, displayToISO } from './utils'
 import { validateInviteCode, consumeInviteCode } from './firebase'
 import Header from './components/Header'
+import EmptyState from './components/EmptyState'
 import MainHeader from './components/MainHeader'
 import BottomNav from './components/BottomNav'
 import WeatherStrip from './components/WeatherStrip'
@@ -323,6 +324,14 @@ export default function App() {
               onClose={() => setTab('dashboard')}
               onManageTrip={(user, t) => alert(`Gestion du séjour "${t.name}" — à venir !`)}
               inline={true}
+            />
+          )}
+
+          {/* EMPTY STATE — aucun séjour */}
+          {!trip && tab !== 'admin' && (
+            <EmptyState
+              onCreateTrip={() => setShowTripForm(true)}
+              userName={store.isGuest ? store.guestSession?.voyageurName : store.userEmail?.split('@')[0]}
             />
           )}
 
