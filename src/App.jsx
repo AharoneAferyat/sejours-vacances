@@ -3,6 +3,7 @@ import { useStore } from './hooks/useStore'
 import { getTodayStr, genId, formatDate, displayToISO } from './utils'
 import { validateInviteCode, consumeInviteCode } from './firebase'
 import Header from './components/Header'
+import MainHeader from './components/MainHeader'
 import BottomNav from './components/BottomNav'
 import WeatherStrip from './components/WeatherStrip'
 import { useWeather } from './hooks/useWeather'
@@ -292,13 +293,14 @@ export default function App() {
           trip={trip}
         />
 
-        {/* ── HEADER PLEINE LARGEUR (titre + séjour + météo) — TOUJOURS VISIBLE ── */}
+        {/* ── HEADER PLEINE LARGEUR (titre + horloge + photo) — DESKTOP UNIQUEMENT ── */}
+        <MainHeader trips={store.trips} activeTrip={trip} onSelectTrip={id => { store.setActiveTrip(id); setTab('dashboard') }} onEditTrip={t => setEditingTrip(t)} onDeleteTrip={id => store.deleteTrip(id)} onNewTrip={() => setShowTripForm(true)} onOpenVoyageurs={() => setShowVoyageurs(true)} onOpenGlobalBudget={!store.isGuest || store.trips?.length > 1 ? () => setShowGlobalBudget(true) : null} isAdmin={store.isAdmin} onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null} onSignOut={store.signOut} userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail} syncing={store.syncing} />
+
+        {/* ── BANDEAU SÉJOUR + MÉTÉO — TOUJOURS VISIBLE ── */}
         {trip && (
           <div className="app-header-zone">
-            {/* Danger alert */}
             <DangerAlert weather={tomorrowWeather} destination={trip.destination || trip.name} />
-            {/* Bandeau séjour */}
-            <div style={{ background: tripColor, color: '#fff', padding: '.6rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+            <div style={{ background: tripColor, color: '#fff', padding: '.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.1rem', fontWeight: 700 }}>
                   {trip.name}
@@ -307,7 +309,6 @@ export default function App() {
                 {trip.accommodation && <div style={{ fontSize: '.73rem', opacity: .8 }}>{trip.accommodation}</div>}
               </div>
             </div>
-            {/* Météo — TOUJOURS VISIBLE */}
             <WeatherStrip lat={trip.lat} lon={trip.lon} locationName={trip.destination || trip.name} />
           </div>
         )}
