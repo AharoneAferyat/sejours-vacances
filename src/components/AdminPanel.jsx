@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createInviteCode, getAllInviteCodes, getAllUsersWithTrips, deleteInviteCode, adminDeleteTrip } from '../firebase'
+import { createInviteCode, getAllInviteCodes, getAllUsersWithTrips, deleteInviteCode, adminDeleteTrip, adminRevokeUser, adminDeleteUser } from '../firebase'
 
 function fmtDate(ts) {
   if (!ts) return '—'
@@ -131,9 +131,27 @@ function TripDetailView({ trip, ownerEmail, onBack, onManage, onDelete }) {
   )
 }
 
-function UsersTree({ users, loading, onSelectTrip }) {
+function UsersTree({ users, loading, onSelectTrip, onRefresh }) {
   const [expanded, setExpanded] = useState({})
   const toggle = (uid) => setExpanded(prev => ({ ...prev, [uid]: !prev[uid] }))
+
+  const handleRevokeUser = async (u) => {
+    if (!confirm(`Révoquer l'accès de ${u.email || 'cet utilisateur'} ?\nSes séjours seront conservés mais il ne pourra plus se connecter.`)) return
+    await adminRevokeUser(u.uid)
+    onRefresh()
+  }
+
+  const handleDeleteUser = async (u) => {
+    if (!confirm(`SUPPRIMER DÉFINITIVEMENT ${u.email || 'cet utilisateur'} ?\nSes séjours ET son accès seront supprimés. Irréversible.`)) return
+    await adminDeleteUser(u.uid)
+    onRefresh()
+  }
+
+  const handleDeleteTrip = async (u, trip) => {
+    if (!confirm(`Supprimer le séjour "${trip.name}" ? Irréversible.`)) return
+    await adminDeleteTrip(u.uid, trip.id)
+    onRefresh()
+  }
 
   if (loading) return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Chargement…</div>
   if (users.length === 0) return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '.88rem' }}>Aucun utilisateur trouvé</div>
@@ -142,12 +160,12 @@ function UsersTree({ users, loading, onSelectTrip }) {
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       {users.map(u => (
         <div key={u.uid} style={{ marginBottom: '.6rem' }}>
-          <div onClick={() => toggle(u.uid)} style={{
-            display: 'flex', alignItems: 'center', gap: '.65rem', cursor: 'pointer',
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '.65rem',
             background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.75rem 1rem'
           }}>
-            <span style={{ fontSize: '1.1rem' }}>{expanded[u.uid] ? '📂' : '📁'}</span>
-            <div style={{ flex: 1 }}>
+            <span style={{ fontSize: '1.1rem', cursor: 'pointer' }} onClick={() => toggle(u.uid)}>{expanded[u.uid] ? '📂' : '📁'}</span>
+            <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggle(u.uid)}>
               <div style={{ fontWeight: 600, fontSize: '.88rem' }}>
                 {u.email || (u.trips[0]?.voyageurs?.[0]?.name ? `${u.trips[0].voyageurs[0].name} (sans email)` : `Utilisateur anonyme · ${u.uid.slice(0, 8)}…`)}
               </div>
@@ -157,7 +175,20 @@ function UsersTree({ users, loading, onSelectTrip }) {
                 {u.inviteCode && ` · code ${u.inviteCode}`}
               </div>
             </div>
-            <span style={{ color: 'var(--text-muted)', fontSize: '.8rem' }}>{expanded[u.uid] ? '▴' : '▾'}</span>
+            {/* Actions utilisateur */}
+            <div style={{ display: 'flex', gap: '.35rem', flexShrink: 0 }}>
+              <button onClick={() => handleRevokeUser(u)}
+                title="Révoquer l'accès (garde les séjours)"
+                style={{ background: 'var(--amber-light)', border: '1px solid var(--amber)', borderRadius: 7, padding: '4px 9px', cursor: 'pointer', fontSize: '.72rem', fontWeight: 500, color: 'var(--amber)', fontFamily: 'inherit' }}>
+                🚫 Révoquer
+              </button>
+              <button onClick={() => handleDeleteUser(u)}
+                title="Supprimer utilisateur + données"
+                style={{ background: 'var(--red-light)', border: '1px solid var(--red)', borderRadius: 7, padding: '4px 9px', cursor: 'pointer', fontSize: '.72rem', fontWeight: 500, color: 'var(--red)', fontFamily: 'inherit' }}>
+                🗑 Supprimer
+              </button>
+            </div>
+            <span style={{ color: 'var(--text-muted)', fontSize: '.8rem', cursor: 'pointer' }} onClick={() => toggle(u.uid)}>{expanded[u.uid] ? '▴' : '▾'}</span>
           </div>
 
           {expanded[u.uid] && (
@@ -165,18 +196,27 @@ function UsersTree({ users, loading, onSelectTrip }) {
               {u.trips.length === 0 ? (
                 <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', padding: '.5rem 0' }}>Aucun séjour créé</div>
               ) : u.trips.map(trip => (
-                <div key={trip.id} onClick={() => onSelectTrip(u, trip)} style={{
-                  display: 'flex', alignItems: 'center', gap: '.6rem', cursor: 'pointer',
+                <div key={trip.id} style={{
+                  display: 'flex', alignItems: 'center', gap: '.6rem',
                   background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: '.55rem .8rem', marginBottom: '.35rem'
                 }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', background: trip.color || 'var(--green)', flexShrink: 0 }}></span>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => onSelectTrip(u, trip)}>
                     <div style={{ fontWeight: 500, fontSize: '.83rem' }}>{trip.name}</div>
                     <div style={{ fontSize: '.7rem', color: 'var(--text-muted)' }}>
                       {trip.destination} {trip.startDate && `· ${fmtTripDate(trip.startDate)}`}
                     </div>
                   </div>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '.78rem' }}>→</span>
+                  <div style={{ display: 'flex', gap: '.3rem', flexShrink: 0 }}>
+                    <button onClick={() => onSelectTrip(u, trip)}
+                      style={{ background: 'var(--green-light)', border: '1px solid var(--green)', borderRadius: 7, padding: '3px 8px', cursor: 'pointer', fontSize: '.7rem', color: 'var(--green)', fontFamily: 'inherit' }}>
+                      👁 Voir
+                    </button>
+                    <button onClick={() => handleDeleteTrip(u, trip)}
+                      style={{ background: 'var(--red-light)', border: '1px solid var(--red)', borderRadius: 7, padding: '3px 8px', cursor: 'pointer', fontSize: '.7rem', color: 'var(--red)', fontFamily: 'inherit' }}>
+                      🗑
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -350,7 +390,7 @@ export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip, inl
             </div>
 
             {tab === 'users' && (
-              <UsersTree users={users} loading={loading} onSelectTrip={(user, trip) => setSelected({ user, trip })} />
+              <UsersTree users={users} loading={loading} onSelectTrip={(user, trip) => setSelected({ user, trip })} onRefresh={loadData} />
             )}
 
             {tab === 'budget' && (

@@ -71,7 +71,6 @@ export function useStore() {
   const [uid, setUid] = useState(null)
   const [userEmail, setUserEmail] = useState(null)
   const ADMIN_UIDS = ['lecSvR1xE5Ni17pngVfODqJ0XBs1']
-  const ADMIN_EMAILS = ['aaferyat@gmail.com', 'ahaferyat5@gmail.com', 'aharone.aferyat@ght-gpne.fr']
   const [isAdmin, setIsAdmin] = useState(false)
   const [isAllowed, setIsAllowed] = useState(false)
   const [allowedLoading, setAllowedLoading] = useState(true)
@@ -91,7 +90,7 @@ export function useStore() {
       setUserEmail(user?.email || null)
       if (user) {
         const emailFromProvider = user.providerData?.[0]?.email || user.email || ''
-        const admin = ADMIN_UIDS.includes(user.uid) || ADMIN_EMAILS.includes(emailFromProvider)
+        const admin = ADMIN_UIDS.includes(user.uid)
         setIsAdmin(admin)
         setIsAllowed(admin ? true : await isUserAllowed(user.uid, emailFromProvider))
         setAllowedLoading(false)

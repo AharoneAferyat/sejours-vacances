@@ -242,7 +242,7 @@ export async function getAllUsersWithTrips() {
     ])
     const allowedMap = {}
     allowedSnap.docs.forEach(d => { allowedMap[d.id] = d.data() })
-    const ADMIN_EMAILS_LIST = ['aaferyat@gmail.com', 'ahaferyat5@gmail.com', 'aharone.aferyat@ght-gpne.fr']
+    const ADMIN_UID = 'lecSvR1xE5Ni17pngVfODqJ0XBs1'
 
     return usersSnap.docs
       // Filtre les faux UIDs générés localement (genId('user') au lieu d'un vrai Firebase UID)
@@ -272,6 +272,27 @@ export async function adminDeleteTrip(uid, tripId) {
     const data = snap.data()
     const trips = (data.trips || []).filter(t => t.id !== tripId)
     await setDoc(doc(db, 'users', uid), { ...data, trips, updatedAt: Date.now() })
+    return true
+  } catch { return false }
+}
+
+// Supprimer accès utilisateur (révoque invitation, garde les données)
+export async function adminRevokeUser(uid) {
+  try {
+    const { deleteDoc } = await import('firebase/firestore')
+    await deleteDoc(doc(db, 'allowedUsers', uid))
+    return true
+  } catch { return false }
+}
+
+// Supprimer utilisateur complètement (accès + données)
+export async function adminDeleteUser(uid) {
+  try {
+    const { deleteDoc } = await import('firebase/firestore')
+    await Promise.all([
+      deleteDoc(doc(db, 'allowedUsers', uid)),
+      deleteDoc(doc(db, 'users', uid)),
+    ])
     return true
   } catch { return false }
 }
