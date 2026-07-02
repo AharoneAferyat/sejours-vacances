@@ -14,11 +14,17 @@ const PHOTOS = {
 
 function getPhoto(name='', dest='') {
   const t = (name + ' ' + dest).toLowerCase()
-  if (/mont|alp|isère|savoie|chamonix|montagne|ski|neige|glacier/.test(t)) return PHOTOS.mountain
-  if (/mer|plage|côte|méditerranée|sea|corse|bretagne/.test(t)) return PHOTOS.beach
-  if (/paris|lyon|marseille|bordeaux|ville|city/.test(t)) return PHOTOS.city
-  if (/forêt|bois|parc|arbre/.test(t)) return PHOTOS.forest
-  if (/lac|rivière|cascade|gorge/.test(t)) return PHOTOS.lake
+  // Montagne
+  if (/mont|alp|isère|savoie|chamonix|montagne|col|ski|neige|glacier|pyrén|vosges|jura|grenoble|annecy|briançon|albertville|gap|valmorel|serre.chevalier|hauteur|sommet|aiguille/.test(t)) return PHOTOS.mountain
+  // Mer / plage
+  if (/mer|océan|plage|côte|méditerranée|atlantique|sea|corse|bretagne|biarritz|nice|cannes|saint.tropez|ajaccio|bastia|arcachon|la.rochelle|île|marin|surf/.test(t)) return PHOTOS.beach
+  // Ville
+  if (/paris|lyon|marseille|bordeaux|toulouse|nantes|strasbourg|lille|montpellier|rennes|rouen|dijon|reims|clermont|amiens|tours|orléans|metz|nancy|limoges|poitiers|caen|perpignan|avignon|ville|city|urban|london|barcelona|amsterdam|roma|berlin|madrid|lisboa|bruxelles/.test(t)) return PHOTOS.city
+  // Forêt / nature
+  if (/forêt|bois|nature|campagne|verdure|parc|jungle|arbre|ardèche|dordogne|périgord|landes|sologne|auvergne|cévennes|morvan|limousin/.test(t)) return PHOTOS.forest
+  // Lac / eau
+  if (/lac|rivière|fleuve|gorge|canyon|cascade|étang|verdon|annecy.*lac|léman|bourget/.test(t)) return PHOTOS.lake
+  // Défaut = paysage voyage générique
   return PHOTOS.default
 }
 
@@ -128,7 +134,7 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
               </button>
               <div style={{ display:'flex', flexDirection:'column', gap:1, paddingRight:6, opacity:.6 }}>
                 <button onClick={() => onEditTrip(t)} title="Modifier" style={{ background:'none', border:'none', cursor:'pointer', fontSize:'.65rem', color:'#fff', padding:'1px 2px', lineHeight:1 }}>✏️</button>
-                {trips.length > 1 && <button onClick={() => confirm(`Supprimer "${t.name}" ?`) && onDeleteTrip(t.id)} title="Supprimer" style={{ background:'none', border:'none', cursor:'pointer', fontSize:'.65rem', color:'#fff', padding:'1px 2px', lineHeight:1 }}>🗑</button>}
+                <button onClick={() => confirm(`Supprimer "${t.name}" ?${trips.length === 1 ? '\nC\'est ton seul séjour, tu seras redirigé vers la page d\'accueil.' : ''}`) && onDeleteTrip(t.id)} title="Supprimer" style={{ background:'none', border:'none', cursor:'pointer', fontSize:'.65rem', color:'#fff', padding:'1px 2px', lineHeight:1 }}>🗑</button>
               </div>
             </div>
           )
