@@ -60,12 +60,13 @@ export default function AppHeader({
   const user=userEmail?.includes('@')?userEmail.split('@')[0]:userEmail?.slice(0,12)
 
   const NAV_ITEMS = [
+    {id:'dashboard',icon:'🏠', label:'Tableau de bord'},
     {id:'planning', icon:'📋', label:'Planning'},
     {id:'infos',    icon:'ℹ️',  label:'Infos'},
     {id:'budget',   icon:'💰', label:'Budget'},
     {id:'valise',   icon:'🧳', label:'Valise'},
     {id:'sac',      icon:'🎒', label:'Sac à dos'},
-    {id:'ai',       icon:'🤖', label:'IA Randos'},
+    {id:'ai',       icon:'🤖', label:'IA Activités'},
   ]
 
   const dd={

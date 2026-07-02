@@ -175,7 +175,7 @@ function LoginScreen({ onGoogleSignIn, onCodeLogin, onInviteLogin }) {
 
 export default function App() {
   const store = useStore()
-  const [tab, setTab] = useState('planning')
+  const [tab, setTab] = useState('dashboard')
   const [showTripForm, setShowTripForm] = useState(false)
   const [editingTrip, setEditingTrip] = useState(null)
   const [showVoyageurs, setShowVoyageurs] = useState(false)
@@ -255,12 +255,12 @@ export default function App() {
   const tripColor = trip?.color || '#0F6E56'
 
   return (
-    <div style={{display:"flex",minHeight:"100vh"}}>
-      {/* SIDEBAR + MOBILE TOPBAR */}
+    <div className="app-shell">
+      {/* ── SIDEBAR (desktop) + MOBILE TOP BAR ── */}
       <Header
         trips={store.trips}
         activeTrip={trip}
-        onSelectTrip={id => { store.setActiveTrip(id); setTab('planning') }}
+        onSelectTrip={id => { store.setActiveTrip(id); setTab('dashboard') }}
         onNewTrip={() => setShowTripForm(true)}
         onEditTrip={t => setEditingTrip(t)}
         onDeleteTrip={id => store.deleteTrip(id)}
@@ -276,47 +276,50 @@ export default function App() {
         setTab={setTab}
       />
 
+      {/* ── ZONE PRINCIPALE (décalée par sidebar desktop) ── */}
       <div className="app-main">
-      {/* MOBILE BOTTOM NAV */}
-      <BottomNav
-        tab={tab}
-        setTab={setTab}
-        onOpenVoyageurs={() => setShowVoyageurs(true)}
-        onOpenGlobalBudget={!store.isGuest || store.trips?.length > 1 ? () => setShowGlobalBudget(true) : null}
-        onOpenAI={() => { setAiTargetDayId(null); setShowAI(true) }}
-        isAdmin={store.isAdmin}
-        onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
-        onSignOut={store.signOut}
-        userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail}
-        trip={trip}
-      />
 
-      {/* DANGER ALERT — shown on load if extreme conditions */}
-      {trip && <DangerAlert weather={tomorrowWeather} destination={trip.destination || trip.name} />}
+        {/* MOBILE BOTTOM NAV */}
+        <BottomNav
+          tab={tab} setTab={setTab}
+          onOpenVoyageurs={() => setShowVoyageurs(true)}
+          onOpenGlobalBudget={!store.isGuest || store.trips?.length > 1 ? () => setShowGlobalBudget(true) : null}
+          onOpenAI={() => setTab('ai')}
+          isAdmin={store.isAdmin}
+          onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
+          onSignOut={store.signOut}
+          userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail}
+          trip={trip}
+        />
 
-      {/* TRIP-SPECIFIC SECTION */}
-      {trip && (
-        <>
-          {/* Trip color bar with name */}
-          <div style={{ background: tripColor, color: '#fff', padding: '.6rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-            <div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.1rem', fontWeight: 700 }}>
-                {trip.name}
-                {trip.subtitle && <span style={{ fontFamily: 'Inter', fontSize: '.85rem', fontWeight: 400, opacity: .85, marginLeft: '.5rem' }}>— {trip.subtitle}</span>}
+        {/* ── HEADER PLEINE LARGEUR (titre + séjour + météo) — TOUJOURS VISIBLE ── */}
+        {trip && (
+          <div className="app-header-zone">
+            {/* Danger alert */}
+            <DangerAlert weather={tomorrowWeather} destination={trip.destination || trip.name} />
+            {/* Bandeau séjour */}
+            <div style={{ background: tripColor, color: '#fff', padding: '.6rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+              <div>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.1rem', fontWeight: 700 }}>
+                  {trip.name}
+                  {trip.subtitle && <span style={{ fontFamily: 'Inter', fontSize: '.85rem', fontWeight: 400, opacity: .85, marginLeft: '.5rem' }}>— {trip.subtitle}</span>}
+                </div>
+                {trip.accommodation && <div style={{ fontSize: '.73rem', opacity: .8 }}>{trip.accommodation}</div>}
               </div>
-              {trip.accommodation && <div style={{ fontSize: '.73rem', opacity: .8 }}>{trip.accommodation}</div>}
             </div>
-
+            {/* Météo — TOUJOURS VISIBLE */}
+            <WeatherStrip lat={trip.lat} lon={trip.lon} locationName={trip.destination || trip.name} />
           </div>
+        )}
 
-          <WeatherStrip lat={trip.lat} lon={trip.lon} locationName={trip.destination || trip.name} />
-          <div className="warn-strip">⚠️ Règle d'or : partir avant 9h · rentrer avant 14h si ciel se couvre · orages 14h–18h</div>
-          <TodayZone trip={trip} tomorrowWeather={tomorrowWeather} onUpdateDay={(dayId, changes) => store.updateDay(trip.id, dayId, changes)} />
-        </>
-      )}
-
-      {/* MAIN CONTENT — selon onglet actif */}
-      <div className="app-content">
+        {/* ── CONTENU selon onglet ── */}
+        <div className="app-content">
+          {/* TABLEAU DE BORD — Hype Up (uniquement sur dashboard) */}
+          {tab === 'dashboard' && trip && (
+            <div className="content-pane">
+              <TodayZone trip={trip} tomorrowWeather={tomorrowWeather} onUpdateDay={(dayId, changes) => store.updateDay(trip.id, dayId, changes)} />
+            </div>
+          )}
 
         {/* PLANNING */}
         {tab === 'planning' && trip && (

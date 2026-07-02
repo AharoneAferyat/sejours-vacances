@@ -9,14 +9,14 @@ export default function BottomNav({ tab, setTab, onOpenVoyageurs, onOpenGlobalBu
   return (
     <>
       <nav className="bottom-nav">
+        <button className={`bn-item${tab==='dashboard'?' active':''}`} onClick={()=>go('dashboard')}>
+          <span className="bn-icon">🏠</span>Accueil
+        </button>
         <button className={`bn-item${tab==='planning'?' active':''}`} onClick={()=>go('planning')}>
           <span className="bn-icon">📋</span>Planning
         </button>
         <button className={`bn-item${tab==='budget'?' active':''}`} onClick={()=>go('budget')}>
           <span className="bn-icon">💰</span>Budget
-        </button>
-        <button className={`bn-item${tab==='valise'?' active':''}`} onClick={()=>go('valise')}>
-          <span className="bn-icon">🧳</span>Valise
         </button>
         <button className="bn-item" onClick={()=>setShowMore(true)}>
           <span className="bn-icon">···</span>Plus
@@ -35,7 +35,7 @@ export default function BottomNav({ tab, setTab, onOpenVoyageurs, onOpenGlobalBu
             )}
             <button className="bn-sheet-item" onClick={()=>go('infos')}><span>ℹ️</span>Infos du séjour</button>
             <button className="bn-sheet-item" onClick={()=>go('sac')}><span>🎒</span>Sac à dos</button>
-            <button className="bn-sheet-item" onClick={()=>go('ai')}><span>🤖</span>IA Randos</button>
+            <button className="bn-sheet-item" onClick={()=>go('ai')}><span>🤖</span>IA Activités</button>
             {onOpenVoyageurs && <button className="bn-sheet-item" onClick={()=>{onOpenVoyageurs();setShowMore(false)}}><span>👥</span>Voyageurs</button>}
             {onOpenGlobalBudget && <button className="bn-sheet-item" onClick={()=>{onOpenGlobalBudget();setShowMore(false)}}><span>🌍</span>Budget global</button>}
             {isAdmin && onOpenAdmin && <button className="bn-sheet-item" style={{color:'var(--amber)'}} onClick={()=>{onOpenAdmin();setShowMore(false)}}><span>⚙️</span>Administration</button>}
