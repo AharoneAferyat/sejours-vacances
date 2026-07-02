@@ -2,30 +2,94 @@ import { useState, useEffect, useRef } from 'react'
 
 const TRIP_COLORS = ['#0F6E56','#185FA5','#A32D2D','#BA7517','#7C3AED','#0891B2','#BE185D','#065F46']
 
-const PHOTOS = {
+// Photos spécifiques par destination (vraie photo de l'endroit)
+const DEST_PHOTOS = {
+  // France
+  'paris':'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1600&q=80&fit=crop',
+  'lyon':'https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=1600&q=80&fit=crop',
+  'marseille':'https://images.unsplash.com/photo-1589254065878-42c9da997008?w=1600&q=80&fit=crop',
+  'toulouse':'https://images.unsplash.com/photo-1582764885765-f32ce06c7585?w=1600&q=80&fit=crop',
+  'bordeaux':'https://images.unsplash.com/photo-1593352216840-1aee13f45818?w=1600&q=80&fit=crop',
+  'nice':'https://images.unsplash.com/photo-1491166617655-0723a0999cfc?w=1600&q=80&fit=crop',
+  'strasbourg':'https://images.unsplash.com/photo-1608026043972-0a1c08e6e787?w=1600&q=80&fit=crop',
+  'montpellier':'https://images.unsplash.com/photo-1592318474000-1b22ff26e1f3?w=1600&q=80&fit=crop',
+  'nantes':'https://images.unsplash.com/photo-1605627079912-97c3810a11a4?w=1600&q=80&fit=crop',
+  'lille':'https://images.unsplash.com/photo-1577168519532-3d05e7c78d8e?w=1600&q=80&fit=crop',
+  'grenoble':'https://images.unsplash.com/photo-1583425423320-1a6b1a2a5d30?w=1600&q=80&fit=crop',
+  'annecy':'https://images.unsplash.com/photo-1609250353656-0b3e8201da88?w=1600&q=80&fit=crop',
+  'chamonix':'https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?w=1600&q=80&fit=crop',
+  'corse':'https://images.unsplash.com/photo-1560703650-ef3e0f254ae0?w=1600&q=80&fit=crop',
+  'biarritz':'https://images.unsplash.com/photo-1598978483038-02df04aba437?w=1600&q=80&fit=crop',
+  'avignon':'https://images.unsplash.com/photo-1588172028879-25a13e1e9ef8?w=1600&q=80&fit=crop',
+  'bretagne':'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=1600&q=80&fit=crop',
+  // Europe
+  'barcelone':'https://images.unsplash.com/photo-1583422409516-2895a77efed6?w=1600&q=80&fit=crop',
+  'barcelona':'https://images.unsplash.com/photo-1583422409516-2895a77efed6?w=1600&q=80&fit=crop',
+  'londres':'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1600&q=80&fit=crop',
+  'london':'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1600&q=80&fit=crop',
+  'amsterdam':'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=1600&q=80&fit=crop',
+  'rome':'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1600&q=80&fit=crop',
+  'roma':'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1600&q=80&fit=crop',
+  'berlin':'https://images.unsplash.com/photo-1560969184-10fe8719e047?w=1600&q=80&fit=crop',
+  'madrid':'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=1600&q=80&fit=crop',
+  'lisbonne':'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=1600&q=80&fit=crop',
+  'venise':'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=1600&q=80&fit=crop',
+  'prague':'https://images.unsplash.com/photo-1541849546-216549ae216d?w=1600&q=80&fit=crop',
+  'vienne':'https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=1600&q=80&fit=crop',
+  'athènes':'https://images.unsplash.com/photo-1555993539-1732b0258235?w=1600&q=80&fit=crop',
+  'dublin':'https://images.unsplash.com/photo-1549918864-48ac978761a4?w=1600&q=80&fit=crop',
+  'zurich':'https://images.unsplash.com/photo-1515488764276-beab0607c7ca?w=1600&q=80&fit=crop',
+  'istanbul':'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=1600&q=80&fit=crop',
+  'santorini':'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1600&q=80&fit=crop',
+  'santorin':'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1600&q=80&fit=crop',
+  'dubrovnik':'https://images.unsplash.com/photo-1555990793-da11153b2473?w=1600&q=80&fit=crop',
+  'bruxelles':'https://images.unsplash.com/photo-1559113202-c916b8e44373?w=1600&q=80&fit=crop',
+  // Monde
+  'new york':'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1600&q=80&fit=crop',
+  'tokyo':'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&q=80&fit=crop',
+  'dubai':'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1600&q=80&fit=crop',
+  'bali':'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1600&q=80&fit=crop',
+  'marrakech':'https://images.unsplash.com/photo-1597211833712-5e41faa202ea?w=1600&q=80&fit=crop',
+  'maroc':'https://images.unsplash.com/photo-1597211833712-5e41faa202ea?w=1600&q=80&fit=crop',
+  'islande':'https://images.unsplash.com/photo-1504829857797-ddff29c27927?w=1600&q=80&fit=crop',
+  'norvège':'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1600&q=80&fit=crop',
+  'canada':'https://images.unsplash.com/photo-1503614472-8c93d56e92ce?w=1600&q=80&fit=crop',
+  'japon':'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&q=80&fit=crop',
+  'grèce':'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1600&q=80&fit=crop',
+  'thailande':'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=1600&q=80&fit=crop',
+  'mexique':'https://images.unsplash.com/photo-1518638150340-f706e86654de?w=1600&q=80&fit=crop',
+  'egypte':'https://images.unsplash.com/photo-1539768942893-daf53e448371?w=1600&q=80&fit=crop',
+}
+
+// Fallback par type si la destination exacte n'est pas trouvée
+const TYPE_PHOTOS = {
   mountain: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80&fit=crop',
   beach:    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80&fit=crop',
-  city:     'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1600&q=80&fit=crop',
+  city:     'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1600&q=80&fit=crop',
   forest:   'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1600&q=80&fit=crop',
   lake:     'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=1600&q=80&fit=crop',
-  default:  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600&q=80&fit=crop',
   admin:    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80&fit=crop',
+  default:  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600&q=80&fit=crop',
 }
 
 function getPhoto(name='', dest='') {
-  const t = (name + ' ' + dest).toLowerCase()
-  // Montagne
-  if (/mont|alp|isère|savoie|chamonix|montagne|col|ski|neige|glacier|pyrén|vosges|jura|grenoble|annecy|briançon|albertville|gap|valmorel|serre.chevalier|hauteur|sommet|aiguille/.test(t)) return PHOTOS.mountain
-  // Mer / plage
-  if (/mer|océan|plage|côte|méditerranée|atlantique|sea|corse|bretagne|biarritz|nice|cannes|saint.tropez|ajaccio|bastia|arcachon|la.rochelle|île|marin|surf/.test(t)) return PHOTOS.beach
-  // Ville
-  if (/paris|lyon|marseille|bordeaux|toulouse|nantes|strasbourg|lille|montpellier|rennes|rouen|dijon|reims|clermont|amiens|tours|orléans|metz|nancy|limoges|poitiers|caen|perpignan|avignon|ville|city|urban|london|barcelona|amsterdam|roma|berlin|madrid|lisboa|bruxelles/.test(t)) return PHOTOS.city
-  // Forêt / nature
-  if (/forêt|bois|nature|campagne|verdure|parc|jungle|arbre|ardèche|dordogne|périgord|landes|sologne|auvergne|cévennes|morvan|limousin/.test(t)) return PHOTOS.forest
-  // Lac / eau
-  if (/lac|rivière|fleuve|gorge|canyon|cascade|étang|verdon|annecy.*lac|léman|bourget/.test(t)) return PHOTOS.lake
-  // Défaut = paysage voyage générique
-  return PHOTOS.default
+  const t = (name + ' ' + dest).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  
+  // 1. Chercher une correspondance exacte dans le mapping
+  for (const [key, url] of Object.entries(DEST_PHOTOS)) {
+    const k = key.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    if (t.includes(k)) return url
+  }
+  
+  // 2. Fallback par type de paysage
+  if (/mont|alp|ski|neige|glacier|pyren|sommet|altitude|col |trek/.test(t)) return TYPE_PHOTOS.mountain
+  if (/mer|ocean|plage|cote|beach|sea|surf|ile |island/.test(t)) return TYPE_PHOTOS.beach
+  if (/foret|bois|nature|campagne|parc|arbre|jungle/.test(t)) return TYPE_PHOTOS.forest
+  if (/lac|riviere|cascade|gorge|canyon/.test(t)) return TYPE_PHOTOS.lake
+  if (/ville|city|urban|centre/.test(t)) return TYPE_PHOTOS.city
+  
+  // 3. Défaut
+  return TYPE_PHOTOS.default
 }
 
 function getBg() {
@@ -39,7 +103,7 @@ function getBg() {
   return su?'linear-gradient(160deg,#0a0a20,#1a1245,#2d0d30)':wi?'linear-gradient(160deg,#0d0d25,#1a1040,#2a0a3a)':'linear-gradient(160deg,#0d0d22,#18103c,#260c2e)'
 }
 
-export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip, onOpenVoyageurs, onOpenGlobalBudget, isAdmin, onOpenAdmin, onSignOut, userEmail, syncing, tab }) {
+export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip, onOpenVoyageurs, onOpenGlobalBudget, isAdmin, onOpenAdmin, onSignOut, userEmail, syncing, tab, onUpdatePhoto }) {
   const [time, setTime] = useState({ local: '', dateFR: '', utc: '', dateEN: '' })
   const [bg, setBg] = useState(getBg())
   const [photo, setPhoto] = useState(null)
@@ -73,14 +137,36 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
 
   useEffect(() => {
     if (!activeTrip || tab === 'admin') {
-      setPhoto(tab === 'admin' ? PHOTOS.admin : null)
+      setPhoto(tab === 'admin' ? TYPE_PHOTOS.admin : null)
       return
     }
-    const url = getPhoto(activeTrip.name || '', activeTrip.destination || '')
-    const img = new window.Image()
-    img.onload = () => setPhoto(url)
-    img.onerror = () => setPhoto(null)
-    img.src = url
+    
+    // Si le séjour a déjà une photo stockée, l'utiliser directement
+    if (activeTrip.headerPhoto) {
+      setPhoto(activeTrip.headerPhoto)
+      return
+    }
+    
+    // Sinon : essayer Unsplash, fallback sur le mapping local
+    const dest = activeTrip.destination || activeTrip.name || ''
+    const fallback = getPhoto(activeTrip.name || '', dest)
+    
+    // Charger le fallback immédiatement
+    setPhoto(fallback)
+    
+    // Puis tenter Unsplash en background
+    if (dest) {
+      fetch(`/api/unsplash?q=${encodeURIComponent(dest + ' landscape travel')}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.url) {
+            setPhoto(data.url)
+            // Stocker dans le séjour pour ne pas re-fetcher
+            if (typeof onUpdatePhoto === 'function') onUpdatePhoto(data.url)
+          }
+        })
+        .catch(() => {}) // Silently fail, fallback already loaded
+    }
   }, [activeTrip?.id, tab])
 
   useEffect(() => {

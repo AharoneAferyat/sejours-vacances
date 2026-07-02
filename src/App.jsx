@@ -295,7 +295,7 @@ export default function App() {
         />
 
         {/* ── HEADER PLEINE LARGEUR (titre + horloge + photo) — DESKTOP UNIQUEMENT ── */}
-        <MainHeader trips={store.trips} activeTrip={trip} onSelectTrip={id => { store.setActiveTrip(id); setTab('dashboard') }} onEditTrip={t => setEditingTrip(t)} onDeleteTrip={id => store.deleteTrip(id)} onNewTrip={() => setShowTripForm(true)} onOpenVoyageurs={() => setShowVoyageurs(true)} onOpenGlobalBudget={!store.isGuest || store.trips?.length > 1 ? () => setShowGlobalBudget(true) : null} isAdmin={store.isAdmin} onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null} onSignOut={store.signOut} userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail} syncing={store.syncing} tab={tab} />
+        <MainHeader trips={store.trips} activeTrip={trip} onSelectTrip={id => { store.setActiveTrip(id); setTab('dashboard') }} onEditTrip={t => setEditingTrip(t)} onDeleteTrip={id => store.deleteTrip(id)} onNewTrip={() => setShowTripForm(true)} onOpenVoyageurs={() => setShowVoyageurs(true)} onOpenGlobalBudget={!store.isGuest || store.trips?.length > 1 ? () => setShowGlobalBudget(true) : null} isAdmin={store.isAdmin} onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null} onSignOut={store.signOut} userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : store.userEmail} syncing={store.syncing} tab={tab} onUpdatePhoto={(url) => trip && store.updateTrip(trip.id, { headerPhoto: url })} />
 
         {/* ── BANDEAU SÉJOUR + MÉTÉO — masqué en mode admin ── */}
         {trip && tab !== 'admin' && (
