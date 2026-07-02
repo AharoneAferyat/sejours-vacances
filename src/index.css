@@ -76,17 +76,19 @@ body {
 .app-header-zone { width: 100%; }
 
 /* Contenu principal */
-.app-content { padding: 1.25rem 1.5rem 2rem; width: 100%; max-width: 900px; }
+.app-content { padding: 1.25rem 1.5rem 2rem; width: 100%; }
 .content-pane { width: 100%; }
 
 /* Mobile bar cachée par défaut */
 .app-mobile-bar { display: none; }
 
 @media (max-width: 768px) {
-  .app-sidebar { display: none !important; }
-  .app-main { margin-left: 0 !important; }
+  .app-shell { overflow-x: hidden; }
+  .app-sidebar { display: none !important; visibility: hidden !important; }
+  .app-main { margin-left: 0 !important; width: 100vw !important; }
   .app-mobile-bar { display: block !important; }
-  .app-content { padding: .75rem .75rem 5.5rem !important; max-width: 100%; }
+  .app-content { padding: .75rem .75rem 5.5rem !important; width: 100% !important; box-sizing: border-box; }
+  .content-pane { width: 100% !important; overflow: hidden; }
   .form-row { grid-template-columns: 1fr !important; }
   .modal { padding: .9rem !important; }
   .modal-overlay { padding: .5rem !important; align-items: flex-end !important; }
