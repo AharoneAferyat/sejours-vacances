@@ -179,6 +179,21 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
     return () => document.removeEventListener('mousedown', fn)
   }, [])
 
+  const refreshPhoto = async () => {
+    if (!activeTrip || refreshingPhoto) return
+    setRefreshingPhoto(true)
+    const dest = activeTrip.destination || activeTrip.name || ''
+    try {
+      const r = await fetch(`/api/unsplash?q=${encodeURIComponent(dest + ' landmark cityscape panorama')}`)
+      const data = await r.json()
+      if (data.url) {
+        setPhoto(data.url)
+        if (typeof onUpdatePhoto === 'function') onUpdatePhoto(data.url)
+      }
+    } catch {}
+    setRefreshingPhoto(false)
+  }
+
   const tog = m => setOpenMenu(p => p === m ? null : m)
   const user = userEmail?.includes('@') ? userEmail.split('@')[0] : userEmail?.slice(0, 12)
 
