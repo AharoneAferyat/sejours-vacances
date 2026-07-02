@@ -253,7 +253,7 @@ function GlobalBudgetView({ users, loading }) {
   )
 }
 
-export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip }) {
+export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip, inline = false }) {
   const [tab, setTab] = useState('users')
   const [users, setUsers] = useState([])
   const [codes, setCodes] = useState([])
@@ -308,7 +308,7 @@ export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip }) {
   const totalTrips = users.reduce((sum, u) => sum + u.trips.length, 0)
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 1000, overflowY: 'auto' }}>
+    <div style={{ position: inline ? 'relative' : 'fixed', inset: inline ? 'auto' : 0, background: 'var(--bg)', zIndex: inline ? 'auto' : 1000, overflowY: 'auto', minHeight: inline ? '100vh' : 'auto' }}>
       <div style={{ background: 'linear-gradient(135deg, #2a1a3e 0%, #1e2540 50%, #0f1f3a 100%)', padding: '1.25rem 1.5rem', color: '#fff' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
