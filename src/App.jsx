@@ -4,6 +4,7 @@ import { getTodayStr, genId, formatDate, displayToISO } from './utils'
 import { validateInviteCode, consumeInviteCode } from './firebase'
 import Header from './components/Header'
 import EmptyState from './components/EmptyState'
+import JoinTripModal from './components/JoinTripModal'
 import MainHeader from './components/MainHeader'
 import BottomNav from './components/BottomNav'
 import WeatherStrip from './components/WeatherStrip'
@@ -178,6 +179,10 @@ function LoginScreen({ onGoogleSignIn, onCodeLogin, onInviteLogin }) {
 export default function App() {
   const store = useStore()
   const [tab, setTab] = useState('dashboard')
+  const [shareCode, setShareCode] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('share') || null
+  })
   const [showTripForm, setShowTripForm] = useState(false)
   const [editingTrip, setEditingTrip] = useState(null)
   const [showVoyageurs, setShowVoyageurs] = useState(false)
@@ -281,7 +286,16 @@ export default function App() {
       {/* ── ZONE PRINCIPALE (décalée par sidebar desktop) ── */}
       <div className="app-main">
 
-        {/* MOBILE BOTTOM NAV */}
+        {/* LIEN DE PARTAGE — modal join */}
+        {shareCode && (
+          <JoinTripModal
+            shareCode={shareCode}
+            onJoined={() => { setShareCode(null); window.history.replaceState({}, '', '/') }}
+            onClose={() => { setShareCode(null); window.history.replaceState({}, '', '/') }}
+          />
+        )}
+
+      {/* MOBILE BOTTOM NAV */}
         <BottomNav
           tab={tab} setTab={setTab}
           onOpenVoyageurs={() => setShowVoyageurs(true)}
@@ -373,7 +387,7 @@ export default function App() {
         {/* INFOS */}
         {tab === 'infos' && (
           <div className="content-pane">
-            <InfosTab trip={trip} onUpdateTrip={(changes) => store.updateTrip(trip.id, changes)} />
+            <InfosTab trip={{...trip, ownerUid: store.uid}} onUpdateTrip={(changes) => store.updateTrip(trip.id, changes)} />
           </div>
         )}
 

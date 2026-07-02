@@ -295,14 +295,45 @@ export async function adminDeleteUser(uid) {
 
 
 // Générer un code de partage pour un séjour
-export async function generateShareCode(uid, tripId) {
+export async function generateShareCode(uid, tripId, tripName = '') {
   const code = 'SHR-' + Array.from({length:6}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('')
-  // Stocker dans guestAccess pour que n'importe qui puisse le trouver
   await setDoc(doc(db, 'guestAccess', code), {
     ownerUid: uid,
     tripId: tripId,
+    tripName: tripName,
     createdAt: Date.now(),
     type: 'share-link'
   })
   return code
+}
+
+// Valider un code de partage et récupérer les infos du séjour
+export async function validateShareCode(code) {
+  try {
+    const snap = await getDoc(doc(db, 'guestAccess', code))
+    if (!snap.exists()) return null
+    const data = snap.data()
+    if (data.type !== 'share-link') return null
+    return data
+  } catch { return null }
+}
+
+// Ajouter un voyageur au séjour d'un autre utilisateur via share link
+export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurEmail) {
+  try {
+    const snap = await getDoc(doc(db, 'users', ownerUid))
+    if (!snap.exists()) return false
+    const data = snap.data()
+    const trips = data.trips || []
+    const tripIdx = trips.findIndex(t => t.id === tripId)
+    if (tripIdx === -1) return false
+    
+    const trip = trips[tripIdx]
+    const vid = 'v_' + Date.now()
+    const voyageurs = [...(trip.voyageurs || []), { id: vid, name: voyageurName, email: voyageurEmail }]
+    trips[tripIdx] = { ...trip, voyageurs }
+    
+    await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
+    return true
+  } catch (e) { console.error('joinTripViaShare failed:', e); return false }
 }

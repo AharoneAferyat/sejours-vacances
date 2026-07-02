@@ -59,7 +59,7 @@ function renderContent(text) {
 }
 
 
-function ShareLink({ tripId, tripName }) {
+function ShareLink({ tripId, tripName, ownerUid }) {
   const [shareUrl, setShareUrl] = useState(null)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -67,11 +67,12 @@ function ShareLink({ tripId, tripName }) {
   const generate = async () => {
     setLoading(true)
     try {
-      // Pour l'instant on génère un code simple
-      const code = 'SHR-' + Array.from({length:6}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('')
+      const { generateShareCode } = await import('../firebase')
+      const code = await generateShareCode(ownerUid, tripId, tripName)
       const url = window.location.origin + '?share=' + code
       setShareUrl(url)
     } catch (e) {
+      console.error(e)
       alert('Erreur lors de la création du lien')
     }
     setLoading(false)
@@ -172,7 +173,7 @@ export default function InfosTab({ trip, onUpdateTrip }) {
       <div className="info-card" style={{ borderLeft: '3px solid var(--green)' }}>
         <h3>🔗 Inviter des participants</h3>
         <p>Génère un lien de partage pour ce séjour. Toute personne avec le lien pourra voir et participer.</p>
-        <ShareLink tripId={trip.id} tripName={trip.name} />
+        <ShareLink tripId={trip.id} tripName={trip.name} ownerUid={trip.ownerUid || ''} />
       </div>
 
 </div>
