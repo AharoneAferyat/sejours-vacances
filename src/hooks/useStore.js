@@ -70,6 +70,7 @@ function clearGuestSession() {
 export function useStore() {
   const [uid, setUid] = useState(null)
   const [userEmail, setUserEmail] = useState(null)
+  const [userDisplayName, setUserDisplayName] = useState(null)
   const ADMIN_UIDS = ['lecSvR1xE5Ni17pngVfODqJ0XBs1']
   const [isAdmin, setIsAdmin] = useState(false)
   const [isAllowed, setIsAllowed] = useState(false)
@@ -88,6 +89,7 @@ export function useStore() {
     const unsub = onAuthChange(async user => {
       setUid(user?.uid || null)
       setUserEmail(user?.email || null)
+      setUserDisplayName(user?.displayName || null)
       if (user) {
         const emailFromProvider = user.providerData?.[0]?.email || user.email || ''
         const admin = ADMIN_UIDS.includes(user.uid)
@@ -500,7 +502,7 @@ export function useStore() {
     signIn: signInWithGoogle,
     signOut,
     loginWithCode,
-    activeTrip, tripVoyageurs, activeVoyageurId,
+    activeTrip, tripVoyageurs, activeVoyageurId, userDisplayName,
     currentValise, currentSac,
     addTrip, updateTrip, deleteTrip, setActiveTrip,
     addDay, updateDay, deleteDay, validateDay,

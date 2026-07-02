@@ -13,8 +13,8 @@ export default async function handler(req) {
 
   try {
     // Chercher plusieurs photos orientées paysage/voyage, puis en choisir une au hasard
-    const searchQuery = `${query} scenic landscape travel nature`
-    const randomPage = Math.floor(Math.random() * 5) + 1 // pages 1-5 pour varier
+    const searchQuery = `${query} landmark cityscape panorama skyline`
+    const randomPage = Math.floor(Math.random() * 3) + 1 // pages 1-3 pour garder la pertinence
 
     const res = await fetch(
       `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchQuery)}&orientation=landscape&per_page=10&page=${randomPage}&content_filter=high&order_by=relevant`,

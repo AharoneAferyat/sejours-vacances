@@ -444,7 +444,7 @@ export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip, inl
                         </div>
                         <div style={{ display: 'flex', gap: '.35rem' }}>
                           {!c.usedBy && <button className="btn" onClick={() => handleCopy(c.code)} style={{ fontSize: '.72rem', padding: '3px 8px' }}>{copied === c.code ? '✓' : '📋'}</button>}
-                          {!c.usedBy && <button className="btn" onClick={() => handleDeleteCode(c.code)} style={{ fontSize: '.72rem', padding: '3px 8px', color: 'var(--red)' }}>🗑</button>}
+                          <button className="btn" onClick={() => handleDeleteCode(c.code)} style={{ fontSize: '.72rem', padding: '3px 8px', color: 'var(--red)' }}>🗑</button>
                         </div>
                       </div>
                       {c.note && <div style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginTop: '.25rem' }}>📝 {c.note}</div>}

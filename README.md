@@ -34,10 +34,13 @@ Application web premium de planification de séjours & randonnées — React + F
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'lecSvR1xE5Ni17pngVfODqJ0XBs1';
+    }
     match /users/{uid} {
       allow get: if true;
-      allow list: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow list: if isAdmin();
+      allow write: if request.auth != null && (request.auth.uid == uid || isAdmin());
     }
     match /guestAccess/{docId} {
       allow read: if true;
@@ -48,8 +51,8 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
     match /allowedUsers/{uid} {
-      allow get: if request.auth != null && request.auth.uid == uid;
-      allow list: if request.auth != null;
+      allow get: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
       allow write: if request.auth != null;
     }
   }
