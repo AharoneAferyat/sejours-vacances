@@ -235,9 +235,8 @@ export default function App() {
   const handleAIResult = (activity, targetDayId) => {
     if (!trip) return
     const dayId = targetDayId || aiTargetDayId
-    if (!dayId) return // shouldn't happen - AIRandoSearch handles day selection
+    if (!dayId) return
 
-    // Check if similar activity already exists on that day
     const targetDay = trip.days.find(d => d.id === dayId)
     if (targetDay) {
       const duplicate = targetDay.activities.find(a =>
@@ -249,7 +248,8 @@ export default function App() {
       }
     }
 
-    store.addActivity(trip.id, dayId, { ...activity, id: genId('act') })
+    // Toujours générer un id propre pour éviter les bugs d'édition
+    store.addActivity(trip.id, dayId, { ...activity, id: genId('act'), notes: activity.notes || [], done: activity.done || false })
     setShowAI(false)
   }
 
@@ -411,7 +411,7 @@ export default function App() {
             <AIRandoSearch
               trip={trip} destination={trip.destination || trip.name} days={trip.days}
               targetDayId={null}
-              onSelectActivity={(activity, targetDayId) => { store.addActivity(trip.id, targetDayId, { ...activity, id: undefined }); setTab('planning') }}
+              onSelectActivity={(activity, targetDayId) => { store.addActivity(trip.id, targetDayId, { ...activity, id: genId('act'), notes: activity.notes || [], done: activity.done || false }); setTab('planning') }}
               onClose={() => setTab('planning')}
               inline={true}
             />

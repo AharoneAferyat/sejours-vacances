@@ -1,6 +1,72 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { EMOJIS, ACTIVITY_TYPES, DIFFICULTY } from '../data/defaults'
 import { genId } from '../utils'
+
+// Mini toolbar pour les champs texte riches
+const QUICK_EMOJIS = ['🥾','⛰️','🏞️','💦','🌲','🦌','🔭','☀️','⚡','🍽️','🏨','🚗','🚶','🌊','❄️','🌸','🍂']
+
+function RichTextArea({ value, onChange, placeholder, rows = 3 }) {
+  const ref = React.useRef(null)
+
+  const insert = (before, after = '') => {
+    const el = ref.current
+    if (!el) return
+    const s = el.selectionStart, e = el.selectionEnd
+    const selected = value.slice(s, e)
+    const newVal = value.slice(0, s) + before + selected + after + value.slice(e)
+    onChange(newVal)
+    setTimeout(() => { el.focus(); el.setSelectionRange(s + before.length, s + before.length + selected.length) }, 0)
+  }
+
+  const insertEmoji = e => { onChange(value + e); ref.current?.focus() }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '.25rem', flexWrap: 'wrap', marginBottom: '.35rem', alignItems: 'center' }}>
+        <button type="button" onClick={() => insert('**','**')} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 5, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: '.75rem' }}>G</button>
+        <button type="button" onClick={() => insert('_','_')} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 5, padding: '2px 7px', cursor: 'pointer', fontStyle: 'italic', fontSize: '.75rem' }}>I</button>
+        <span style={{ width: 1, background: 'var(--border)', height: 18, margin: '0 2px' }} />
+        {QUICK_EMOJIS.map(e => (
+          <button key={e} type="button" onClick={() => insertEmoji(e)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.9rem', padding: '1px 2px', lineHeight: 1 }}>{e}</button>
+        ))}
+      </div>
+      <textarea ref={ref} value={value} onChange={e => onChange(e.target.value)}
+        placeholder={placeholder} rows={rows}
+        style={{ width: '100%', fontFamily: 'inherit' }} />
+    </div>
+  )
+}
+
+function RichInput({ value, onChange, placeholder }) {
+  const ref = React.useRef(null)
+
+  const insert = (before, after = '') => {
+    const el = ref.current
+    if (!el) return
+    const s = el.selectionStart, e = el.selectionEnd
+    const selected = value.slice(s, e)
+    const newVal = value.slice(0, s) + before + selected + after + value.slice(e)
+    onChange(newVal)
+    setTimeout(() => { el.focus(); el.setSelectionRange(s + before.length, s + before.length + selected.length) }, 0)
+  }
+
+  const insertEmoji = e => { onChange(value + e); ref.current?.focus() }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '.25rem', flexWrap: 'wrap', marginBottom: '.25rem', alignItems: 'center' }}>
+        <button type="button" onClick={() => insert('**','**')} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 5, padding: '2px 7px', cursor: 'pointer', fontWeight: 700, fontSize: '.75rem' }}>G</button>
+        <button type="button" onClick={() => insert('_','_')} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 5, padding: '2px 7px', cursor: 'pointer', fontStyle: 'italic', fontSize: '.75rem' }}>I</button>
+        <span style={{ width: 1, background: 'var(--border)', height: 18, margin: '0 2px' }} />
+        {QUICK_EMOJIS.map(e => (
+          <button key={e} type="button" onClick={() => insertEmoji(e)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.9rem', padding: '1px 2px', lineHeight: 1 }}>{e}</button>
+        ))}
+      </div>
+      <input ref={ref} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ width: '100%' }} />
+    </div>
+  )
+}
+
 
 const FEATURES = [
   { id: 'lac', label: '🏞 Lac', cls: 'pill-lac' },
@@ -140,8 +206,7 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
 
         <div className="form-group">
           <label>Description</label>
-          <textarea value={form.desc} onChange={e => set('desc', e.target.value)}
-            placeholder="Détails du parcours, points d'intérêt…" rows={3} />
+          <RichTextArea value={form.desc} onChange={v => set('desc', v)} placeholder="Détails du parcours, points d'intérêt…" rows={3} />
         </div>
 
         <div className="form-group">
@@ -158,8 +223,7 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
 
         <div className="form-group">
           <label>Conseil / astuce</label>
-          <input value={form.tip} onChange={e => set('tip', e.target.value)}
-            placeholder="ex: Partir avant 8h, orages l'après-midi" />
+          <RichInput value={form.tip} onChange={v => set('tip', v)} placeholder="ex: Partir avant 8h, orages l'après-midi" />
         </div>
 
         <div className="modal-actions">

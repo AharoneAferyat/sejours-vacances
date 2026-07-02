@@ -3,29 +3,20 @@ import { genId, getDaysBetween, formatDate } from '../utils'
 import { geocodeAddress } from '../hooks/useWeather'
 
 function DateInput({ label, value, onChange }) {
-  const toDisplay = iso => {
-    if (!iso) return ''
-    const [y, m, d] = iso.split('-')
-    return `${d}/${m}/${y}`
-  }
-  const [display, setDisplay] = useState(toDisplay(value))
-  useEffect(() => { setDisplay(toDisplay(value)) }, [value])
-
-  const handleChange = e => {
-    let v = e.target.value.replace(/[^\d/]/g, '')
-    const digits = v.replace(/\D/g, '')
-    if (digits.length <= 2) v = digits
-    else if (digits.length <= 4) v = digits.slice(0,2) + '/' + digits.slice(2)
-    else v = digits.slice(0,2) + '/' + digits.slice(2,4) + '/' + digits.slice(4,8)
-    setDisplay(v)
-    if (digits.length === 8) onChange(`${digits.slice(4)}-${digits.slice(2,4)}-${digits.slice(0,2)}`)
-    else if (!v) onChange('')
-  }
-
   return (
     <div className="form-group">
       <label>{label}</label>
-      <input value={display} onChange={handleChange} placeholder="JJ/MM/AAAA" maxLength={10} />
+      <input
+        type="date"
+        value={value || ''}
+        onChange={e => onChange(e.target.value)}
+        style={{ cursor: 'pointer' }}
+      />
+      {value && (
+        <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', marginTop: '.2rem' }}>
+          {new Date(value + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </div>
+      )}
     </div>
   )
 }

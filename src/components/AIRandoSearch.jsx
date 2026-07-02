@@ -353,6 +353,12 @@ Réponds UNIQUEMENT avec un objet JSON:
       <div className="modal" style={{ maxWidth: 600 }}>
         <h2>🤖 Activités IA</h2>
 
+        {/* Message quota */}
+        <div style={{ background: '#fff8e6', border: '1px solid #f0c040', borderRadius: 10, padding: '.5rem .85rem', marginBottom: '.75rem', fontSize: '.75rem', color: '#7a5c00', display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+          <span>⚠️</span>
+          <span>Quota limité · Utilisez les requêtes avec parcimonie — trop de demandes bloquent l'accès jusqu'au lendemain matin (9h).</span>
+        </div>
+
         {/* Sélecteur de mode */}
         <div style={{ display: 'flex', gap: '.4rem', marginBottom: '1rem', background: 'var(--gray-light)', borderRadius: 10, padding: '3px' }}>
           <button
