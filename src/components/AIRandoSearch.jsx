@@ -254,7 +254,16 @@ IMPORTANT: Pour chaque activité, fournis de vrais liens AllTrails et/ou Visoran
     try {
       const activities = await callGemini(prompt)
       if (!Array.isArray(activities) || activities.length === 0) throw new Error('Réponse vide')
-      setResults(activities)
+      // Générer des liens de recherche fiables depuis le titre
+      const withLinks = activities.map(act => ({
+        ...act,
+        links: [
+          { url: `https://www.google.com/search?q=${encodeURIComponent(act.title + ' ' + destination)}`, label: '🔍 Google' },
+          { url: `https://www.alltrails.com/explore?q=${encodeURIComponent(act.title)}`, label: 'AllTrails' },
+          { url: `https://www.visorando.com/recherche/?s=${encodeURIComponent(act.title)}`, label: 'Visorando' },
+        ]
+      }))
+      setResults(withLinks)
     } catch (e) { setError(getErrorMsg(e)) }
     finally { setLoading(false) }
   }
@@ -301,7 +310,14 @@ IMPORTANT: Fournis de vrais liens AllTrails et/ou Visorando pour chaque activit�
       const result = parsed.map(item => ({
         dayId: tripDays[item.dayIndex]?.id,
         dayLabel: formatDate(tripDays[item.dayIndex]?.date),
-        activity: item.activity
+        activity: {
+          ...item.activity,
+          links: [
+            { url: `https://www.google.com/search?q=${encodeURIComponent((item.activity?.title||'') + ' ' + destination)}`, label: '🔍 Google' },
+            { url: `https://www.alltrails.com/explore?q=${encodeURIComponent(item.activity?.title||'')}`, label: 'AllTrails' },
+            { url: `https://www.visorando.com/recherche/?s=${encodeURIComponent(item.activity?.title||'')}`, label: 'Visorando' },
+          ]
+        }
       })).filter(item => item.dayId)
 
       setPlanDays(result)

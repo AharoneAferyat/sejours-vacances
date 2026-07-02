@@ -84,14 +84,22 @@ const EMPTY = {
 }
 
 export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvelle activité' }) {
-  const [form, setForm] = useState(() => initial
-    ? {
-        ...initial,
-        gear: (initial.gear || []).join(', '),
-        links: (initial.links || []).map(l => `${l.url}|${l.label}`).join(','),
-      }
-    : EMPTY
-  )
+  const [form, setForm] = useState(() => {
+    if (!initial) return EMPTY
+    // gear peut être un tableau ou une string selon la source (IA vs manuel)
+    const gearArr = Array.isArray(initial.gear) ? initial.gear : (initial.gear ? String(initial.gear).split(',').map(x=>x.trim()).filter(Boolean) : [])
+    // links peut être un tableau d'objets ou vide
+    const linksArr = Array.isArray(initial.links) ? initial.links : []
+    return {
+      ...initial,
+      gear: gearArr.join(', '),
+      links: linksArr.map(l => l && l.url ? `${l.url}|${l.label||'Lien'}` : '').filter(Boolean).join(','),
+      desc: initial.desc || '',
+      tip: initial.tip || '',
+      notes: Array.isArray(initial.notes) ? initial.notes : [],
+      features: Array.isArray(initial.features) ? initial.features : [],
+    }
+  })
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
   const toggleFeature = (f) => set('features', form.features.includes(f)
