@@ -247,8 +247,9 @@ Activités déjà planifiées: ${existingActs}
 
 Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant ou après, sans markdown.
 Format exact (3 activités):
-[{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte","tip":"Conseil pratique","gear":["Item 1"],"links":[]}]
-difficulty: facile | moyen | sportif | repos`
+[{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte","tip":"Conseil pratique","gear":["Item 1"],"links":[{"url":"https://www.alltrails.com/...","label":"AllTrails"},{"url":"https://www.visorando.com/...","label":"Visorando"}]}]
+difficulty: facile | moyen | sportif | repos
+IMPORTANT: Pour chaque activité, fournis de vrais liens AllTrails et/ou Visorando si disponibles pour ce lieu. Si tu n'as pas de lien exact, mets des liens de recherche : https://www.alltrails.com/explore?q=NomActivite et https://www.visorando.com/randonnee-NomActivite`
 
     try {
       const activities = await callGemini(prompt)
@@ -289,8 +290,9 @@ Propose UN programme complet, une activité principale par jour, adaptée au lie
 Ne propose pas d'activités déjà planifiées.
 
 Réponds UNIQUEMENT avec un tableau JSON, une entrée par jour, sans texte avant ou après:
-[{"dayIndex":0,"activity":{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte sans apostrophes","tip":"Conseil pratique sans apostrophes","gear":[]}}]
-dayIndex = index du jour (0 = premier jour). difficulty: facile | moyen | sportif | repos`
+[{"dayIndex":0,"activity":{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte sans apostrophes","tip":"Conseil pratique sans apostrophes","gear":[],"links":[{"url":"https://www.alltrails.com/explore?q=NomActivite","label":"AllTrails"}]}}]
+dayIndex = index du jour (0 = premier jour). difficulty: facile | moyen | sportif | repos
+IMPORTANT: Fournis de vrais liens AllTrails et/ou Visorando pour chaque activité si disponibles.`
 
     try {
       const parsed = await callGemini(prompt)
