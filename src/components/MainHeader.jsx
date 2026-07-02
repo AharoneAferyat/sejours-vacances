@@ -9,6 +9,7 @@ const PHOTOS = {
   forest:   'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1600&q=80&fit=crop',
   lake:     'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=1600&q=80&fit=crop',
   default:  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600&q=80&fit=crop',
+  admin:    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80&fit=crop',
 }
 
 function getPhoto(name='', dest='') {
@@ -32,7 +33,7 @@ function getBg() {
   return su?'linear-gradient(160deg,#0a0a20,#1a1245,#2d0d30)':wi?'linear-gradient(160deg,#0d0d25,#1a1040,#2a0a3a)':'linear-gradient(160deg,#0d0d22,#18103c,#260c2e)'
 }
 
-export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip, onOpenVoyageurs, onOpenGlobalBudget, isAdmin, onOpenAdmin, onSignOut, userEmail, syncing }) {
+export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip, onOpenVoyageurs, onOpenGlobalBudget, isAdmin, onOpenAdmin, onSignOut, userEmail, syncing, tab }) {
   const [time, setTime] = useState({ local: '', dateFR: '', utc: '', dateEN: '' })
   const [bg, setBg] = useState(getBg())
   const [photo, setPhoto] = useState(null)
@@ -65,13 +66,16 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
   }, [])
 
   useEffect(() => {
-    if (!activeTrip) { setPhoto(null); return }
+    if (!activeTrip || tab === 'admin') {
+      setPhoto(tab === 'admin' ? PHOTOS.admin : null)
+      return
+    }
     const url = getPhoto(activeTrip.name || '', activeTrip.destination || '')
     const img = new window.Image()
     img.onload = () => setPhoto(url)
     img.onerror = () => setPhoto(null)
     img.src = url
-  }, [activeTrip?.id])
+  }, [activeTrip?.id, tab])
 
   useEffect(() => {
     const fn = e => {
@@ -111,8 +115,8 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
         </div>
       </div>
 
-      {/* Onglets séjours redesignés */}
-      <div style={{ position:'relative', zIndex:1, display:'flex', gap:'.35rem', padding:'.45rem clamp(.75rem,3vw,1.5rem)', overflowX:'auto', scrollbarWidth:'none', WebkitOverflowScrolling:'touch', alignItems:'center' }}>
+      {/* Onglets séjours redesignés — masqués en admin */}
+      {tab !== 'admin' && <div style={{ position:'relative', zIndex:1, display:'flex', gap:'.35rem', padding:'.45rem clamp(.75rem,3vw,1.5rem)', overflowX:'auto', scrollbarWidth:'none', WebkitOverflowScrolling:'touch', alignItems:'center' }}>
         {trips.map((t, i) => {
           const color = t.color || TRIP_COLORS[i % TRIP_COLORS.length]
           const active = t.id === activeTrip?.id
@@ -130,7 +134,7 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
           )
         })}
         <button onClick={onNewTrip} style={{ background:'rgba(255,255,255,.1)', border:'1px dashed rgba(255,255,255,.3)', borderRadius:10, padding:'6px 12px', color:'rgba(255,255,255,.7)', cursor:'pointer', fontFamily:'inherit', fontSize:'.78rem', fontWeight:500, whiteSpace:'nowrap', transition:'all .15s' }}>＋ Nouveau</button>
-      </div>
+      </div>}
     </div>
   )
 }

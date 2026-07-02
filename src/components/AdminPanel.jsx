@@ -308,23 +308,30 @@ export default function AdminPanel({ uid, adminEmail, onClose, onManageTrip, inl
   const totalTrips = users.reduce((sum, u) => sum + u.trips.length, 0)
 
   return (
-    <div style={{ position: inline ? 'relative' : 'fixed', inset: inline ? 'auto' : 0, background: 'var(--bg)', zIndex: inline ? 'auto' : 1000, overflowY: 'auto', minHeight: inline ? '100vh' : 'auto' }}>
-      <div style={{ background: 'linear-gradient(135deg, #2a1a3e 0%, #1e2540 50%, #0f1f3a 100%)', padding: '1.25rem 1.5rem', color: '#fff' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.35rem', fontWeight: 700 }}>⚙️ Administration</div>
-            <div style={{ fontSize: '.78rem', opacity: .65, marginTop: '.15rem' }}>
-              {users.length} utilisateur{users.length > 1 ? 's' : ''} · {totalTrips} séjour{totalTrips > 1 ? 's' : ''}
+    <div style={{ position: inline ? 'relative' : 'fixed', inset: inline ? 'auto' : 0, background: 'var(--bg)', zIndex: inline ? 'auto' : 1000, overflowY: 'auto', minHeight: inline ? 'auto' : '100vh' }}>
+      {!inline && (
+        <div style={{ background: 'linear-gradient(135deg, #2a1a3e 0%, #1e2540 50%, #0f1f3a 100%)', padding: '1.25rem 1.5rem', color: '#fff' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.35rem', fontWeight: 700 }}>⚙️ Administration</div>
+              <div style={{ fontSize: '.78rem', opacity: .65, marginTop: '.15rem' }}>
+                {users.length} utilisateur{users.length > 1 ? 's' : ''} · {totalTrips} séjour{totalTrips > 1 ? 's' : ''}
+              </div>
             </div>
+            <button onClick={onClose} style={{ background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '7px 14px', color: '#fff', cursor: 'pointer', fontSize: '.82rem', fontFamily: 'inherit' }}>
+              ✕ Retour à l'app
+            </button>
           </div>
-          <button onClick={onClose} style={{
-            background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.2)', borderRadius: 8,
-            padding: '7px 14px', color: '#fff', cursor: 'pointer', fontSize: '.82rem', fontFamily: 'inherit'
-          }}>
-            ✕ Retour à l'app
-          </button>
         </div>
-      </div>
+      )}
+      {inline && (
+        <div style={{ padding: '1rem 1.5rem .5rem', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>⚙️ Administration</h2>
+          <div style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginTop: '.1rem' }}>
+            {users.length} utilisateur{users.length > 1 ? 's' : ''} · {totalTrips} séjour{totalTrips > 1 ? 's' : ''}
+          </div>
+        </div>
+      )}
 
       <div style={{ padding: '1.5rem' }}>
         {!selected ? (
