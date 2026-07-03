@@ -19,170 +19,185 @@ function getCountdown(startDate) {
   return `${j}j ${h}h`
 }
 
-export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay }) {
+export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay, setTab }) {
   const upcoming = trips.filter(t => getTripStatus(t) === 'upcoming').sort((a, b) => a.startDate?.localeCompare(b.startDate))
   const ongoing = trips.filter(t => getTripStatus(t) === 'ongoing')
   const past = trips.filter(t => getTripStatus(t) === 'past').sort((a, b) => b.endDate?.localeCompare(a.endDate))
   const nextTrip = ongoing[0] || upcoming[0]
 
-  return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '1.5rem 1rem 3rem' }}>
-
-      {/* Salutation */}
-      <div style={{ marginBottom: '1.75rem' }}>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1.3rem, 3.5vw, 1.8rem)', fontWeight: 700, color: 'var(--text)', marginBottom: '.3rem' }}>
-          {userName ? `Salut, ${userName} 👋` : 'Bienvenue ! 👋'}
+  if (trips.length === 0) {
+    return (
+      <div style={{ maxWidth: 600, margin: '3rem auto', textAlign: 'center', padding: '2rem 1rem' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '.75rem' }}>🥾</div>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.6rem', fontWeight: 700, marginBottom: '.5rem' }}>
+          {userName ? `Bienvenue, ${userName} !` : 'Bienvenue !'}
         </h1>
-        <p style={{ fontSize: '.88rem', color: 'var(--text-muted)' }}>
-          {trips.length === 0 ? 'Prêt à planifier ton premier séjour ?' :
-           nextTrip ? `Ton prochain séjour approche !` : 'Tous tes séjours sont terminés — prêt pour le prochain ?'}
+        <p style={{ fontSize: '.92rem', color: 'var(--text-muted)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
+          Planifie tes randonnées et séjours de A à Z — météo, activités, budget, valise.
         </p>
+        <button onClick={onCreateTrip} style={{
+          background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 14,
+          padding: '.9rem 2.5rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
+          fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(47,143,107,.35)',
+        }}>＋ Créer mon premier séjour</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '1.25rem 1.5rem 3rem' }}>
+
+      {/* ── GREETING BAR ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '.5rem' }}>
+        <div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 700, marginBottom: '.15rem' }}>
+            {userName ? `Salut, ${userName} 👋` : 'Tableau de bord'}
+          </h1>
+          <p style={{ fontSize: '.82rem', color: 'var(--text-muted)' }}>
+            {ongoing.length ? `${ongoing.length} séjour en cours` : upcoming.length ? `${upcoming.length} séjour${upcoming.length > 1 ? 's' : ''} à venir` : 'Tous tes séjours sont terminés'}
+          </p>
+        </div>
+        <button onClick={onCreateTrip} style={{
+          background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 10,
+          padding: '8px 16px', fontSize: '.82rem', fontWeight: 600, cursor: 'pointer',
+          fontFamily: 'inherit', boxShadow: '0 2px 12px rgba(47,143,107,.2)',
+        }}>＋ Nouveau séjour</button>
       </div>
 
-      {/* Prochain séjour — mis en avant */}
-      {nextTrip && (
-        <div onClick={() => onSelectTrip(nextTrip.id)} style={{
-          background: 'linear-gradient(135deg, var(--green) 0%, #1D9E75 100%)', color: '#fff',
-          borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
-          cursor: 'pointer', boxShadow: '0 8px 32px rgba(47,143,107,.25)',
-          transition: 'transform .15s', position: 'relative', overflow: 'hidden'
-        }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-          <div style={{ position: 'absolute', top: '-30%', right: '-10%', width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
-          <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', opacity: .75, marginBottom: '.4rem' }}>
-            {getTripStatus(nextTrip) === 'ongoing' ? '🟢 En cours' : '📅 Prochain séjour'}
-          </div>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.3rem', fontWeight: 700, marginBottom: '.2rem' }}>
-            {nextTrip.name}
-          </div>
-          {nextTrip.destination && <div style={{ fontSize: '.82rem', opacity: .85, marginBottom: '.5rem' }}>📍 {nextTrip.destination}</div>}
-          <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            {nextTrip.startDate && (
-              <span style={{ background: 'rgba(255,255,255,.18)', borderRadius: 20, padding: '3px 10px', fontSize: '.75rem', fontWeight: 500 }}>
-                {new Date(nextTrip.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} → {new Date(nextTrip.endDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-              </span>
-            )}
-            {getTripStatus(nextTrip) === 'upcoming' && getCountdown(nextTrip.startDate) && (
-              <span style={{ background: 'rgba(255,255,255,.18)', borderRadius: 20, padding: '3px 10px', fontSize: '.75rem', fontWeight: 600 }}>
-                ⏳ {getCountdown(nextTrip.startDate)}
-              </span>
-            )}
-            {nextTrip.days && (
-              <span style={{ fontSize: '.75rem', opacity: .7 }}>
-                {nextTrip.days.length} jours · {nextTrip.days.reduce((s, d) => s + (d.activities?.length || 0), 0)} activités
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '.5rem', marginTop: '.5rem', alignItems: 'center' }}>
-            <span style={{ background: 'rgba(255,255,255,.18)', borderRadius: 8, padding: '4px 10px', fontSize: '.75rem', cursor: 'pointer' }}
-              onClick={e => { e.stopPropagation(); onSelectTrip(nextTrip.id); setTimeout(() => document.querySelector('[data-tab="infos"]')?.click(), 100) }}>
-              🔗 Inviter des participants
-            </span>
-            <span style={{ fontSize: '.78rem', opacity: .5, marginLeft: 'auto' }}>Ouvrir →</span>
-          </div>
-        </div>
-      )}
+      {/* ── GRID PRINCIPAL ── */}
+      <div className="dashboard-grid">
 
-      {/* Hype Up — séjour actif */}
-      {activeTrip && (
-        <div style={{ marginBottom: '1.25rem' }}>
-          <TodayZone trip={activeTrip} tomorrowWeather={tomorrowWeather} onUpdateDay={onUpdateDay} />
-        </div>
-      )}
+        {/* COLONNE GAUCHE — Prochain séjour + Hype Up */}
+        <div className="dashboard-left">
 
-      {/* Tous les séjours */}
-      {trips.length > 0 && (
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.65rem' }}>
-            Mes séjours ({trips.length})
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '.65rem' }}>
+          {/* Prochain séjour — carte hero */}
+          {nextTrip && (
+            <div onClick={() => onSelectTrip(nextTrip.id)} style={{
+              background: `linear-gradient(135deg, ${nextTrip.color || 'var(--green)'} 0%, ${nextTrip.color || '#1D9E75'}dd 100%)`,
+              color: '#fff', borderRadius: 16, padding: '1.15rem 1.3rem', marginBottom: '.85rem',
+              cursor: 'pointer', boxShadow: '0 6px 24px rgba(0,0,0,.12)',
+              transition: 'transform .15s', position: 'relative', overflow: 'hidden'
+            }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+              <div style={{ position: 'absolute', top: '-40%', right: '-15%', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,.07)' }} />
+              <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', opacity: .7, marginBottom: '.3rem' }}>
+                {getTripStatus(nextTrip) === 'ongoing' ? '🟢 En cours' : '📅 Prochain séjour'}
+              </div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.2rem', fontWeight: 700, marginBottom: '.15rem' }}>{nextTrip.name}</div>
+              {nextTrip.destination && <div style={{ fontSize: '.78rem', opacity: .8, marginBottom: '.4rem' }}>📍 {nextTrip.destination}</div>}
+              <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                {nextTrip.startDate && (
+                  <span style={{ background: 'rgba(255,255,255,.18)', borderRadius: 16, padding: '2px 9px', fontSize: '.72rem', fontWeight: 500 }}>
+                    {new Date(nextTrip.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} → {new Date(nextTrip.endDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  </span>
+                )}
+                {getTripStatus(nextTrip) === 'upcoming' && getCountdown(nextTrip.startDate) && (
+                  <span style={{ background: 'rgba(255,255,255,.22)', borderRadius: 16, padding: '2px 9px', fontSize: '.72rem', fontWeight: 600 }}>⏳ {getCountdown(nextTrip.startDate)}</span>
+                )}
+              </div>
+              <div style={{ fontSize: '.72rem', opacity: .5, marginTop: '.4rem', textAlign: 'right' }}>Ouvrir →</div>
+            </div>
+          )}
+
+          {/* Hype Up */}
+          {activeTrip && (
+            <TodayZone trip={activeTrip} tomorrowWeather={tomorrowWeather} onUpdateDay={onUpdateDay} />
+          )}
+        </div>
+
+        {/* COLONNE DROITE — Liste séjours + actions */}
+        <div className="dashboard-right">
+
+          {/* Quick actions */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginBottom: '.85rem' }}>
+            {[
+              { icon: '📋', label: 'Planning', action: () => { if (activeTrip) { onSelectTrip(activeTrip.id); setTab?.('planning') } } },
+              { icon: '💰', label: 'Budget', action: () => { if (activeTrip) { onSelectTrip(activeTrip.id); setTab?.('budget') } } },
+              { icon: '🧳', label: 'Valise', action: () => { if (activeTrip) { onSelectTrip(activeTrip.id); setTab?.('valise') } } },
+              { icon: '🤖', label: 'IA Activités', action: () => { if (activeTrip) { onSelectTrip(activeTrip.id); setTab?.('ai') } } },
+            ].map((a, i) => (
+              <button key={i} onClick={a.action} style={{
+                background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12,
+                padding: '.65rem .75rem', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                gap: '.4rem', fontFamily: 'inherit', fontSize: '.8rem', fontWeight: 500,
+                color: 'var(--text)', boxShadow: 'var(--shadow-sm)', transition: 'box-shadow .15s',
+              }}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-sm)'}>
+                <span style={{ fontSize: '1.1rem' }}>{a.icon}</span>{a.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Liste des séjours */}
+          <div style={{ marginBottom: '.85rem' }}>
+            <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>
+              Mes séjours ({trips.length})
+            </div>
             {trips.map(t => {
               const status = getTripStatus(t)
               const countdown = status === 'upcoming' ? getCountdown(t.startDate) : null
+              const isActive = t.id === activeTrip?.id
               return (
                 <div key={t.id} onClick={() => onSelectTrip(t.id)} style={{
-                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14,
-                  padding: '.85rem 1rem', cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
-                  transition: 'box-shadow .15s, transform .15s',
+                  display: 'flex', alignItems: 'center', gap: '.65rem',
+                  background: isActive ? 'var(--green-light)' : 'var(--card)',
+                  border: `1px solid ${isActive ? 'var(--green)' : 'var(--border)'}`,
+                  borderRadius: 12, padding: '.7rem .85rem', marginBottom: '.4rem',
+                  cursor: 'pointer', boxShadow: 'var(--shadow-sm)', transition: 'all .15s',
                   borderLeft: `4px solid ${t.color || 'var(--green)'}`,
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; e.currentTarget.style.transform = 'translateY(0)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.3rem' }}>
-                    <span style={{ fontWeight: 600, fontSize: '.88rem' }}>{t.name}</span>
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-sm)'}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', marginBottom: '.1rem' }}>
+                      <span style={{ fontWeight: 600, fontSize: '.85rem' }}>{t.name}</span>
+                      {isActive && <span style={{ fontSize: '.55rem', background: 'var(--green)', color: '#fff', padding: '1px 6px', borderRadius: 8, fontWeight: 600 }}>Actif</span>}
+                    </div>
+                    <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+                      {t.destination && <span>📍 {t.destination}</span>}
+                      {t.startDate && <span>{new Date(t.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} → {new Date(t.endDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>}
+                    </div>
+                  </div>
+                  <div style={{ flexShrink: 0, textAlign: 'right' }}>
                     <span style={{
                       fontSize: '.6rem', fontWeight: 600, padding: '2px 7px', borderRadius: 10,
-                      background: status === 'ongoing' ? 'var(--green-light)' : status === 'upcoming' ? 'var(--blue-light)' : '#f5f4f0',
+                      background: status === 'ongoing' ? 'var(--green-light)' : status === 'upcoming' ? 'var(--blue-light)' : '#f0efe8',
                       color: status === 'ongoing' ? 'var(--green)' : status === 'upcoming' ? 'var(--blue)' : 'var(--text-muted)',
                     }}>
-                      {status === 'ongoing' ? '🟢 En cours' : status === 'upcoming' ? '📅 À venir' : '✅ Terminé'}
+                      {status === 'ongoing' ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminé'}
                     </span>
-                  </div>
-                  {t.destination && <div style={{ fontSize: '.76rem', color: 'var(--text-muted)', marginBottom: '.2rem' }}>📍 {t.destination}</div>}
-                  <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', fontSize: '.7rem', color: 'var(--text-muted)' }}>
-                    {t.startDate && <span>{new Date(t.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} → {new Date(t.endDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>}
-                    {countdown && <span style={{ fontWeight: 600, color: 'var(--blue)' }}>⏳ {countdown}</span>}
+                    {countdown && <div style={{ fontSize: '.68rem', fontWeight: 600, color: 'var(--blue)', marginTop: '.15rem' }}>⏳ {countdown}</div>}
                   </div>
                 </div>
               )
             })}
-            {/* Bouton créer */}
-            <div onClick={onCreateTrip} style={{
-              background: 'transparent', border: '2px dashed var(--border)', borderRadius: 14,
-              padding: '.85rem 1rem', cursor: 'pointer', display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', minHeight: 100,
-              transition: 'border-color .15s, background .15s', color: 'var(--text-muted)',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.background = 'var(--green-light)'; e.currentTarget.style.color = 'var(--green)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}>
-              <span style={{ fontSize: '1.5rem', marginBottom: '.3rem' }}>＋</span>
-              <span style={{ fontSize: '.82rem', fontWeight: 500 }}>Nouveau séjour</span>
-            </div>
           </div>
-        </div>
-      )}
 
-      {/* Séjours passés — souvenirs */}
-      {past.length > 0 && (
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.65rem' }}>
-            📸 Souvenirs ({past.length})
-          </h2>
-          <div style={{ display: 'flex', gap: '.5rem', overflowX: 'auto', paddingBottom: '.3rem', scrollbarWidth: 'none' }}>
-            {past.map(t => (
-              <div key={t.id} onClick={() => onSelectTrip(t.id)} style={{
-                flexShrink: 0, width: 180, background: 'var(--card)', border: '1px solid var(--border)',
-                borderRadius: 12, padding: '.75rem', cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
-              }}>
-                <div style={{ fontWeight: 600, fontSize: '.82rem', marginBottom: '.15rem' }}>{t.name}</div>
-                <div style={{ fontSize: '.7rem', color: 'var(--text-muted)' }}>
-                  {t.destination}
-                  {t.startDate && <span> · {new Date(t.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}</span>}
-                </div>
+          {/* Souvenirs */}
+          {past.length > 0 && (
+            <div>
+              <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>
+                📸 Souvenirs
               </div>
-            ))}
-          </div>
+              <div style={{ display: 'flex', gap: '.45rem', overflowX: 'auto', paddingBottom: '.25rem', scrollbarWidth: 'none' }}>
+                {past.map(t => (
+                  <div key={t.id} onClick={() => onSelectTrip(t.id)} style={{
+                    flexShrink: 0, width: 150, background: 'var(--card)', border: '1px solid var(--border)',
+                    borderRadius: 10, padding: '.6rem', cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
+                  }}>
+                    <div style={{ fontWeight: 600, fontSize: '.78rem', marginBottom: '.1rem' }}>{t.name}</div>
+                    <div style={{ fontSize: '.67rem', color: 'var(--text-muted)' }}>
+                      {t.startDate && new Date(t.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Pas de séjour du tout */}
-      {trips.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '.75rem' }}>🥾</div>
-          <p style={{ fontSize: '.92rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-            Planifie tes randonnées et séjours de A à Z<br/>météo, activités, budget, valise — tout au même endroit.
-          </p>
-          <button onClick={onCreateTrip} style={{
-            background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 14,
-            padding: '.85rem 2rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
-            fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(47,143,107,.35)',
-          }}>
-            ＋ Créer mon premier séjour
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

@@ -352,6 +352,7 @@ export default function App() {
               activeTrip={trip}
               tomorrowWeather={tomorrowWeather}
               onUpdateDay={(dayId, changes) => trip && store.updateDay(trip.id, dayId, changes)}
+              setTab={setTab}
             />
           )}
 
