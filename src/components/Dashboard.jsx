@@ -249,9 +249,10 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>Programme du séjour</div>
               {(trip.days || []).slice(0, 6).map(day => (
-                <div key={day.id} style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem', padding: '.3rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem' }}>
-                  <span style={{ fontWeight: 600, minWidth: 60 }}>{day.label?.split('.')[0]}.</span>
-                  <span style={{ flex: 1, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                <div key={day.id} style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem', padding: '.3rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem', overflow: 'hidden' }}>
+                  <span style={{ fontWeight: 600, minWidth: 42, flexShrink: 0 }}>{day.label?.split('.')[0]}.</span>
+                  <span style={{ flex: 1, color: 'var(--text-muted)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    className="dash-prog-text">
                     {day.activities?.[0]?.title || day.activities?.[0]?.subtitle || '—'}
                   </span>
                   {day.activities?.[0]?.distanceKm && <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>{day.activities[0].distanceKm}km</span>}
