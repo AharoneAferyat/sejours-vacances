@@ -95,6 +95,7 @@ export default function AppHeader({
         {NAV_ITEMS.map(item=>(
           <button key={item.id} onClick={()=>setTab(item.id)}
             style={{width:'100%',display:'flex',alignItems:'center',gap:'.5rem',padding:'.5rem .55rem',borderRadius:9,background:tab===item.id?'rgba(255,255,255,.18)':'transparent',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'.81rem',fontWeight:tab===item.id?600:400,color:tab===item.id?'#fff':'rgba(255,255,255,.72)',textAlign:'left',marginBottom:'.05rem',transition:'all .15s'}}
+            data-tab={item.id}
             onMouseEnter={e=>{if(tab!==item.id)e.currentTarget.style.background='rgba(255,255,255,.1)'}}
             onMouseLeave={e=>{if(tab!==item.id)e.currentTarget.style.background='transparent'}}>
             <span style={{width:20,textAlign:'center'}}>{item.icon}</span>{item.label}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import TodayZone from './TodayZone'
 
 function getTripStatus(trip) {
   if (!trip.startDate) return 'unknown'
@@ -18,7 +19,7 @@ function getCountdown(startDate) {
   return `${j}j ${h}h`
 }
 
-export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName }) {
+export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay }) {
   const upcoming = trips.filter(t => getTripStatus(t) === 'upcoming').sort((a, b) => a.startDate?.localeCompare(b.startDate))
   const ongoing = trips.filter(t => getTripStatus(t) === 'ongoing')
   const past = trips.filter(t => getTripStatus(t) === 'past').sort((a, b) => b.endDate?.localeCompare(a.endDate))
@@ -73,7 +74,20 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName 
               </span>
             )}
           </div>
-          <div style={{ position: 'absolute', bottom: '.8rem', right: '1rem', fontSize: '.78rem', opacity: .6 }}>Ouvrir →</div>
+          <div style={{ display: 'flex', gap: '.5rem', marginTop: '.5rem', alignItems: 'center' }}>
+            <span style={{ background: 'rgba(255,255,255,.18)', borderRadius: 8, padding: '4px 10px', fontSize: '.75rem', cursor: 'pointer' }}
+              onClick={e => { e.stopPropagation(); onSelectTrip(nextTrip.id); setTimeout(() => document.querySelector('[data-tab="infos"]')?.click(), 100) }}>
+              🔗 Inviter des participants
+            </span>
+            <span style={{ fontSize: '.78rem', opacity: .5, marginLeft: 'auto' }}>Ouvrir →</span>
+          </div>
+        </div>
+      )}
+
+      {/* Hype Up — séjour actif */}
+      {activeTrip && (
+        <div style={{ marginBottom: '1.25rem' }}>
+          <TodayZone trip={activeTrip} tomorrowWeather={tomorrowWeather} onUpdateDay={onUpdateDay} />
         </div>
       )}
 

@@ -349,6 +349,9 @@ export default function App() {
               onSelectTrip={id => { store.setActiveTrip(id); setTab('planning') }}
               onCreateTrip={() => setShowTripForm(true)}
               userName={store.isGuest ? store.guestSession?.voyageurName : (store.userDisplayName?.split(' ')[0] || store.userEmail?.split('@')[0])}
+              activeTrip={trip}
+              tomorrowWeather={tomorrowWeather}
+              onUpdateDay={(dayId, changes) => trip && store.updateDay(trip.id, dayId, changes)}
             />
           )}
 
