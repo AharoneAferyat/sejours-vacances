@@ -107,7 +107,6 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
   const [time, setTime] = useState({ local: '', dateFR: '', utc: '', dateEN: '' })
   const [bg, setBg] = useState(getBg())
   const [photo, setPhoto] = useState(null)
-  const [refreshingPhoto, setRefreshingPhoto] = useState(false)
   const [openMenu, setOpenMenu] = useState(null)
   const refTrips = useRef(null)
   const refAccount = useRef(null)
@@ -179,21 +178,6 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
     return () => document.removeEventListener('mousedown', fn)
   }, [])
 
-  const refreshPhoto = async () => {
-    if (!activeTrip || refreshingPhoto) return
-    setRefreshingPhoto(true)
-    const dest = activeTrip.destination || activeTrip.name || ''
-    try {
-      const r = await fetch(`/api/unsplash?q=${encodeURIComponent(dest + ' landmark cityscape panorama')}`)
-      const data = await r.json()
-      if (data.url) {
-        setPhoto(data.url)
-        if (typeof onUpdatePhoto === 'function') onUpdatePhoto(data.url)
-      }
-    } catch {}
-    setRefreshingPhoto(false)
-  }
-
   const tog = m => setOpenMenu(p => p === m ? null : m)
   const user = userEmail?.includes('@') ? userEmail.split('@')[0] : userEmail?.slice(0, 12)
 
@@ -212,15 +196,7 @@ export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip,
       <div style={{ position:'relative', zIndex:1, textAlign:'center', padding:'clamp(.75rem,2vw,1rem) 1.5rem clamp(.6rem,1.5vw,.8rem)', borderBottom:'1px solid rgba(255,255,255,.08)', display:'flex', flexDirection:'column', alignItems:'center', gap:'.35rem' }}>
         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:'clamp(.95rem,3vw,1.6rem)', fontWeight:700, background:'linear-gradient(135deg,#fff,rgba(255,255,255,.78))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
           Séjours Vacances
-          {tab !== 'admin' && (
-            <button onClick={refreshPhoto} disabled={refreshingPhoto}
-              title="Changer la photo de fond"
-              style={{ background:'none', border:'none', cursor:'pointer', fontSize:'.75rem', marginLeft:'.4rem', opacity: refreshingPhoto ? .3 : .5, transition:'opacity .15s' }}
-              onMouseEnter={e=>e.target.style.opacity=.9}
-              onMouseLeave={e=>e.target.style.opacity=.5}>
-              {refreshingPhoto ? '⏳' : '🔄'}
-            </button>
-          )}
+
         </div>
         <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'center', background:'rgba(255,255,255,.08)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,.12)', borderRadius:14, padding:'clamp(.3rem,1vw,.45rem) clamp(.8rem,3vw,1.4rem)', gap:'.04rem' }}>
           <span style={{ fontFamily:'monospace', fontSize:'clamp(.65rem,2vw,.78rem)', opacity:.82, fontWeight:500 }}>{time.dateFR}</span>

@@ -4,6 +4,7 @@ import { getTodayStr, genId, formatDate, displayToISO } from './utils'
 import { validateInviteCode, consumeInviteCode } from './firebase'
 import Header from './components/Header'
 import EmptyState from './components/EmptyState'
+import Dashboard from './components/Dashboard'
 import JoinTripModal from './components/JoinTripModal'
 import MainHeader from './components/MainHeader'
 import BottomNav from './components/BottomNav'
@@ -341,19 +342,14 @@ export default function App() {
             />
           )}
 
-          {/* EMPTY STATE — aucun séjour */}
-          {!trip && tab !== 'admin' && (
-            <EmptyState
+          {/* TABLEAU DE BORD / ACCUEIL */}
+          {tab === 'dashboard' && (
+            <Dashboard
+              trips={store.trips}
+              onSelectTrip={id => { store.setActiveTrip(id); setTab('planning') }}
               onCreateTrip={() => setShowTripForm(true)}
               userName={store.isGuest ? store.guestSession?.voyageurName : (store.userDisplayName?.split(' ')[0] || store.userEmail?.split('@')[0])}
             />
-          )}
-
-          {/* TABLEAU DE BORD — Hype Up (uniquement sur dashboard) */}
-          {tab === 'dashboard' && trip && (
-            <div className="content-pane">
-              <TodayZone trip={trip} tomorrowWeather={tomorrowWeather} onUpdateDay={(dayId, changes) => store.updateDay(trip.id, dayId, changes)} />
-            </div>
           )}
 
         {/* PLANNING */}
