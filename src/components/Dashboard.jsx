@@ -208,7 +208,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
             {/* Statistiques */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>Statistiques</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem' }}>
+              <div className="dash-stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem' }}>
                 {[
                   { val: `${totalKm.toFixed(1)} km`, label: 'Trajet total', icon: '📍' },
                   { val: `${Math.floor(totalDuration/60)}h${String(totalDuration%60).padStart(2,'0')}`, label: 'Activités prévues', icon: '⏱' },
@@ -251,7 +251,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
               {(trip.days || []).slice(0, 6).map(day => (
                 <div key={day.id} style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem', padding: '.3rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem' }}>
                   <span style={{ fontWeight: 600, minWidth: 60 }}>{day.label?.split('.')[0]}.</span>
-                  <span style={{ flex: 1, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ flex: 1, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
                     {day.activities?.[0]?.title || day.activities?.[0]?.subtitle || '—'}
                   </span>
                   {day.activities?.[0]?.distanceKm && <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>{day.activities[0].distanceKm}km</span>}
@@ -265,7 +265,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
 
       {/* ── 3 CARDS : Sac / Budget / IA ── */}
       {trip && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '.65rem', marginBottom: '1.25rem' }}>
+        <div className="dash-bottom-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '.65rem', marginBottom: '1.25rem' }}>
           <div onClick={() => goTrip('sac')} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', cursor: 'pointer', boxShadow: 'var(--shadow-sm)', transition: 'box-shadow .15s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-sm)'}>
