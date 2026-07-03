@@ -29,15 +29,86 @@ function getFallbackPhoto(name='',dest='') {
   return PHOTOS.default
 }
 
-export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay, setTab }) {
+
+const EXPIRE_OPTS = [
+  { label: 'Jamais', value: null },
+  { label: '1 heure', value: 3600000 },
+  { label: '24 heures', value: 86400000 },
+  { label: '7 jours', value: 604800000 },
+]
+const USES_OPTS = [
+  { label: 'Illimité', value: null },
+  { label: '1', value: 1 },
+  { label: '3', value: 3 },
+  { label: '5', value: 5 },
+  { label: '10', value: 10 },
+]
+
+function InviteGenerator({ tripId, tripName, ownerUid }) {
+  const [url, setUrl] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [maxUses, setMaxUses] = useState(null)
+  const [expiresIn, setExpiresIn] = useState(null)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const { generateShareCode } = await import('../firebase')
+      const code = await generateShareCode(ownerUid, tripId, tripName, { maxUses, expiresIn })
+      setUrl(window.location.origin + '?share=' + code)
+    } catch { alert('Erreur') }
+    setLoading(false)
+  }
+
+  const copy = () => { navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) }
+
+  if (url) {
+    return (
+      <div>
+        <div style={{ display: 'flex', gap: '.35rem', alignItems: 'center' }}>
+          <input value={url} readOnly style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid var(--border)', fontSize: '.75rem', fontFamily: 'monospace', background: 'var(--bg)' }} onClick={e => e.target.select()} />
+          <button onClick={copy} className="btn btn-primary">{copied ? '✅' : '📋 Copier'}</button>
+        </div>
+        <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginTop: '.3rem' }}>Partage ce lien avec tes compagnons de voyage</div>
+        <button onClick={() => setUrl(null)} style={{ marginTop: '.3rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '.72rem', color: 'var(--text-muted)' }}>🔄 Générer un nouveau lien</button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginBottom: '.6rem' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '.65rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.2rem', textTransform: 'uppercase' }}>Expiration</label>
+          <select value={expiresIn || ''} onChange={e => setExpiresIn(e.target.value ? Number(e.target.value) : null)} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.8rem', fontFamily: 'inherit' }}>
+            {EXPIRE_OPTS.map(o => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '.65rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.2rem', textTransform: 'uppercase' }}>Max personnes</label>
+          <select value={maxUses || ''} onChange={e => setMaxUses(e.target.value ? Number(e.target.value) : null)} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.8rem', fontFamily: 'inherit' }}>
+            {USES_OPTS.map(o => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
+          </select>
+        </div>
+      </div>
+      <button onClick={generate} disabled={loading} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+        {loading ? '⏳ Génération...' : '🔗 Générer le lien d\'invitation'}
+      </button>
+    </div>
+  )
+}
+
+export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay, setTab, uid }) {
   const [time, setTime] = useState('')
   const [countdown, setCountdown] = useState(null)
+  const [showInvite, setShowInvite] = useState(false)
 
   const upcoming = trips.filter(t => getTripStatus(t)==='upcoming').sort((a,b) => a.startDate?.localeCompare(b.startDate))
   const ongoing = trips.filter(t => getTripStatus(t)==='ongoing')
   const past = trips.filter(t => getTripStatus(t)==='past')
-  const nextTrip = ongoing[0] || upcoming[0] || trips[0]
-  const trip = activeTrip || nextTrip
+  const nextTrip = ongoing[0] || upcoming[0]
+  const trip = activeTrip || nextTrip || trips[0]
 
   useEffect(() => {
     const tick = () => {
@@ -86,36 +157,38 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
   return (
     <div style={{ padding: 'clamp(.75rem,2vw,1.5rem)' }}>
 
-      {/* ── HERO CARD — prochain séjour avec photo ── */}
-      {trip && (
-        <div style={{
-          borderRadius: 18, overflow: 'hidden', marginBottom: '1rem',
-          boxShadow: '0 4px 24px rgba(0,0,0,.1)', position: 'relative',
-          background: trip.color || 'var(--green)', color: '#fff',
-          minHeight: 200,
-        }}>
-          {/* Photo de fond */}
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${photo})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: .45 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 100%)' }} />
-
-          <div style={{ position: 'relative', zIndex: 1, padding: 'clamp(1rem,3vw,1.5rem)' }}>
-            <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', opacity: .75, marginBottom: '.35rem' }}>
-              {getTripStatus(trip) === 'ongoing' ? '🟢 Séjour en cours' : '📅 Prochain séjour'}
-            </div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1.3rem,4vw,1.8rem)', fontWeight: 700, marginBottom: '.1rem' }}>{trip.name}</div>
-            {trip.subtitle && <div style={{ fontSize: '.88rem', opacity: .85, marginBottom: '.3rem' }}>{trip.subtitle}</div>}
-            <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', fontSize: '.78rem', opacity: .85, marginBottom: '.7rem' }}>
-              {trip.destination && <span>📍 {trip.destination}</span>}
-              {trip.startDate && <span>📅 {new Date(trip.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} → {new Date(trip.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}</span>}
-              {voyageurs.length > 0 && <span>👥 {voyageurs.length} voyageur{voyageurs.length > 1 ? 's' : ''}</span>}
-            </div>
-            <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
-              <button onClick={() => goTrip('planning')} style={{ background: '#fff', color: 'var(--text)', border: 'none', borderRadius: 10, padding: '7px 16px', fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Ouvrir le séjour →</button>
-              <button onClick={() => goTrip('infos')} style={{ background: 'rgba(255,255,255,.2)', color: '#fff', border: '1px solid rgba(255,255,255,.3)', borderRadius: 10, padding: '7px 14px', fontSize: '.78rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>🔗 Inviter</button>
+      {/* ── HERO CARD — prochain séjour (toujours le plus proche par date) ── */}
+      {(nextTrip || trips[0]) && (() => {
+        const hero = nextTrip || trips[0]
+        const heroPhoto = hero.headerPhoto || getFallbackPhoto(hero.name, hero.destination)
+        const heroVoy = hero.voyageurs || []
+        return (
+          <div style={{
+            borderRadius: 18, overflow: 'hidden', marginBottom: '1rem',
+            boxShadow: '0 4px 24px rgba(0,0,0,.1)', position: 'relative',
+            background: hero.color || 'var(--green)', color: '#fff', minHeight: 200,
+          }}>
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${heroPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: .45 }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 100%)' }} />
+            <div style={{ position: 'relative', zIndex: 1, padding: 'clamp(1rem,3vw,1.5rem)' }}>
+              <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', opacity: .75, marginBottom: '.35rem' }}>
+                {getTripStatus(hero) === 'ongoing' ? '🟢 Séjour en cours' : '📅 Prochain séjour'}
+              </div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1.3rem,4vw,1.8rem)', fontWeight: 700, marginBottom: '.1rem' }}>{hero.name}</div>
+              {hero.subtitle && <div style={{ fontSize: '.88rem', opacity: .85, marginBottom: '.3rem' }}>{hero.subtitle}</div>}
+              <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', fontSize: '.78rem', opacity: .85, marginBottom: '.7rem' }}>
+                {hero.destination && <span>📍 {hero.destination}</span>}
+                {hero.startDate && <span>📅 {new Date(hero.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} → {new Date(hero.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}</span>}
+                {heroVoy.length > 0 && <span>👥 {heroVoy.length} voyageur{heroVoy.length > 1 ? 's' : ''}</span>}
+              </div>
+              <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+                <button onClick={() => { onSelectTrip(hero.id); setTab?.('planning') }} style={{ background: '#fff', color: 'var(--text)', border: 'none', borderRadius: 10, padding: '7px 16px', fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Ouvrir le séjour →</button>
+                <button onClick={() => setShowInvite(true)} style={{ background: 'rgba(255,255,255,.2)', color: '#fff', border: '1px solid rgba(255,255,255,.3)', borderRadius: 10, padding: '7px 14px', fontSize: '.78rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>🔗 Inviter</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ── GRID : Countdown + Météo | Stats + Voyageurs ── */}
       {trip && (
@@ -169,7 +242,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   </div>
                 ))}
               </div>
-              <button onClick={() => goTrip('infos')} style={{ marginTop: '.5rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.78rem', color: 'var(--green)', fontWeight: 500 }}>＋ Inviter un participant</button>
+              <button onClick={() => setShowInvite(true)} style={{ marginTop: '.5rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.78rem', color: 'var(--green)', fontWeight: 500 }}>＋ Inviter un participant</button>
             </div>
 
             {/* Programme résumé */}
@@ -232,7 +305,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
           <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.55rem' }}>
             Mes séjours ({trips.length})
           </div>
-          <div style={{ display: 'flex', gap: '.6rem', overflowX: 'auto', paddingBottom: '.4rem', scrollbarWidth: 'none' }}>
+          <div style={{ display: 'flex', gap: '.6rem', overflowX: 'auto', paddingBottom: '.5rem', scrollbarWidth: 'thin' }}>
             {trips.map(t => {
               const status = getTripStatus(t)
               const isActive = t.id === trip?.id
@@ -272,6 +345,19 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
               <span style={{ fontSize: '1.5rem', marginBottom: '.2rem' }}>＋</span>
               <span style={{ fontSize: '.78rem', fontWeight: 500 }}>Nouveau séjour</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL INVITATION ── */}
+      {showInvite && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}
+          onClick={e => e.target === e.currentTarget && setShowInvite(false)}>
+          <div style={{ background: '#fff', borderRadius: 18, padding: '1.5rem', maxWidth: 420, width: '100%', boxShadow: '0 16px 48px rgba(0,0,0,.2)' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '.25rem' }}>🔗 Inviter des participants</h2>
+            <p style={{ fontSize: '.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Génère un lien de partage pour que tes amis rejoignent le séjour.</p>
+            <InviteGenerator tripId={trip?.id} tripName={trip?.name} ownerUid={uid} />
+            <button onClick={() => setShowInvite(false)} style={{ marginTop: '.75rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.82rem', color: 'var(--text-muted)' }}>Fermer</button>
           </div>
         </div>
       )}

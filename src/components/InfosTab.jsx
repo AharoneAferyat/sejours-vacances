@@ -195,6 +195,12 @@ export default function InfosTab({ trip, onUpdateTrip }) {
 
   return (
     <div>
+      {/* Section partage — en premier */}
+      <div className="info-card" style={{ borderLeft: '3px solid var(--green)', marginBottom: '1rem' }}>
+        <h3>🔗 Inviter des participants</h3>
+        <p>Génère un lien de partage pour ce séjour. Toute personne avec le lien pourra voir et participer.</p>
+        <ShareLink tripId={trip.id} tripName={trip.name} ownerUid={trip.ownerUid || ''} />
+      </div>
       {blocks.length === 0 && !adding && (
         <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>📋</div>
@@ -232,13 +238,6 @@ export default function InfosTab({ trip, onUpdateTrip }) {
         )
       }
     
-      {/* Section partage */}
-      <div className="info-card" style={{ borderLeft: '3px solid var(--green)' }}>
-        <h3>🔗 Inviter des participants</h3>
-        <p>Génère un lien de partage pour ce séjour. Toute personne avec le lien pourra voir et participer.</p>
-        <ShareLink tripId={trip.id} tripName={trip.name} ownerUid={trip.ownerUid || ''} />
-      </div>
-
 </div>
   )
 }

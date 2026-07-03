@@ -353,6 +353,7 @@ export default function App() {
               tomorrowWeather={tomorrowWeather}
               onUpdateDay={(dayId, changes) => trip && store.updateDay(trip.id, dayId, changes)}
               setTab={setTab}
+              uid={store.uid}
             />
           )}
 
