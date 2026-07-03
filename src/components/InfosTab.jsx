@@ -59,18 +59,38 @@ function renderContent(text) {
 }
 
 
+const EXPIRE_OPTIONS = [
+  { label: 'Jamais', value: null },
+  { label: '1 heure', value: 3600000 },
+  { label: '24 heures', value: 86400000 },
+  { label: '7 jours', value: 604800000 },
+  { label: '30 jours', value: 2592000000 },
+]
+const USES_OPTIONS = [
+  { label: 'Illimité', value: null },
+  { label: '1 personne', value: 1 },
+  { label: '3 personnes', value: 3 },
+  { label: '5 personnes', value: 5 },
+  { label: '10 personnes', value: 10 },
+]
+
 function ShareLink({ tripId, tripName, ownerUid }) {
   const [shareUrl, setShareUrl] = useState(null)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showOptions, setShowOptions] = useState(false)
+  const [maxUses, setMaxUses] = useState(null)
+  const [expiresIn, setExpiresIn] = useState(null)
+  const [linkInfo, setLinkInfo] = useState(null)
 
   const generate = async () => {
     setLoading(true)
     try {
       const { generateShareCode } = await import('../firebase')
-      const code = await generateShareCode(ownerUid, tripId, tripName)
+      const code = await generateShareCode(ownerUid, tripId, tripName, { maxUses, expiresIn })
       const url = window.location.origin + '?share=' + code
       setShareUrl(url)
+      setLinkInfo({ maxUses, expiresIn })
     } catch (e) {
       console.error(e)
       alert('Erreur lors de la création du lien')
@@ -84,24 +104,67 @@ function ShareLink({ tripId, tripName, ownerUid }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const reset = () => {
+    setShareUrl(null)
+    setLinkInfo(null)
+    setShowOptions(false)
+  }
+
   if (!shareUrl) {
     return (
-      <button onClick={generate} disabled={loading} className="btn btn-primary" style={{ marginTop: '.5rem' }}>
-        {loading ? '⏳ Génération...' : '🔗 Générer un lien d\'invitation'}
-      </button>
+      <div style={{ marginTop: '.5rem' }}>
+        {!showOptions ? (
+          <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+            <button onClick={generate} disabled={loading} className="btn btn-primary">
+              {loading ? '⏳ Génération...' : '🔗 Générer un lien'}
+            </button>
+            <button onClick={() => setShowOptions(true)} className="btn" style={{ fontSize: '.78rem' }}>
+              ⚙️ Options
+            </button>
+          </div>
+        ) : (
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '.85rem', marginBottom: '.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.6rem', marginBottom: '.75rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '.68rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.25rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Expiration</label>
+                <select value={expiresIn || ''} onChange={e => setExpiresIn(e.target.value ? Number(e.target.value) : null)}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.82rem', fontFamily: 'inherit', background: '#fff' }}>
+                  {EXPIRE_OPTIONS.map(o => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '.68rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.25rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Nb max d'utilisations</label>
+                <select value={maxUses || ''} onChange={e => setMaxUses(e.target.value ? Number(e.target.value) : null)}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.82rem', fontFamily: 'inherit', background: '#fff' }}>
+                  {USES_OPTIONS.map(o => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '.4rem' }}>
+              <button onClick={generate} disabled={loading} className="btn btn-primary">
+                {loading ? '⏳...' : '🔗 Générer'}
+              </button>
+              <button onClick={() => setShowOptions(false)} className="btn">Annuler</button>
+            </div>
+          </div>
+        )}
+      </div>
     )
   }
 
   return (
     <div style={{ marginTop: '.5rem' }}>
       <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
-        <input value={shareUrl} readOnly style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.78rem', background: 'var(--bg)', fontFamily: 'monospace' }} onClick={e => e.target.select()} />
+        <input value={shareUrl} readOnly style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.75rem', background: 'var(--bg)', fontFamily: 'monospace' }} onClick={e => e.target.select()} />
         <button onClick={copy} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
           {copied ? '✅ Copié !' : '📋 Copier'}
         </button>
+        <button onClick={reset} className="btn" title="Générer un nouveau lien" style={{ whiteSpace: 'nowrap' }}>🔄</button>
       </div>
-      <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginTop: '.3rem' }}>
-        Partage ce lien avec tes compagnons de voyage
+      <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginTop: '.3rem', display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
+        <span>Partage ce lien avec tes compagnons</span>
+        {linkInfo?.maxUses && <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '1px 6px', borderRadius: 10 }}>Max {linkInfo.maxUses} pers.</span>}
+        {linkInfo?.expiresIn && <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '1px 6px', borderRadius: 10 }}>Expire dans {EXPIRE_OPTIONS.find(o => o.value === linkInfo.expiresIn)?.label}</span>}
       </div>
     </div>
   )

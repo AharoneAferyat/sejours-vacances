@@ -295,14 +295,18 @@ export async function adminDeleteUser(uid) {
 
 
 // Générer un code de partage pour un séjour
-export async function generateShareCode(uid, tripId, tripName = '') {
+export async function generateShareCode(uid, tripId, tripName = '', options = {}) {
   const code = 'SHR-' + Array.from({length:6}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('')
   await setDoc(doc(db, 'guestAccess', code), {
     ownerUid: uid,
     tripId: tripId,
     tripName: tripName,
     createdAt: Date.now(),
-    type: 'share-link'
+    type: 'share-link',
+    maxUses: options.maxUses || null,     // null = illimité
+    expiresAt: options.expiresIn ? Date.now() + options.expiresIn : null, // null = jamais
+    usedCount: 0,
+    usedBy: [],
   })
   return code
 }
@@ -311,15 +315,19 @@ export async function generateShareCode(uid, tripId, tripName = '') {
 export async function validateShareCode(code) {
   try {
     const snap = await getDoc(doc(db, 'guestAccess', code))
-    if (!snap.exists()) return null
+    if (!snap.exists()) return { error: 'Lien invalide' }
     const data = snap.data()
-    if (data.type !== 'share-link') return null
-    return data
-  } catch { return null }
+    if (data.type !== 'share-link') return { error: 'Lien invalide' }
+    // Vérifier expiration
+    if (data.expiresAt && Date.now() > data.expiresAt) return { error: 'Ce lien a expiré' }
+    // Vérifier nombre d'utilisations
+    if (data.maxUses && (data.usedCount || 0) >= data.maxUses) return { error: 'Ce lien a atteint le nombre maximum d\'utilisations' }
+    return { ...data, valid: true }
+  } catch { return { error: 'Erreur de vérification' } }
 }
 
 // Ajouter un voyageur au séjour d'un autre utilisateur via share link
-export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurEmail) {
+export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurEmail, shareCode = '') {
   try {
     const snap = await getDoc(doc(db, 'users', ownerUid))
     if (!snap.exists()) return false
@@ -334,6 +342,20 @@ export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurE
     trips[tripIdx] = { ...trip, voyageurs }
     
     await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
+    
+    // Incrémenter le compteur d'utilisations du lien
+    try {
+      const codeSnap = await getDoc(doc(db, 'guestAccess', shareCode))
+      if (codeSnap.exists()) {
+        const codeData = codeSnap.data()
+        await setDoc(doc(db, 'guestAccess', shareCode), {
+          ...codeData,
+          usedCount: (codeData.usedCount || 0) + 1,
+          usedBy: [...(codeData.usedBy || []), { name: voyageurName, email: voyageurEmail, joinedAt: Date.now() }]
+        })
+      }
+    } catch {}
+    
     return true
   } catch (e) { console.error('joinTripViaShare failed:', e); return false }
 }

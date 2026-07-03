@@ -26,7 +26,7 @@ export default function JoinTripModal({ shareCode, onJoined, onClose }) {
     if (!email.trim() || !email.includes('@')) return alert('Entre une adresse email valide')
     
     setStep('joining')
-    const ok = await joinTripViaShare(shareData.ownerUid, shareData.tripId, name.trim(), email.trim())
+    const ok = await joinTripViaShare(shareData.ownerUid, shareData.tripId, name.trim(), email.trim(), shareCode)
     if (ok) {
       setStep('done')
       setTimeout(() => onJoined(), 2000)
@@ -58,9 +58,19 @@ export default function JoinTripModal({ shareCode, onJoined, onClose }) {
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.3rem', fontWeight: 700, marginBottom: '.3rem' }}>
               Tu es invité !
             </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', marginBottom: '1.5rem' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', marginBottom: '1rem' }}>
               Rejoins le séjour <strong style={{ color: 'var(--text)' }}>"{shareData.tripName || 'Séjour'}"</strong>
             </p>
+            {(shareData.maxUses || shareData.expiresAt) && (
+              <div style={{ display: 'flex', gap: '.4rem', justifyContent: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                {shareData.maxUses && <span style={{ fontSize: '.7rem', background: '#eef5ff', color: '#275d9c', padding: '2px 8px', borderRadius: 10 }}>
+                  {shareData.maxUses - (shareData.usedCount || 0)} place{shareData.maxUses - (shareData.usedCount || 0) > 1 ? 's' : ''} restante{shareData.maxUses - (shareData.usedCount || 0) > 1 ? 's' : ''}
+                </span>}
+                {shareData.expiresAt && <span style={{ fontSize: '.7rem', background: '#fff8e6', color: '#8f4e20', padding: '2px 8px', borderRadius: 10 }}>
+                  Expire {new Date(shareData.expiresAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>}
+              </div>
+            )}
 
             <div style={{ textAlign: 'left', marginBottom: '.75rem' }}>
               <label style={{ display: 'block', fontSize: '.72rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.3rem', textTransform: 'uppercase', letterSpacing: '.06em' }}>
