@@ -1,9 +1,8 @@
-import { useState } from 'react'
-import TodayZone from './TodayZone'
+import { useState, useEffect } from 'react'
 
 function getTripStatus(trip) {
   if (!trip.startDate) return 'unknown'
-  const today = new Date().toISOString().slice(0, 10)
+  const today = new Date().toISOString().slice(0,10)
   if (today < trip.startDate) return 'upcoming'
   if (today > trip.endDate) return 'past'
   return 'ongoing'
@@ -16,188 +15,266 @@ function getCountdown(startDate) {
   if (diff <= 0) return null
   const j = Math.floor(diff / 86400000)
   const h = Math.floor((diff % 86400000) / 3600000)
-  return `${j}j ${h}h`
+  const m = Math.floor((diff % 3600000) / 60000)
+  return { j, h, m, text: `${j}j ${h}h ${m}m` }
+}
+
+const PHOTOS = {
+  mountain:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80&fit=crop&crop=entropy&h=350',
+  default:'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80&fit=crop&crop=entropy&h=350',
+}
+function getFallbackPhoto(name='',dest='') {
+  const t = (name+' '+dest).toLowerCase()
+  if (/mont|alp|isère|savoie|chamonix|ski|neige|grenoble|annecy/.test(t)) return PHOTOS.mountain
+  return PHOTOS.default
 }
 
 export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay, setTab }) {
-  const upcoming = trips.filter(t => getTripStatus(t) === 'upcoming').sort((a, b) => a.startDate?.localeCompare(b.startDate))
-  const ongoing = trips.filter(t => getTripStatus(t) === 'ongoing')
-  const past = trips.filter(t => getTripStatus(t) === 'past').sort((a, b) => b.endDate?.localeCompare(a.endDate))
-  const nextTrip = ongoing[0] || upcoming[0]
+  const [time, setTime] = useState('')
+  const [countdown, setCountdown] = useState(null)
+
+  const upcoming = trips.filter(t => getTripStatus(t)==='upcoming').sort((a,b) => a.startDate?.localeCompare(b.startDate))
+  const ongoing = trips.filter(t => getTripStatus(t)==='ongoing')
+  const past = trips.filter(t => getTripStatus(t)==='past')
+  const nextTrip = ongoing[0] || upcoming[0] || trips[0]
+  const trip = activeTrip || nextTrip
+
+  useEffect(() => {
+    const tick = () => {
+      setTime(new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}))
+      if (trip?.startDate) setCountdown(getCountdown(trip.startDate))
+    }
+    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
+  }, [trip?.startDate])
+
+  // Stats du séjour
+  const totalKm = trip?.days?.reduce((s,d) => s + d.activities.reduce((a,act) => a + (parseFloat(act.distanceKm)||0), 0), 0) || 0
+  const totalDplus = trip?.days?.reduce((s,d) => s + d.activities.reduce((a,act) => a + (parseFloat(act.dplus)||0), 0), 0) || 0
+  const totalDuration = trip?.days?.reduce((s,d) => s + d.activities.reduce((a,act) => a + (parseFloat(act.durationMin)||0), 0), 0) || 0
+  const totalDays = trip?.days?.length || 0
+  const totalActs = trip?.days?.reduce((s,d) => s + (d.activities?.length||0), 0) || 0
+  const voyageurs = trip?.voyageurs || []
+  const photo = trip?.headerPhoto || getFallbackPhoto(trip?.name, trip?.destination)
+
+  // Budget
+  const expenses = trip?.expenses || []
+  const perso = Object.values(trip?.voyageurData || {}).flatMap(vd => vd.depenses || [])
+  const totalSpent = [...expenses, ...perso].reduce((s,e) => s + (parseFloat(e.amount)||0), 0)
+  const budget = trip?.budget || 0
+
+  // Sac à dos
+  const sacItems = Object.values(trip?.voyageurData || {}).flatMap(vd => vd.sac || [])
+  const sacDone = sacItems.filter(i => i.done).length
 
   if (trips.length === 0) {
     return (
-      <div style={{ maxWidth: 600, margin: '3rem auto', textAlign: 'center', padding: '2rem 1rem' }}>
+      <div style={{ maxWidth: 550, margin: '4rem auto', textAlign: 'center', padding: '2rem 1rem' }}>
         <div style={{ fontSize: '3.5rem', marginBottom: '.75rem' }}>🥾</div>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.6rem', fontWeight: 700, marginBottom: '.5rem' }}>
           {userName ? `Bienvenue, ${userName} !` : 'Bienvenue !'}
         </h1>
-        <p style={{ fontSize: '.92rem', color: 'var(--text-muted)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
+        <p style={{ fontSize: '.9rem', color: 'var(--text-muted)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
           Planifie tes randonnées et séjours de A à Z — météo, activités, budget, valise.
         </p>
-        <button onClick={onCreateTrip} style={{
-          background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 14,
-          padding: '.9rem 2.5rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
-          fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(47,143,107,.35)',
-        }}>＋ Créer mon premier séjour</button>
+        <button onClick={onCreateTrip} className="btn btn-primary" style={{ padding: '.9rem 2.5rem', fontSize: '1rem', borderRadius: 14 }}>＋ Créer mon premier séjour</button>
       </div>
     )
   }
 
+  const goTrip = (tab) => { if (trip) { onSelectTrip(trip.id); setTab?.(tab) } }
+
   return (
-    <div style={{ padding: '1.25rem 1.5rem 3rem' }}>
+    <div style={{ padding: 'clamp(.75rem,2vw,1.5rem)' }}>
 
-      {/* ── GREETING BAR ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '.5rem' }}>
-        <div>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', fontWeight: 700, marginBottom: '.15rem' }}>
-            {userName ? `Salut, ${userName} 👋` : 'Tableau de bord'}
-          </h1>
-          <p style={{ fontSize: '.82rem', color: 'var(--text-muted)' }}>
-            {ongoing.length ? `${ongoing.length} séjour en cours` : upcoming.length ? `${upcoming.length} séjour${upcoming.length > 1 ? 's' : ''} à venir` : 'Tous tes séjours sont terminés'}
-          </p>
-        </div>
-        <button onClick={onCreateTrip} style={{
-          background: 'var(--green)', color: '#fff', border: 'none', borderRadius: 10,
-          padding: '8px 16px', fontSize: '.82rem', fontWeight: 600, cursor: 'pointer',
-          fontFamily: 'inherit', boxShadow: '0 2px 12px rgba(47,143,107,.2)',
-        }}>＋ Nouveau séjour</button>
-      </div>
+      {/* ── HERO CARD — prochain séjour avec photo ── */}
+      {trip && (
+        <div style={{
+          borderRadius: 18, overflow: 'hidden', marginBottom: '1rem',
+          boxShadow: '0 4px 24px rgba(0,0,0,.1)', position: 'relative',
+          background: trip.color || 'var(--green)', color: '#fff',
+          minHeight: 200,
+        }}>
+          {/* Photo de fond */}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${photo})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: .45 }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 100%)' }} />
 
-      {/* ── GRID PRINCIPAL ── */}
-      <div className="dashboard-grid">
-
-        {/* COLONNE GAUCHE — Prochain séjour + Hype Up */}
-        <div className="dashboard-left">
-
-          {/* Prochain séjour — carte hero */}
-          {nextTrip && (
-            <div onClick={() => onSelectTrip(nextTrip.id)} style={{
-              background: `linear-gradient(135deg, ${nextTrip.color || 'var(--green)'} 0%, ${nextTrip.color || '#1D9E75'}dd 100%)`,
-              color: '#fff', borderRadius: 16, padding: '1.15rem 1.3rem', marginBottom: '.85rem',
-              cursor: 'pointer', boxShadow: '0 6px 24px rgba(0,0,0,.12)',
-              transition: 'transform .15s', position: 'relative', overflow: 'hidden'
-            }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-              <div style={{ position: 'absolute', top: '-40%', right: '-15%', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,.07)' }} />
-              <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', opacity: .7, marginBottom: '.3rem' }}>
-                {getTripStatus(nextTrip) === 'ongoing' ? '🟢 En cours' : '📅 Prochain séjour'}
-              </div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.2rem', fontWeight: 700, marginBottom: '.15rem' }}>{nextTrip.name}</div>
-              {nextTrip.destination && <div style={{ fontSize: '.78rem', opacity: .8, marginBottom: '.4rem' }}>📍 {nextTrip.destination}</div>}
-              <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                {nextTrip.startDate && (
-                  <span style={{ background: 'rgba(255,255,255,.18)', borderRadius: 16, padding: '2px 9px', fontSize: '.72rem', fontWeight: 500 }}>
-                    {new Date(nextTrip.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} → {new Date(nextTrip.endDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                  </span>
-                )}
-                {getTripStatus(nextTrip) === 'upcoming' && getCountdown(nextTrip.startDate) && (
-                  <span style={{ background: 'rgba(255,255,255,.22)', borderRadius: 16, padding: '2px 9px', fontSize: '.72rem', fontWeight: 600 }}>⏳ {getCountdown(nextTrip.startDate)}</span>
-                )}
-              </div>
-              <div style={{ fontSize: '.72rem', opacity: .5, marginTop: '.4rem', textAlign: 'right' }}>Ouvrir →</div>
+          <div style={{ position: 'relative', zIndex: 1, padding: 'clamp(1rem,3vw,1.5rem)' }}>
+            <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', opacity: .75, marginBottom: '.35rem' }}>
+              {getTripStatus(trip) === 'ongoing' ? '🟢 Séjour en cours' : '📅 Prochain séjour'}
             </div>
-          )}
-
-          {/* Hype Up */}
-          {activeTrip && (
-            <TodayZone trip={activeTrip} tomorrowWeather={tomorrowWeather} onUpdateDay={onUpdateDay} />
-          )}
-        </div>
-
-        {/* COLONNE DROITE — Liste séjours + actions */}
-        <div className="dashboard-right">
-
-          {/* Quick actions */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginBottom: '.85rem' }}>
-            {[
-              { icon: '📋', label: 'Planning', action: () => { if (activeTrip) { onSelectTrip(activeTrip.id); setTab?.('planning') } } },
-              { icon: '💰', label: 'Budget', action: () => { if (activeTrip) { onSelectTrip(activeTrip.id); setTab?.('budget') } } },
-              { icon: '🧳', label: 'Valise', action: () => { if (activeTrip) { onSelectTrip(activeTrip.id); setTab?.('valise') } } },
-              { icon: '🤖', label: 'IA Activités', action: () => { if (activeTrip) { onSelectTrip(activeTrip.id); setTab?.('ai') } } },
-            ].map((a, i) => (
-              <button key={i} onClick={a.action} style={{
-                background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12,
-                padding: '.65rem .75rem', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                gap: '.4rem', fontFamily: 'inherit', fontSize: '.8rem', fontWeight: 500,
-                color: 'var(--text)', boxShadow: 'var(--shadow-sm)', transition: 'box-shadow .15s',
-              }}
-                onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
-                onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-sm)'}>
-                <span style={{ fontSize: '1.1rem' }}>{a.icon}</span>{a.label}
-              </button>
-            ))}
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1.3rem,4vw,1.8rem)', fontWeight: 700, marginBottom: '.1rem' }}>{trip.name}</div>
+            {trip.subtitle && <div style={{ fontSize: '.88rem', opacity: .85, marginBottom: '.3rem' }}>{trip.subtitle}</div>}
+            <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', fontSize: '.78rem', opacity: .85, marginBottom: '.7rem' }}>
+              {trip.destination && <span>📍 {trip.destination}</span>}
+              {trip.startDate && <span>📅 {new Date(trip.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} → {new Date(trip.endDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}</span>}
+              {voyageurs.length > 0 && <span>👥 {voyageurs.length} voyageur{voyageurs.length > 1 ? 's' : ''}</span>}
+            </div>
+            <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+              <button onClick={() => goTrip('planning')} style={{ background: '#fff', color: 'var(--text)', border: 'none', borderRadius: 10, padding: '7px 16px', fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Ouvrir le séjour →</button>
+              <button onClick={() => goTrip('infos')} style={{ background: 'rgba(255,255,255,.2)', color: '#fff', border: '1px solid rgba(255,255,255,.3)', borderRadius: 10, padding: '7px 14px', fontSize: '.78rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>🔗 Inviter</button>
+            </div>
           </div>
+        </div>
+      )}
 
-          {/* Liste des séjours */}
-          <div style={{ marginBottom: '.85rem' }}>
-            <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>
-              Mes séjours ({trips.length})
-            </div>
-            {trips.map(t => {
-              const status = getTripStatus(t)
-              const countdown = status === 'upcoming' ? getCountdown(t.startDate) : null
-              const isActive = t.id === activeTrip?.id
-              return (
-                <div key={t.id} onClick={() => onSelectTrip(t.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: '.65rem',
-                  background: isActive ? 'var(--green-light)' : 'var(--card)',
-                  border: `1px solid ${isActive ? 'var(--green)' : 'var(--border)'}`,
-                  borderRadius: 12, padding: '.7rem .85rem', marginBottom: '.4rem',
-                  cursor: 'pointer', boxShadow: 'var(--shadow-sm)', transition: 'all .15s',
-                  borderLeft: `4px solid ${t.color || 'var(--green)'}`,
-                }}
-                  onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
-                  onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-sm)'}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', marginBottom: '.1rem' }}>
-                      <span style={{ fontWeight: 600, fontSize: '.85rem' }}>{t.name}</span>
-                      {isActive && <span style={{ fontSize: '.55rem', background: 'var(--green)', color: '#fff', padding: '1px 6px', borderRadius: 8, fontWeight: 600 }}>Actif</span>}
-                    </div>
-                    <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
-                      {t.destination && <span>📍 {t.destination}</span>}
-                      {t.startDate && <span>{new Date(t.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} → {new Date(t.endDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>}
-                    </div>
-                  </div>
-                  <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                    <span style={{
-                      fontSize: '.6rem', fontWeight: 600, padding: '2px 7px', borderRadius: 10,
-                      background: status === 'ongoing' ? 'var(--green-light)' : status === 'upcoming' ? 'var(--blue-light)' : '#f0efe8',
-                      color: status === 'ongoing' ? 'var(--green)' : status === 'upcoming' ? 'var(--blue)' : 'var(--text-muted)',
-                    }}>
-                      {status === 'ongoing' ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminé'}
-                    </span>
-                    {countdown && <div style={{ fontSize: '.68rem', fontWeight: 600, color: 'var(--blue)', marginTop: '.15rem' }}>⏳ {countdown}</div>}
-                  </div>
+      {/* ── GRID : Countdown + Météo | Stats + Voyageurs ── */}
+      {trip && (
+        <div className="dashboard-grid" style={{ marginBottom: '1rem' }}>
+          <div>
+            {/* Countdown */}
+            {countdown && countdown.j >= 0 && (
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', marginBottom: '.65rem', boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.4rem' }}>⏳ Avant le départ</div>
+                <div style={{ fontFamily: 'monospace', fontSize: '1.6rem', fontWeight: 700, color: 'var(--text)', marginBottom: '.15rem' }}>{countdown.j}j {countdown.h}h {countdown.m}m</div>
+                <div style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>
+                  {new Date(trip.startDate+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
                 </div>
-              )
-            })}
-          </div>
-
-          {/* Souvenirs */}
-          {past.length > 0 && (
-            <div>
-              <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>
-                📸 Souvenirs
               </div>
-              <div style={{ display: 'flex', gap: '.45rem', overflowX: 'auto', paddingBottom: '.25rem', scrollbarWidth: 'none' }}>
-                {past.map(t => (
-                  <div key={t.id} onClick={() => onSelectTrip(t.id)} style={{
-                    flexShrink: 0, width: 150, background: 'var(--card)', border: '1px solid var(--border)',
-                    borderRadius: 10, padding: '.6rem', cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
-                  }}>
-                    <div style={{ fontWeight: 600, fontSize: '.78rem', marginBottom: '.1rem' }}>{t.name}</div>
-                    <div style={{ fontSize: '.67rem', color: 'var(--text-muted)' }}>
-                      {t.startDate && new Date(t.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+            )}
+
+            {/* Statistiques */}
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>Statistiques</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem' }}>
+                {[
+                  { val: `${totalKm.toFixed(1)} km`, label: 'Trajet total', icon: '📍' },
+                  { val: `${Math.floor(totalDuration/60)}h${String(totalDuration%60).padStart(2,'0')}`, label: 'Activités prévues', icon: '⏱' },
+                  { val: `${totalDplus} m D+`, label: 'Dénivelé positif', icon: '⛰' },
+                  { val: `${totalDays} jours`, label: 'Durée du séjour', icon: '📅' },
+                ].map((s,i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '.45rem' }}>
+                    <span style={{ fontSize: '1.1rem' }}>{s.icon}</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '.88rem' }}>{s.val}</div>
+                      <div style={{ fontSize: '.65rem', color: 'var(--text-muted)' }}>{s.label}</div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
+          </div>
+
+          <div>
+            {/* Voyageurs */}
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', marginBottom: '.65rem', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>Voyageurs</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
+                {voyageurs.map((v,i) => (
+                  <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '.45rem' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? 'var(--green)' : '#6b7cc4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', fontWeight: 700, color: '#fff', flexShrink: 0 }}>{v.name?.charAt(0).toUpperCase()}</div>
+                    <div>
+                      <div style={{ fontSize: '.82rem', fontWeight: 500 }}>{v.name}</div>
+                      {i === 0 && <div style={{ fontSize: '.62rem', color: 'var(--green)', fontWeight: 600 }}>Organisateur</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => goTrip('infos')} style={{ marginTop: '.5rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.78rem', color: 'var(--green)', fontWeight: 500 }}>＋ Inviter un participant</button>
+            </div>
+
+            {/* Programme résumé */}
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>Programme du séjour</div>
+              {(trip.days || []).slice(0, 6).map(day => (
+                <div key={day.id} style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem', padding: '.3rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem' }}>
+                  <span style={{ fontWeight: 600, minWidth: 60 }}>{day.label?.split('.')[0]}.</span>
+                  <span style={{ flex: 1, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {day.activities?.[0]?.title || day.activities?.[0]?.subtitle || '—'}
+                  </span>
+                  {day.activities?.[0]?.distanceKm && <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>{day.activities[0].distanceKm}km</span>}
+                </div>
+              ))}
+              {(trip.days?.length || 0) > 6 && <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', paddingTop: '.3rem' }}>+{trip.days.length - 6} jours...</div>}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ── 3 CARDS : Sac / Budget / IA ── */}
+      {trip && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '.65rem', marginBottom: '1.25rem' }}>
+          <div onClick={() => goTrip('sac')} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', cursor: 'pointer', boxShadow: 'var(--shadow-sm)', transition: 'box-shadow .15s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-sm)'}>
+            <div style={{ fontSize: '1.3rem', marginBottom: '.3rem' }}>🎒</div>
+            <div style={{ fontWeight: 600, fontSize: '.82rem', marginBottom: '.1rem' }}>Sac à dos</div>
+            <div style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>{sacDone} / {sacItems.length} objets ajoutés</div>
+            <div style={{ fontSize: '.72rem', color: 'var(--green)', marginTop: '.3rem', fontWeight: 500 }}>Voir la checklist →</div>
+          </div>
+
+          <div onClick={() => goTrip('budget')} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', cursor: 'pointer', boxShadow: 'var(--shadow-sm)', transition: 'box-shadow .15s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-sm)'}>
+            <div style={{ fontSize: '1.3rem', marginBottom: '.3rem' }}>💰</div>
+            <div style={{ fontWeight: 600, fontSize: '.82rem', marginBottom: '.1rem' }}>Budget</div>
+            <div style={{ fontSize: '.88rem', fontWeight: 700 }}>
+              {totalSpent > 0 ? `${totalSpent.toFixed(0)} €` : '—'}
+              {budget > 0 && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> / {budget} €</span>}
+            </div>
+            {budget > 0 && <div style={{ height: 4, background: '#eee', borderRadius: 2, marginTop: '.3rem', overflow: 'hidden' }}><div style={{ height: '100%', width: `${Math.min(100, totalSpent/budget*100)}%`, background: totalSpent > budget ? 'var(--red)' : 'var(--green)', borderRadius: 2 }} /></div>}
+            <div style={{ fontSize: '.72rem', color: 'var(--green)', marginTop: '.3rem', fontWeight: 500 }}>Voir le budget →</div>
+          </div>
+
+          <div onClick={() => goTrip('ai')} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', cursor: 'pointer', boxShadow: 'var(--shadow-sm)', transition: 'box-shadow .15s' }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow-sm)'}>
+            <div style={{ fontSize: '1.3rem', marginBottom: '.3rem' }}>🤖</div>
+            <div style={{ fontWeight: 600, fontSize: '.82rem', marginBottom: '.1rem' }}>IA Activités</div>
+            <div style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>Suggestions de parcours adaptés à la météo</div>
+            <div style={{ fontSize: '.72rem', color: 'var(--green)', marginTop: '.3rem', fontWeight: 500 }}>Voir les suggestions →</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MES SÉJOURS (scroll horizontal) ── */}
+      {trips.length > 1 && (
+        <div>
+          <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.55rem' }}>
+            Mes séjours ({trips.length})
+          </div>
+          <div style={{ display: 'flex', gap: '.6rem', overflowX: 'auto', paddingBottom: '.4rem', scrollbarWidth: 'none' }}>
+            {trips.map(t => {
+              const status = getTripStatus(t)
+              const isActive = t.id === trip?.id
+              const tripPhoto = t.headerPhoto || getFallbackPhoto(t.name, t.destination)
+              return (
+                <div key={t.id} onClick={() => onSelectTrip(t.id)} style={{
+                  flexShrink: 0, width: 200, borderRadius: 14, overflow: 'hidden',
+                  border: `2px solid ${isActive ? 'var(--green)' : 'var(--border)'}`,
+                  cursor: 'pointer', boxShadow: 'var(--shadow-sm)', transition: 'all .15s',
+                  background: 'var(--card)',
+                }}>
+                  <div style={{ height: 80, backgroundImage: `url(${tripPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(0,0,0,.4))' }} />
+                    <span style={{ position: 'absolute', bottom: 6, right: 8, fontSize: '.58rem', fontWeight: 600, padding: '1px 6px', borderRadius: 8,
+                      background: status === 'ongoing' ? 'var(--green)' : status === 'upcoming' ? 'var(--blue)' : '#888',
+                      color: '#fff' }}>
+                      {status === 'ongoing' ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminé'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '.55rem .65rem' }}>
+                    <div style={{ fontWeight: 600, fontSize: '.82rem', marginBottom: '.1rem' }}>{t.name}</div>
+                    <div style={{ fontSize: '.68rem', color: 'var(--text-muted)' }}>
+                      {t.destination}
+                      {t.startDate && <span> · {new Date(t.startDate+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</span>}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+            <div onClick={onCreateTrip} style={{
+              flexShrink: 0, width: 140, borderRadius: 14, border: '2px dashed var(--border)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: 'var(--text-muted)', transition: 'all .15s', minHeight: 130,
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.color = 'var(--green)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}>
+              <span style={{ fontSize: '1.5rem', marginBottom: '.2rem' }}>＋</span>
+              <span style={{ fontSize: '.78rem', fontWeight: 500 }}>Nouveau séjour</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
