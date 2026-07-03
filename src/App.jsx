@@ -210,6 +210,17 @@ export default function App() {
     )
   }
 
+  // Lien d'invitation partagé — afficher AVANT le login
+  if (shareCode) {
+    return (
+      <JoinTripModal
+        shareCode={shareCode}
+        onJoined={() => { setShareCode(null); window.history.replaceState({}, '', '/'); window.location.reload() }}
+        onClose={() => { setShareCode(null); window.history.replaceState({}, '', '/') }}
+      />
+    )
+  }
+
   if (!store.uid && !store.isGuest) {
     if (showInviteScreen) return <InviteScreen onBack={() => setShowInviteScreen(false)} onSuccess={store.signIn} />
     return <LoginScreen onGoogleSignIn={store.signIn} onCodeLogin={store.loginWithCode} onInviteLogin={() => setShowInviteScreen(true)} />
@@ -287,16 +298,7 @@ export default function App() {
       {/* ── ZONE PRINCIPALE (décalée par sidebar desktop) ── */}
       <div className="app-main">
 
-        {/* LIEN DE PARTAGE — modal join */}
-        {shareCode && (
-          <JoinTripModal
-            shareCode={shareCode}
-            onJoined={() => { setShareCode(null); window.history.replaceState({}, '', '/') }}
-            onClose={() => { setShareCode(null); window.history.replaceState({}, '', '/') }}
-          />
-        )}
-
-      {/* MOBILE BOTTOM NAV */}
+        {/* MOBILE BOTTOM NAV */}
         <BottomNav
           tab={tab} setTab={setTab}
           onOpenVoyageurs={() => setShowVoyageurs(true)}
