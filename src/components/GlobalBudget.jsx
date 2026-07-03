@@ -5,7 +5,7 @@ function fmt(n) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n || 0)
 }
 
-export default function GlobalBudget({ trips, onClose, isOwner, activeVoyageurId, onUpdateTrip }) {
+export default function GlobalBudget({ trips, onClose, isOwner, activeVoyageurId, onUpdateTrip, inline = false }) {
   const [selectedTrip, setSelectedTrip] = useState(null)
 
   const tripStats = trips.map(t => {
@@ -25,8 +25,8 @@ export default function GlobalBudget({ trips, onClose, isOwner, activeVoyageurId
     if (!ts) return null
     const t = ts.trip
     return (
-      <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-        <div className="modal" style={{ maxWidth: 520 }}>
+      <div className={inline ? '' : 'modal-overlay'} onClick={e => !inline && e.target === e.currentTarget && onClose()}>
+        <div className={inline ? '' : 'modal'} style={inline ? {} : { maxWidth: 520 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '1rem' }}>
             <button className="btn" style={{ fontSize: '.75rem', padding: '4px 10px' }} onClick={() => setSelectedTrip(null)}>
               ← Retour
@@ -44,7 +44,7 @@ export default function GlobalBudget({ trips, onClose, isOwner, activeVoyageurId
             onUpdate={(changes) => onUpdateTrip && onUpdateTrip(t.id, changes)}
           />
           <div className="modal-actions" style={{ marginTop: '1rem' }}>
-            <button className="btn btn-primary" onClick={onClose}>Fermer</button>
+            {!inline && <button className="btn btn-primary" onClick={onClose}>Fermer</button>}
           </div>
         </div>
       </div>
@@ -52,8 +52,8 @@ export default function GlobalBudget({ trips, onClose, isOwner, activeVoyageurId
   }
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 480 }}>
+    <div className={inline ? '' : 'modal-overlay'} onClick={e => !inline && e.target === e.currentTarget && onClose()}>
+      <div className={inline ? '' : 'modal'} style={inline ? {} : { maxWidth: 480 }}>
         <h2>💰 Budget global</h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginBottom: '1rem' }}>
@@ -107,7 +107,7 @@ export default function GlobalBudget({ trips, onClose, isOwner, activeVoyageurId
         })}
 
         <div className="modal-actions">
-          <button className="btn btn-primary" onClick={onClose}>Fermer</button>
+          {!inline && <button className="btn btn-primary" onClick={onClose}>Fermer</button>}
         </div>
       </div>
     </div>

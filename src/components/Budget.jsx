@@ -484,25 +484,58 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
       {/* ── STATS ── */}
       {tab === 'stats' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginBottom: '.75rem' }}>
-            <MetricCard label="Total commun" value={fmt(totalCommon)} color="var(--blue)" />
-            <MetricCard label="Mes dépenses perso" value={fmt(totalPerso)} />
-            <MetricCard label="Par personne" value={fmt(Math.round(totalCommon / (voyageurs.length || 1)))} />
-            <MetricCard label="Par jour" value={fmt(Math.round(totalCommon / (days.length || 1)))} />
+          {/* Résumé chiffré */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '.5rem', marginBottom: '1rem' }}>
+            {[
+              { label: 'Total commun', val: fmt(totalCommon), color: 'var(--blue)', bg: 'var(--blue-light)' },
+              { label: 'Mes dépenses perso', val: fmt(totalPerso), color: 'var(--green)', bg: 'var(--green-light)' },
+              { label: 'Total combiné', val: fmt(totalAll), color: 'var(--text)', bg: '#f5f4f0' },
+              { label: 'Par personne (commun)', val: fmt(Math.round(totalCommon / (voyageurs.length || 1))), color: 'var(--text-muted)', bg: '#f5f4f0' },
+              { label: 'Par jour (commun)', val: fmt(Math.round(totalCommon / (days.length || 1))), color: 'var(--text-muted)', bg: '#f5f4f0' },
+              { label: 'Nb de dépenses', val: `${commonExpenses.length + myPersonalExpenses.length}`, color: 'var(--text-muted)', bg: '#f5f4f0' },
+            ].map((s, i) => (
+              <div key={i} style={{ background: s.bg, borderRadius: 12, padding: '.75rem .85rem' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: s.color }}>{s.val}</div>
+                <div style={{ fontSize: '.65rem', color: s.color, opacity: .7 }}>{s.label}</div>
+              </div>
+            ))}
           </div>
 
-          <SectionTitle>Dépenses communes par journée</SectionTitle>
-          <div className="card" style={{ padding: '.85rem' }}>
+          {/* Répartition par catégorie */}
+          {Object.keys(byCat).length > 0 && (
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.6rem' }}>Répartition par catégorie</div>
+              <div style={{ display: 'flex', height: 10, borderRadius: 20, overflow: 'hidden', gap: 2, marginBottom: '.65rem' }}>
+                {Object.entries(byCat).map(([cat, amt]) => <div key={cat} style={{ flex: amt, background: CAT_COLORS[cat] || '#888' }} />)}
+              </div>
+              {Object.entries(byCat).sort((a,b) => b[1]-a[1]).map(([cat, amt]) => (
+                <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '.35rem 0', fontSize: '.82rem', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: CAT_COLORS[cat] || '#888' }} />
+                    <span>{CAT_LABELS[cat] || cat}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+                    <span style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>{totalCommon > 0 ? Math.round(amt/totalCommon*100) : 0}%</span>
+                    <span style={{ fontWeight: 600 }}>{fmt(amt)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Dépenses par jour */}
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem' }}>
+            <div style={{ fontSize: '.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>Dépenses communes par jour</div>
             {days.map(d => {
               const dayTotal = (byDayCommon[d.id]?.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
               const maxDay = Math.max(...days.map(dd => (byDayCommon[dd.id]?.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)), 1)
               return (
-                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.45rem', fontSize: '.78rem' }}>
-                  <span style={{ width: 68, color: 'var(--text-muted)', flexShrink: 0, fontSize: '.71rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.label}</span>
-                  <div style={{ flex: 1, height: 7, background: 'var(--gray-light)', borderRadius: 20, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: (dayTotal / maxDay * 100) + '%', background: 'var(--green-mid)', borderRadius: 20 }} />
+                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.4rem', fontSize: '.8rem' }}>
+                  <span style={{ width: 55, color: 'var(--text-muted)', flexShrink: 0, fontSize: '.72rem' }}>{d.label?.split('.')[0]}.</span>
+                  <div style={{ flex: 1, height: 8, background: 'rgba(0,0,0,.05)', borderRadius: 20, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: maxDay > 0 ? (dayTotal / maxDay * 100) + '%' : '0%', background: 'var(--green)', borderRadius: 20, transition: 'width .3s' }} />
                   </div>
-                  <span style={{ width: 50, textAlign: 'right', fontWeight: 500, flexShrink: 0, fontSize: '.78rem' }}>{dayTotal > 0 ? fmt(dayTotal) : '—'}</span>
+                  <span style={{ width: 55, textAlign: 'right', fontWeight: dayTotal > 0 ? 600 : 400, flexShrink: 0, color: dayTotal > 0 ? 'var(--text)' : 'var(--text-light)' }}>{dayTotal > 0 ? fmt(dayTotal) : '—'}</span>
                 </div>
               )
             })}
