@@ -359,3 +359,23 @@ export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurE
     return true
   } catch (e) { console.error('joinTripViaShare failed:', e); return false }
 }
+
+
+// Récupérer les liens de partage d'un séjour
+export async function getShareLinksForTrip(tripId) {
+  try {
+    const snap = await getDocs(collection(db, 'guestAccess'))
+    return snap.docs
+      .map(d => ({ code: d.id, ...d.data() }))
+      .filter(d => d.type === 'share-link' && d.tripId === tripId)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+  } catch (e) { console.error('getShareLinksForTrip failed:', e); return [] }
+}
+
+// Supprimer un lien de partage
+export async function deleteShareLink(code) {
+  try {
+    await deleteDoc(doc(db, 'guestAccess', code))
+    return true
+  } catch (e) { console.error('deleteShareLink failed:', e); return false }
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { generateShareCode } from '../firebase'
+import { generateShareCode, getShareLinksForTrip, deleteShareLink } from '../firebase'
 
 const ICONS = ['📋','🏕','🚄','📞','🗺','🛡','🚌','🍽','💊','🏥','💰','🔑','⚠️','📸','🎒','🌤','🏊','⛷','🦌','🌿','🏔','🌊','🎯','📍','🗓','💡']
 
@@ -59,116 +59,180 @@ function renderContent(text) {
 }
 
 
-const EXPIRE_OPTIONS = [
-  { label: 'Jamais', value: null },
-  { label: '1 heure', value: 3600000 },
-  { label: '24 heures', value: 86400000 },
-  { label: '7 jours', value: 604800000 },
-  { label: '30 jours', value: 2592000000 },
-]
-const USES_OPTIONS = [
-  { label: 'Illimité', value: null },
-  { label: '1 personne', value: 1 },
-  { label: '3 personnes', value: 3 },
-  { label: '5 personnes', value: 5 },
-  { label: '10 personnes', value: 10 },
-]
-
-function ShareLink({ tripId, tripName, ownerUid }) {
-  const [shareUrl, setShareUrl] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [showOptions, setShowOptions] = useState(false)
+function InviteManager({ tripId, tripName, ownerUid }) {
+  const [links, setLinks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showCreate, setShowCreate] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [copied, setCopied] = useState(null)
   const [maxUses, setMaxUses] = useState(null)
   const [expiresIn, setExpiresIn] = useState(null)
-  const [linkInfo, setLinkInfo] = useState(null)
+  const [newUrl, setNewUrl] = useState(null)
 
-  const generate = async () => {
+  const EXPIRE_OPTS = [
+    { label: 'Jamais', value: null },
+    { label: '1 heure', value: 3600000 },
+    { label: '24 heures', value: 86400000 },
+    { label: '7 jours', value: 604800000 },
+    { label: '30 jours', value: 2592000000 },
+  ]
+  const USES_OPTS = [
+    { label: 'Illimité', value: null },
+    { label: '1', value: 1 },
+    { label: '3', value: 3 },
+    { label: '5', value: 5 },
+    { label: '10', value: 10 },
+  ]
+
+  const loadLinks = async () => {
     setLoading(true)
-    try {
-      const { generateShareCode } = await import('../firebase')
-      const code = await generateShareCode(ownerUid, tripId, tripName, { maxUses, expiresIn })
-      const url = window.location.origin + '?share=' + code
-      setShareUrl(url)
-      setLinkInfo({ maxUses, expiresIn })
-    } catch (e) {
-      console.error(e)
-      alert('Erreur lors de la création du lien')
-    }
+    const data = await getShareLinksForTrip(tripId)
+    setLinks(data)
     setLoading(false)
   }
 
-  const copy = () => {
-    navigator.clipboard.writeText(shareUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  useState(() => { loadLinks() })
+
+  const generate = async () => {
+    setCreating(true)
+    try {
+      const code = await generateShareCode(ownerUid, tripId, tripName, { maxUses, expiresIn })
+      const url = window.location.origin + '?share=' + code
+      setNewUrl(url)
+      loadLinks()
+    } catch { alert('Erreur') }
+    setCreating(false)
   }
 
-  const reset = () => {
-    setShareUrl(null)
-    setLinkInfo(null)
-    setShowOptions(false)
+  const handleDelete = async (code) => {
+    if (!confirm('Supprimer ce lien d\'invitation ?')) return
+    await deleteShareLink(code)
+    loadLinks()
   }
 
-  if (!shareUrl) {
-    return (
-      <div style={{ marginTop: '.5rem' }}>
-        {!showOptions ? (
-          <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
-            <button onClick={generate} disabled={loading} className="btn btn-primary">
-              {loading ? '⏳ Génération...' : '🔗 Générer un lien'}
-            </button>
-            <button onClick={() => setShowOptions(true)} className="btn" style={{ fontSize: '.78rem' }}>
-              ⚙️ Options
-            </button>
-          </div>
-        ) : (
-          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '.85rem', marginBottom: '.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.6rem', marginBottom: '.75rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '.68rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.25rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Expiration</label>
-                <select value={expiresIn || ''} onChange={e => setExpiresIn(e.target.value ? Number(e.target.value) : null)}
-                  style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.82rem', fontFamily: 'inherit', background: '#fff' }}>
-                  {EXPIRE_OPTIONS.map(o => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '.68rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.25rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>Nb max d'utilisations</label>
-                <select value={maxUses || ''} onChange={e => setMaxUses(e.target.value ? Number(e.target.value) : null)}
-                  style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.82rem', fontFamily: 'inherit', background: '#fff' }}>
-                  {USES_OPTIONS.map(o => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
-                </select>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '.4rem' }}>
-              <button onClick={generate} disabled={loading} className="btn btn-primary">
-                {loading ? '⏳...' : '🔗 Générer'}
-              </button>
-              <button onClick={() => setShowOptions(false)} className="btn">Annuler</button>
-            </div>
-          </div>
-        )}
-      </div>
-    )
+  const copy = (url, code) => {
+    navigator.clipboard.writeText(url)
+    setCopied(code)
+    setTimeout(() => setCopied(null), 2000)
   }
+
+  const isExpired = (link) => link.expiresAt && Date.now() > link.expiresAt
+  const isMaxed = (link) => link.maxUses && (link.usedCount || 0) >= link.maxUses
 
   return (
-    <div style={{ marginTop: '.5rem' }}>
-      <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
-        <input value={shareUrl} readOnly style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.75rem', background: 'var(--bg)', fontFamily: 'monospace' }} onClick={e => e.target.select()} />
-        <button onClick={copy} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
-          {copied ? '✅ Copié !' : '📋 Copier'}
+    <div>
+      {/* Créer un nouveau lien */}
+      {!showCreate && !newUrl && (
+        <button onClick={() => setShowCreate(true)} className="btn btn-primary" style={{ marginBottom: '.75rem' }}>
+          🔗 Créer un lien d'invitation
         </button>
-        <button onClick={reset} className="btn" title="Générer un nouveau lien" style={{ whiteSpace: 'nowrap' }}>🔄</button>
-      </div>
-      <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginTop: '.3rem', display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
-        <span>Partage ce lien avec tes compagnons</span>
-        {linkInfo?.maxUses && <span style={{ background: 'var(--blue-light)', color: 'var(--blue)', padding: '1px 6px', borderRadius: 10 }}>Max {linkInfo.maxUses} pers.</span>}
-        {linkInfo?.expiresIn && <span style={{ background: 'var(--amber-light)', color: 'var(--amber)', padding: '1px 6px', borderRadius: 10 }}>Expire dans {EXPIRE_OPTIONS.find(o => o.value === linkInfo.expiresIn)?.label}</span>}
-      </div>
+      )}
+
+      {showCreate && !newUrl && (
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '.85rem', marginBottom: '.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginBottom: '.6rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '.65rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.2rem', textTransform: 'uppercase' }}>Expiration</label>
+              <select value={expiresIn || ''} onChange={e => setExpiresIn(e.target.value ? Number(e.target.value) : null)}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.82rem', fontFamily: 'inherit' }}>
+                {EXPIRE_OPTS.map(o => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '.65rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.2rem', textTransform: 'uppercase' }}>Max personnes</label>
+              <select value={maxUses || ''} onChange={e => setMaxUses(e.target.value ? Number(e.target.value) : null)}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.82rem', fontFamily: 'inherit' }}>
+                {USES_OPTS.map(o => <option key={o.label} value={o.value || ''}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '.4rem' }}>
+            <button onClick={generate} disabled={creating} className="btn btn-primary">{creating ? '⏳...' : '🔗 Générer'}</button>
+            <button onClick={() => setShowCreate(false)} className="btn">Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {newUrl && (
+        <div style={{ background: 'var(--green-light)', border: '1px solid var(--green)', borderRadius: 12, padding: '.85rem', marginBottom: '.75rem' }}>
+          <div style={{ fontSize: '.78rem', fontWeight: 600, color: 'var(--green)', marginBottom: '.35rem' }}>✅ Lien créé !</div>
+          <div style={{ display: 'flex', gap: '.35rem', alignItems: 'center' }}>
+            <input value={newUrl} readOnly style={{ flex: 1, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '.72rem', fontFamily: 'monospace', background: '#fff' }} onClick={e => e.target.select()} />
+            <button onClick={() => copy(newUrl, 'new')} className="btn btn-primary">{copied === 'new' ? '✅' : '📋'}</button>
+          </div>
+          <button onClick={() => { setNewUrl(null); setShowCreate(false) }} style={{ marginTop: '.4rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '.75rem', color: 'var(--text-muted)', fontFamily: 'inherit' }}>Fermer</button>
+        </div>
+      )}
+
+      {/* Liste des invitations actives */}
+      {loading ? (
+        <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', padding: '.5rem 0' }}>Chargement…</div>
+      ) : links.length === 0 ? (
+        <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', padding: '.5rem 0' }}>Aucune invitation créée pour ce séjour</div>
+      ) : (
+        <div>
+          <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.4rem' }}>
+            Invitations ({links.length})
+          </div>
+          {links.map(link => {
+            const url = window.location.origin + '?share=' + link.code
+            const expired = isExpired(link)
+            const maxed = isMaxed(link)
+            const inactive = expired || maxed
+            return (
+              <div key={link.code} style={{
+                background: inactive ? '#f9f8f5' : 'var(--card)', border: '1px solid var(--border)',
+                borderRadius: 10, padding: '.65rem .8rem', marginBottom: '.35rem',
+                opacity: inactive ? .65 : 1,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.25rem' }}>
+                  <code style={{ fontSize: '.72rem', color: 'var(--text-muted)', flex: 1 }}>{link.code}</code>
+                  <div style={{ display: 'flex', gap: '.25rem' }}>
+                    {!inactive && <button onClick={() => copy(url, link.code)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontSize: '.7rem' }}>
+                      {copied === link.code ? '✅' : '📋'}
+                    </button>}
+                    <button onClick={() => handleDelete(link.code)} style={{ background: 'none', border: '1px solid var(--red)', borderRadius: 6, padding: '2px 7px', cursor: 'pointer', fontSize: '.7rem', color: 'var(--red)' }}>🗑</button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', fontSize: '.68rem' }}>
+                  {/* Statut */}
+                  {expired && <span style={{ background: '#fdecea', color: 'var(--red)', padding: '1px 6px', borderRadius: 8 }}>Expiré</span>}
+                  {maxed && <span style={{ background: '#fdecea', color: 'var(--red)', padding: '1px 6px', borderRadius: 8 }}>Complet</span>}
+                  {!inactive && <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '1px 6px', borderRadius: 8 }}>Actif</span>}
+                  {/* Utilisations */}
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    👥 {link.usedCount || 0}{link.maxUses ? ` / ${link.maxUses}` : ''} utilisé{(link.usedCount || 0) > 1 ? 's' : ''}
+                  </span>
+                  {/* Expiration */}
+                  {link.expiresAt && <span style={{ color: 'var(--text-muted)' }}>
+                    ⏰ {expired ? 'Expiré' : `Expire le ${new Date(link.expiresAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                  </span>}
+                  {/* Date création */}
+                  <span style={{ color: 'var(--text-light)' }}>
+                    Créé le {new Date(link.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  </span>
+                </div>
+                {/* Liste des personnes qui ont rejoint */}
+                {(link.usedBy || []).length > 0 && (
+                  <div style={{ marginTop: '.35rem', paddingTop: '.3rem', borderTop: '1px solid var(--border)' }}>
+                    {link.usedBy.map((u, i) => (
+                      <div key={i} style={{ fontSize: '.7rem', color: 'var(--text-muted)', display: 'flex', gap: '.3rem', alignItems: 'center', padding: '.1rem 0' }}>
+                        <span style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--green-light)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '.55rem', fontWeight: 700, color: 'var(--green)' }}>{u.name?.charAt(0).toUpperCase()}</span>
+                        <span>{u.name}</span>
+                        <span style={{ opacity: .6 }}>{u.email}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
+
 
 export default function InfosTab({ trip, onUpdateTrip }) {
   const [adding, setAdding] = useState(false)
@@ -199,7 +263,7 @@ export default function InfosTab({ trip, onUpdateTrip }) {
       <div className="info-card" style={{ borderLeft: '3px solid var(--green)', marginBottom: '1rem' }}>
         <h3>🔗 Inviter des participants</h3>
         <p>Génère un lien de partage pour ce séjour. Toute personne avec le lien pourra voir et participer.</p>
-        <ShareLink tripId={trip.id} tripName={trip.name} ownerUid={trip.ownerUid || ''} />
+        <InviteManager tripId={trip.id} tripName={trip.name} ownerUid={trip.ownerUid || ''} />
       </div>
       {blocks.length === 0 && !adding && (
         <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
