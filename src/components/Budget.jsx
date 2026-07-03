@@ -268,33 +268,62 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
 
   return (
     <div>
-      {/* Budget input */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.65rem', background: 'var(--gray-light)', borderRadius: 'var(--radius)', padding: '.55rem .85rem' }}>
-        <span style={{ fontSize: '.8rem', color: 'var(--text-muted)', flexShrink: 0 }}>Budget prévu :</span>
-        <input type="number" defaultValue={budget || ''} onBlur={e => onUpdate({ budget: parseFloat(e.target.value) || 0 })}
-          placeholder="ex: 800" disabled={isGuest}
-          style={{ width: 80, border: '1px solid var(--border)', borderRadius: 7, padding: '4px 8px', fontSize: '.85rem', fontFamily: 'inherit', background: '#fff', outline: 'none' }} />
-        <span style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>€</span>
-        {budget > 0 && <span style={{ marginLeft: 'auto', fontSize: '.78rem', color: pctColor, fontWeight: 600 }}>{pct}% utilisé</span>}
-        {!isGuest && (
-          <button className="btn btn-primary" style={{ fontSize: '.75rem', flexShrink: 0, marginLeft: 'auto' }} onClick={() => setShowAdd(true)}>
-            ＋ Dépense
-          </button>
+      {/* ── BUDGET PRÉVISIONNEL — carte premium ── */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.1rem 1.25rem', marginBottom: '1rem', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.65rem', flexWrap: 'wrap', gap: '.5rem' }}>
+          <div>
+            <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.2rem' }}>💰 Budget prévisionnel</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem' }}>
+              {!isGuest ? (
+                <input type="number" defaultValue={budget || ''} onBlur={e => onUpdate({ budget: parseFloat(e.target.value) || 0 })}
+                  placeholder="0" style={{ width: 90, border: 'none', borderBottom: '2px solid var(--border)', padding: '2px 0', fontSize: '1.6rem', fontWeight: 700, fontFamily: 'inherit', background: 'transparent', outline: 'none', color: 'var(--text)' }} />
+              ) : (
+                <span style={{ fontSize: '1.6rem', fontWeight: 700 }}>{budget || '—'}</span>
+              )}
+              <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 500 }}>€</span>
+            </div>
+          </div>
+          {!isGuest && (
+            <button className="btn btn-primary" onClick={() => setShowAdd(true)} style={{ borderRadius: 12, padding: '8px 16px' }}>
+              ＋ Nouvelle dépense
+            </button>
+          )}
+        </div>
+
+        {/* Progress bar */}
+        {budget > 0 && (
+          <>
+            <div style={{ height: 8, background: 'rgba(0,0,0,.06)', borderRadius: 20, overflow: 'hidden', marginBottom: '.4rem' }}>
+              <div style={{ height: '100%', width: Math.min(pct, 100) + '%', background: barColor, borderRadius: 20, transition: 'width .5s ease' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.75rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>{fmt(totalAll)} dépensé</span>
+              <span style={{ fontWeight: 600, color: pctColor }}>{budget > totalAll ? fmt(budget - totalAll) + ' restant' : fmt(totalAll - budget) + ' dépassé !'}</span>
+            </div>
+          </>
+        )}
+        {budget === 0 && (
+          <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', padding: '.5rem 0' }}>
+            Définis un budget prévisionnel pour suivre tes dépenses en temps réel
+          </div>
         )}
       </div>
 
-      {/* Progress bar */}
-      {budget > 0 && (
-        <div style={{ marginBottom: '.75rem' }}>
-          <div style={{ height: 7, background: 'var(--gray-light)', borderRadius: 20, overflow: 'hidden', marginBottom: '.3rem' }}>
-            <div style={{ height: '100%', width: Math.min(pct, 100) + '%', background: barColor, borderRadius: 20, transition: 'width .4s' }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.72rem', color: 'var(--text-muted)' }}>
-            <span>{fmt(totalAll)} dépensé</span>
-            <span style={{ color: pctColor }}>{fmt(budget - totalAll)} restant</span>
-          </div>
+      {/* ── RÉSUMÉ RAPIDE — commun vs perso ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '.5rem', marginBottom: '1rem' }}>
+        <div style={{ background: 'var(--blue-light)', borderRadius: 12, padding: '.75rem .85rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--blue)' }}>{fmt(totalCommon)}</div>
+          <div style={{ fontSize: '.68rem', color: 'var(--blue)', opacity: .7 }}>Dépenses communes</div>
         </div>
-      )}
+        <div style={{ background: 'var(--green-light)', borderRadius: 12, padding: '.75rem .85rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--green)' }}>{fmt(totalPerso)}</div>
+          <div style={{ fontSize: '.68rem', color: 'var(--green)', opacity: .7 }}>Mes dépenses perso</div>
+        </div>
+        <div style={{ background: '#f5f4f0', borderRadius: 12, padding: '.75rem .85rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 700 }}>{voyageurs.length > 0 ? fmt(Math.round(totalCommon / voyageurs.length)) : '—'}</div>
+          <div style={{ fontSize: '.68rem', color: 'var(--text-muted)' }}>Par personne</div>
+        </div>
+      </div>
 
       {/* Tabs */}
       <div className="tabs" style={{ marginBottom: '.75rem' }}>
@@ -306,11 +335,23 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
       {/* ── VUE ── */}
       {tab === 'vue' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem', marginBottom: '.75rem' }}>
-            <MetricCard label="Dépenses communes" value={fmt(totalCommon)} color="var(--blue)" />
-            <MetricCard label="Mes dépenses perso" value={fmt(totalPerso)} />
-            <MetricCard label="Mon total" value={fmt(totalAll)} color={pctColor} />
-            <MetricCard label="Par personne (commun)" value={voyageurs.length > 0 ? fmt(Math.round(totalCommon / voyageurs.length)) : '—'} />
+          {/* Les stats sont déjà affichées en haut, on montre ici le détail par personne */}
+          <div style={{ marginBottom: '.75rem' }}>
+            <div style={{ fontSize: '.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.4rem' }}>Solde par voyageur</div>
+            {voyageurs.map(v => (
+              <div key={v.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '.45rem .65rem', borderBottom: '1px solid var(--border)', fontSize: '.82rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--green-light)', color: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.65rem', fontWeight: 700 }}>{v.name?.charAt(0)}</div>
+                  <span style={{ fontWeight: 500 }}>{v.name}</span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 600 }}>Payé : {fmt(paid[v.id] || 0)}</div>
+                  <div style={{ fontSize: '.72rem', color: balances[v.id] > 0 ? 'var(--green)' : balances[v.id] < 0 ? 'var(--red)' : 'var(--text-muted)' }}>
+                    {balances[v.id] > 0 ? `+${fmt(balances[v.id])} (on lui doit)` : balances[v.id] < 0 ? `${fmt(balances[v.id])} (doit rembourser)` : 'OK'}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           {Object.keys(byCat).length > 0 && (
