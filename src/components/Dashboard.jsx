@@ -1,5 +1,22 @@
 import { useState, useEffect } from 'react'
 
+/* ── Minimal QR Code generator (SVG) ── */
+function QRCode({ value, size = 160 }) {
+  const [svg, setSvg] = useState('')
+  useEffect(() => {
+    if (!value) return
+    // Use an external API for simplicity — generates a QR SVG
+    const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(value)}&format=svg&margin=1`
+    setSvg(url)
+  }, [value, size])
+  if (!svg) return null
+  return (
+    <div style={{ width: size, height: size, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#fff', padding: 8 }}>
+      <img src={svg} alt="QR Code" width={size - 16} height={size - 16} style={{ display: 'block' }} />
+    </div>
+  )
+}
+
 function getTripStatus(trip) {
   if (!trip.startDate) return 'unknown'
   const today = new Date().toISOString().slice(0,10)
@@ -70,8 +87,12 @@ function InviteGenerator({ tripId, tripName, ownerUid }) {
           <input value={url} readOnly style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid var(--border)', fontSize: '.75rem', fontFamily: 'monospace', background: 'var(--bg)' }} onClick={e => e.target.select()} />
           <button onClick={copy} className="btn btn-primary">{copied ? '✅' : '📋 Copier'}</button>
         </div>
-        <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginTop: '.3rem' }}>Partage ce lien avec tes compagnons de voyage</div>
-        <button onClick={() => setUrl(null)} style={{ marginTop: '.3rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '.72rem', color: 'var(--text-muted)' }}>🔄 Générer un nouveau lien</button>
+        {/* QR Code */}
+        <div style={{ display: 'flex', justifyContent: 'center', margin: '1rem 0' }}>
+          <QRCode value={url} size={160} />
+        </div>
+        <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '.4rem' }}>Scanne ce QR code pour rejoindre le séjour</div>
+        <button onClick={() => setUrl(null)} style={{ display: 'block', width: '100%', marginTop: '.3rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '.72rem', color: 'var(--text-muted)', fontFamily: 'inherit', textAlign: 'center' }}>🔄 Générer un nouveau lien</button>
       </div>
     )
   }
@@ -248,16 +269,21 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
             {/* Programme résumé */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>Programme du séjour</div>
-              {(trip.days || []).slice(0, 6).map(day => (
-                <div key={day.id} style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem', padding: '.3rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem', overflow: 'hidden' }}>
+              {(trip.days || []).slice(0, 6).map(day => {
+                const acts = day.activities || []
+                const emojis = acts.map(a => a.emoji || (a.title?.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u)?.[0]) || '').filter(Boolean).slice(0, 3)
+                return (
+                <div key={day.id} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.35rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem', overflow: 'hidden' }}>
                   <span style={{ fontWeight: 600, minWidth: 42, flexShrink: 0 }}>{day.label?.split('.')[0]}.</span>
+                  {emojis.length > 0 && <span style={{ fontSize: '.85rem', flexShrink: 0, display: 'flex', gap: 2 }}>{emojis.join('')}</span>}
                   <span style={{ flex: 1, color: 'var(--text-muted)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                     className="dash-prog-text">
-                    {day.activities?.[0]?.title || day.activities?.[0]?.subtitle || '—'}
+                    {acts.length > 1 ? `${acts[0]?.title || '—'} +${acts.length - 1}` : (acts[0]?.title || '—')}
                   </span>
-                  {day.activities?.[0]?.distanceKm && <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>{day.activities[0].distanceKm}km</span>}
+                  {acts[0]?.distanceKm && <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>{acts[0].distanceKm}km</span>}
                 </div>
-              ))}
+                )
+              })}
               {(trip.days?.length || 0) > 6 && <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', paddingTop: '.3rem' }}>+{trip.days.length - 6} jours...</div>}
             </div>
           </div>
