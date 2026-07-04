@@ -548,3 +548,13 @@ html, body { overflow-x: hidden; max-width: 100vw; }
 @media (max-width: 768px) {
   .dash-prog-text { white-space: normal !important; text-overflow: unset !important; line-height: 1.4; }
 }
+
+/* ─── BUDGET RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .content-pane [style*="grid-template-columns: repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .content-pane [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
