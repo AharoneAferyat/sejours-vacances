@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from './hooks/useStore'
 import { getTodayStr, genId, formatDate, displayToISO } from './utils'
-import { validateInviteCode, consumeInviteCode } from './firebase'
+import { validateInviteCode, consumeInviteCode, adminLoadUserData, adminUpdateTrip, adminAddActivity, adminUpdateActivity, adminDeleteActivity, adminValidateDay } from './firebase'
 import Header from './components/Header'
 import EmptyState from './components/EmptyState'
 import Dashboard from './components/Dashboard'
@@ -193,6 +193,37 @@ export default function App() {
   const [showInviteScreen, setShowInviteScreen] = useState(false)
   const [aiTargetDayId, setAiTargetDayId] = useState(null)
 
+  // Admin mode: manage another user's trip
+  const [adminMode, setAdminMode] = useState(null) // { uid, email, trip, trips }
+  const [adminTab, setAdminTab] = useState('planning')
+
+  const enterAdminMode = async (user, tripData) => {
+    // Load fresh data from Firebase
+    const userData = await adminLoadUserData(user.uid)
+    if (!userData?.trips) return alert('Impossible de charger les données de cet utilisateur.')
+    const freshTrip = userData.trips.find(t => t.id === tripData.id)
+    if (!freshTrip) return alert('Séjour introuvable.')
+    setAdminMode({ uid: user.uid, email: user.email, trip: freshTrip, trips: userData.trips })
+    setAdminTab('planning')
+    setTab('admin-manage')
+  }
+
+  const refreshAdminTrip = async () => {
+    if (!adminMode) return
+    const userData = await adminLoadUserData(adminMode.uid)
+    if (!userData?.trips) return
+    const freshTrip = userData.trips.find(t => t.id === adminMode.trip.id)
+    if (freshTrip) setAdminMode(prev => ({ ...prev, trip: freshTrip, trips: userData.trips }))
+  }
+
+  const adminUpdateTripLocal = async (changes) => {
+    if (!adminMode) return
+    const ok = await adminUpdateTrip(adminMode.uid, adminMode.trip.id, changes)
+    if (ok) {
+      setAdminMode(prev => ({ ...prev, trip: { ...prev.trip, ...changes } }))
+    }
+  }
+
   const trip = store.activeTrip
   const today = getTodayStr()
   const vid = store.activeVoyageurId
@@ -315,7 +346,7 @@ export default function App() {
         <MainHeader trips={store.trips} activeTrip={trip} onSelectTrip={id => { store.setActiveTrip(id); setTab('dashboard') }} onEditTrip={t => setEditingTrip(t)} onDeleteTrip={id => store.deleteTrip(id)} onNewTrip={() => setShowTripForm(true)} onOpenVoyageurs={() => setShowVoyageurs(true)} onOpenGlobalBudget={() => setTab('globalbudget')} isAdmin={store.isAdmin} onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null} onSignOut={store.signOut} userEmail={store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : (store.userDisplayName || store.userEmail)} syncing={store.syncing} tab={tab} onUpdatePhoto={(url) => trip && store.updateTrip(trip.id, { headerPhoto: url })} />
 
         {/* ── BANDEAU SÉJOUR + MÉTÉO — masqué en mode admin ── */}
-        {trip && tab !== 'admin' && (
+        {trip && tab !== 'admin' && tab !== 'admin-manage' && (
           <div className="app-header-zone">
             <DangerAlert weather={tomorrowWeather} destination={trip.destination || trip.name} />
             <div style={{ background: tripColor, color: '#fff', padding: '.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -346,10 +377,154 @@ export default function App() {
               uid={store.uid}
               adminEmail={store.userEmail}
               onClose={() => setTab('dashboard')}
-              onManageTrip={(user, t) => alert(`Gestion du séjour "${t.name}" — à venir !`)}
+              onManageTrip={(user, t) => enterAdminMode(user, t)}
               inline={true}
             />
           )}
+
+          {/* ADMIN MANAGE — gestion d'un séjour d'un autre utilisateur */}
+          {tab === 'admin-manage' && adminMode && (() => {
+            const at = adminMode.trip
+            const atVoyageurs = at.voyageurs || []
+            const atDays = at.days || []
+            const atValidated = atDays.filter(d => d.validated).length
+            const atTotal = atDays.length
+            const atPct = atTotal > 0 ? Math.round(atValidated / atTotal * 100) : 0
+            const atColor = at.color || '#0F6E56'
+
+            const handleAdminAddAct = async (dayId, act) => {
+              const ok = await adminAddActivity(adminMode.uid, at.id, dayId, act)
+              if (ok) refreshAdminTrip()
+            }
+            const handleAdminUpdateAct = async (dayId, actId, changes) => {
+              const ok = await adminUpdateActivity(adminMode.uid, at.id, dayId, actId, changes)
+              if (ok) refreshAdminTrip()
+            }
+            const handleAdminDeleteAct = async (dayId, actId) => {
+              const ok = await adminDeleteActivity(adminMode.uid, at.id, dayId, actId)
+              if (ok) refreshAdminTrip()
+            }
+            const handleAdminValidateDay = async (dayId) => {
+              const ok = await adminValidateDay(adminMode.uid, at.id, dayId)
+              if (ok) refreshAdminTrip()
+            }
+
+            return (
+              <div className="content-pane">
+                {/* Bandeau admin */}
+                <div style={{ background: 'linear-gradient(135deg, #2a1a3e, #1e2540)', color: '#fff', borderRadius: 12, padding: '.85rem 1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '.5rem' }}>
+                  <div>
+                    <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', opacity: .7, marginBottom: '.2rem' }}>⚙️ Mode admin</div>
+                    <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.15rem', fontWeight: 700 }}>{at.name}</div>
+                    <div style={{ fontSize: '.78rem', opacity: .75 }}>{adminMode.email} · {at.destination}</div>
+                  </div>
+                  <button onClick={() => { setAdminMode(null); setTab('admin') }} style={{ background: 'rgba(255,255,255,.15)', border: '1px solid rgba(255,255,255,.25)', borderRadius: 8, padding: '7px 16px', color: '#fff', cursor: 'pointer', fontSize: '.82rem', fontFamily: 'inherit' }}>
+                    ← Retour admin
+                  </button>
+                </div>
+
+                {/* Infos séjour */}
+                <div style={{ background: atColor, color: '#fff', borderRadius: 10, padding: '.7rem 1.2rem', marginBottom: '.75rem' }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.05rem', fontWeight: 700 }}>
+                    {at.name}
+                    {at.subtitle && <span style={{ fontFamily: 'Inter', fontSize: '.82rem', fontWeight: 400, opacity: .85, marginLeft: '.5rem' }}>— {at.subtitle}</span>}
+                  </div>
+                  {at.startDate && at.endDate && <div style={{ fontSize: '.75rem', opacity: .8, marginTop: '.2rem' }}>{formatDate(at.startDate)} → {formatDate(at.endDate)} · {atVoyageurs.length} voyageur{atVoyageurs.length > 1 ? 's' : ''}</div>}
+                </div>
+
+                {/* Onglets */}
+                <div className="tabs" style={{ marginBottom: '.75rem' }}>
+                  {[['planning','📋 Planning'],['infos','ℹ️ Infos'],['budget','💰 Budget'],['voyageurs','👥 Voyageurs']].map(([id,lbl]) => (
+                    <button key={id} className={`tab-btn${adminTab===id?' active':''}`} onClick={() => setAdminTab(id)}>{lbl}</button>
+                  ))}
+                </div>
+
+                {/* Planning */}
+                {adminTab === 'planning' && (
+                  <div>
+                    <div className="progress-wrap">
+                      <div className="progress-bar"><div className="progress-bar-fill" style={{ width: atPct + '%' }} /></div>
+                      <div className="progress-text">{atValidated} / {atTotal} validées</div>
+                    </div>
+                    {atDays.map(day => (
+                      <DayCard
+                        key={day.id} day={day} tripId={at.id} isToday={day.date === today}
+                        onValidateDay={() => handleAdminValidateDay(day.id)}
+                        onDeleteDay={() => {}}
+                        onAddActivity={(dayId, act) => handleAdminAddAct(dayId, act)}
+                        onUpdateActivity={(dayId, actId, ch) => handleAdminUpdateAct(dayId, actId, ch)}
+                        onDeleteActivity={(dayId, actId) => handleAdminDeleteAct(dayId, actId)}
+                        onMoveActivity={() => {}}
+                        onValidateActivity={(dayId, actId) => handleAdminUpdateAct(dayId, actId, { done: !(day.activities?.find(a => a.id === actId)?.done) })}
+                        onAISearch={() => {}}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Infos */}
+                {adminTab === 'infos' && (
+                  <InfosTab trip={{...at, ownerUid: adminMode.uid}} onUpdateTrip={(changes) => adminUpdateTripLocal(changes)} />
+                )}
+
+                {/* Budget */}
+                {adminTab === 'budget' && (
+                  <Budget trip={at} voyageurs={atVoyageurs} isGuest={false} activeVoyageurId={atVoyageurs[0]?.id} onUpdate={(changes) => adminUpdateTripLocal(changes)} />
+                )}
+
+                {/* Voyageurs */}
+                {adminTab === 'voyageurs' && (
+                  <div>
+                    <div style={{ fontSize: '.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>
+                      {atVoyageurs.length} voyageur{atVoyageurs.length > 1 ? 's' : ''}
+                    </div>
+                    {atVoyageurs.map(v => {
+                      const vd = at.voyageurData?.[v.id] || {}
+                      const valise = vd.valise || []
+                      const sac = vd.sac || []
+                      const depenses = vd.depenses || []
+                      const totalDep = depenses.reduce((s, d) => s + (d.amount || 0), 0)
+                      return (
+                        <div key={v.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.85rem 1rem', marginBottom: '.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '.55rem', marginBottom: '.4rem' }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--green-light)', color: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.8rem', fontWeight: 700 }}>{v.name?.charAt(0)}</div>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: '.88rem' }}>{v.name}</div>
+                              {v.email && <div style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>{v.email}</div>}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '.78rem', color: 'var(--text-muted)' }}>
+                            <span>🧳 Valise : {valise.filter(i => i.done).length}/{valise.length}</span>
+                            <span>🎒 Sac : {sac.filter(i => i.done).length}/{sac.length}</span>
+                            <span>💸 Perso : {totalDep.toFixed(0)}€ ({depenses.length})</span>
+                          </div>
+                          {(valise.length > 0 || sac.length > 0) && (
+                            <details style={{ marginTop: '.5rem' }}>
+                              <summary style={{ cursor: 'pointer', fontSize: '.74rem', color: 'var(--text-muted)' }}>Voir le détail</summary>
+                              <div style={{ marginTop: '.4rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                                {valise.length > 0 && (
+                                  <div>
+                                    <div style={{ fontSize: '.7rem', fontWeight: 600, marginBottom: '.2rem' }}>🧳 Valise</div>
+                                    {valise.map(i => <div key={i.id} style={{ fontSize: '.72rem', color: i.done ? 'var(--text-muted)' : 'var(--text)', textDecoration: i.done ? 'line-through' : 'none' }}>{i.qty > 1 ? `×${i.qty} ` : ''}{i.text}</div>)}
+                                  </div>
+                                )}
+                                {sac.length > 0 && (
+                                  <div>
+                                    <div style={{ fontSize: '.7rem', fontWeight: 600, marginBottom: '.2rem' }}>🎒 Sac</div>
+                                    {sac.map(i => <div key={i.id} style={{ fontSize: '.72rem', color: i.done ? 'var(--text-muted)' : 'var(--text)', textDecoration: i.done ? 'line-through' : 'none' }}>{i.qty > 1 ? `×${i.qty} ` : ''}{i.text}</div>)}
+                                  </div>
+                                )}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* TABLEAU DE BORD / ACCUEIL */}
           {tab === 'dashboard' && (
@@ -483,7 +658,7 @@ export default function App() {
           uid={store.uid}
           adminEmail={store.userEmail}
           onClose={() => setShowAdmin(false)}
-          onManageTrip={(user, trip) => alert(`Gestion directe du séjour "${trip.name}" de ${user.email} — fonctionnalité à venir dans une prochaine session !`)}
+          onManageTrip={(user, trip) => enterAdminMode(user, trip)}
         />
       )}
 

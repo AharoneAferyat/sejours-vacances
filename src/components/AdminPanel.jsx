@@ -120,15 +120,18 @@ function TripDetailView({ trip, ownerEmail, onBack, onManage, onDelete }) {
       )}
 
       <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
+        <button className="btn btn-primary" onClick={onManage} style={{ flex: 2, justifyContent: 'center', borderRadius: 10 }}>
+          ⚙️ Gérer ce séjour
+        </button>
         <button className="btn" onClick={() => {
           const text = `Séjour: ${trip.name}\nDestination: ${trip.destination}\nDates: ${trip.startDate} → ${trip.endDate}\nVoyageurs: ${(trip.voyageurs||[]).map(v=>v.name).join(', ')}\nBudget: ${trip.budget||'—'}€`
           navigator.clipboard.writeText(text)
           alert('Détails du séjour copiés !')
         }} style={{ flex: 1, justifyContent: 'center' }}>
-          📋 Copier les détails
+          📋 Copier
         </button>
         <button className="btn" onClick={onDelete} style={{ color: 'var(--red)', flex: 1, justifyContent: 'center' }}>
-          🗑 Supprimer ce séjour
+          🗑 Supprimer
         </button>
       </div>
     </div>

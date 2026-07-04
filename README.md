@@ -170,6 +170,7 @@ await seedDatabase()
 - Admin UID uniquement (plus de check par email)
 - Budget global admin (agrège tous les utilisateurs)
 - Page d'accueil pour nouveaux invités (EmptyState)
+- Admin mode gestion séjour : entrer dans le séjour d'un autre utilisateur avec édition complète (planning, infos, budget, voyageurs)
 
 ---
 
@@ -178,7 +179,8 @@ await seedDatabase()
 ### Priorité haute
 - [ ] Responsive admin mobile — checkup CSS complet
 - [ ] Responsive général — checkup toutes tailles (320px → 1920px)
-- [ ] Suppression séjours/utilisateurs — vérifier que ça fonctionne correctement
+- [x] Suppression séjours/utilisateurs — vérifier que ça fonctionne correctement
+- [x] Admin : mode gestion séjour (planning, infos, budget, voyageurs) avec édition complète
 - [ ] Lien d'invitation par séjour (rejoindre librement, sans code admin)
 - [ ] Tricount — choix des participants par dépense + option "tout le monde"
 - [ ] Jour de voyage (aller/retour) — visuellement distinct dans le planning

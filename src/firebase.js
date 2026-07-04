@@ -294,6 +294,89 @@ export async function adminDeleteUser(uid) {
 }
 
 
+// Admin: charger les données complètes d'un utilisateur
+export async function adminLoadUserData(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid))
+    if (!snap.exists()) return null
+    return snap.data()
+  } catch (e) { console.error('adminLoadUserData failed:', e); return null }
+}
+
+// Admin: mettre à jour un séjour d'un autre utilisateur
+export async function adminUpdateTrip(ownerUid, tripId, changes) {
+  try {
+    const snap = await getDoc(doc(db, 'users', ownerUid))
+    if (!snap.exists()) return false
+    const data = snap.data()
+    const trips = (data.trips || []).map(t =>
+      t.id === tripId ? { ...t, ...changes } : t
+    )
+    await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
+    return true
+  } catch (e) { console.error('adminUpdateTrip failed:', e); return false }
+}
+
+// Admin: ajouter une activité dans un séjour d'un autre utilisateur
+export async function adminAddActivity(ownerUid, tripId, dayId, activity) {
+  try {
+    const snap = await getDoc(doc(db, 'users', ownerUid))
+    if (!snap.exists()) return false
+    const data = snap.data()
+    const trips = (data.trips || []).map(t => {
+      if (t.id !== tripId) return t
+      return { ...t, days: (t.days || []).map(d => d.id === dayId ? { ...d, activities: [...(d.activities || []), activity] } : d) }
+    })
+    await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
+    return true
+  } catch (e) { console.error('adminAddActivity failed:', e); return false }
+}
+
+// Admin: modifier une activité
+export async function adminUpdateActivity(ownerUid, tripId, dayId, actId, changes) {
+  try {
+    const snap = await getDoc(doc(db, 'users', ownerUid))
+    if (!snap.exists()) return false
+    const data = snap.data()
+    const trips = (data.trips || []).map(t => {
+      if (t.id !== tripId) return t
+      return { ...t, days: (t.days || []).map(d => d.id === dayId ? { ...d, activities: (d.activities || []).map(a => a.id === actId ? { ...a, ...changes } : a) } : d) }
+    })
+    await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
+    return true
+  } catch (e) { console.error('adminUpdateActivity failed:', e); return false }
+}
+
+// Admin: supprimer une activité
+export async function adminDeleteActivity(ownerUid, tripId, dayId, actId) {
+  try {
+    const snap = await getDoc(doc(db, 'users', ownerUid))
+    if (!snap.exists()) return false
+    const data = snap.data()
+    const trips = (data.trips || []).map(t => {
+      if (t.id !== tripId) return t
+      return { ...t, days: (t.days || []).map(d => d.id === dayId ? { ...d, activities: (d.activities || []).filter(a => a.id !== actId) } : d) }
+    })
+    await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
+    return true
+  } catch (e) { console.error('adminDeleteActivity failed:', e); return false }
+}
+
+// Admin: valider un jour
+export async function adminValidateDay(ownerUid, tripId, dayId) {
+  try {
+    const snap = await getDoc(doc(db, 'users', ownerUid))
+    if (!snap.exists()) return false
+    const data = snap.data()
+    const trips = (data.trips || []).map(t => {
+      if (t.id !== tripId) return t
+      return { ...t, days: (t.days || []).map(d => d.id === dayId ? { ...d, validated: !d.validated } : d) }
+    })
+    await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
+    return true
+  } catch (e) { console.error('adminValidateDay failed:', e); return false }
+}
+
 // Générer un code de partage pour un séjour
 export async function generateShareCode(uid, tripId, tripName = '', options = {}) {
   const code = 'SHR-' + Array.from({length:6}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('')

@@ -354,24 +354,6 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
             ))}
           </div>
 
-          {Object.keys(byCat).length > 0 && (
-            <div className="card" style={{ marginBottom: '.65rem' }}>
-              <div style={{ fontSize: '.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.6rem' }}>Répartition par catégorie</div>
-              <div style={{ display: 'flex', height: 10, borderRadius: 20, overflow: 'hidden', gap: 2, marginBottom: '.65rem' }}>
-                {Object.entries(byCat).map(([cat, amt]) => <div key={cat} style={{ flex: amt, background: CAT_COLORS[cat] || '#888' }} />)}
-              </div>
-              {Object.entries(byCat).map(([cat, amt]) => (
-                <div key={cat} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', fontSize: '.8rem', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: CAT_COLORS[cat] || '#888', flexShrink: 0 }} />
-                    <span style={{ color: 'var(--text-muted)' }}>{CAT_LABELS[cat] || cat}</span>
-                  </div>
-                  <span style={{ fontWeight: 500 }}>{fmt(amt)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
           {totalAll === 0 && (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '.85rem' }}>
               💰 Aucune dépense pour l'instant
