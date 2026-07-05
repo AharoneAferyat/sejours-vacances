@@ -247,22 +247,26 @@ Activités déjà planifiées: ${existingActs}
 
 Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant ou après, sans markdown.
 Format exact (3 activités):
-[{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte","tip":"Conseil pratique","gear":["Item 1"],"links":[{"url":"https://www.alltrails.com/...","label":"AllTrails"},{"url":"https://www.visorando.com/...","label":"Visorando"}]}]
+[{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte","tip":"Conseil pratique","gear":["Item 1"],"type":"randonnée","links":[]}]
 difficulty: facile | moyen | sportif | repos
-IMPORTANT: Pour chaque activité, fournis de vrais liens AllTrails et/ou Visorando si disponibles pour ce lieu. Si tu n'as pas de lien exact, mets des liens de recherche : https://www.alltrails.com/explore?q=NomActivite et https://www.visorando.com/randonnee-NomActivite`
+type: randonnée | visite | activité | repos | sport | culture
+IMPORTANT: Le champ "type" est crucial pour déterminer les liens pertinents. distanceKm et dplus ne sont pertinents que pour les randonnées/treks.`
 
     try {
       const activities = await callGemini(prompt)
       if (!Array.isArray(activities) || activities.length === 0) throw new Error('Réponse vide')
-      // Générer des liens de recherche fiables depuis le titre
-      const withLinks = activities.map(act => ({
-        ...act,
-        links: [
+      const withLinks = activities.map(act => {
+        const t = (act.type || '').toLowerCase()
+        const isHike = /rando|trek|marche|sentier/.test(t) || (act.distanceKm > 0 && act.dplus > 0)
+        const links = [
           { url: `https://www.google.com/search?q=${encodeURIComponent(act.title + ' ' + destination)}`, label: '🔍 Google' },
-          { url: `https://www.alltrails.com/explore?q=${encodeURIComponent(act.title)}`, label: 'AllTrails' },
-          { url: `https://www.visorando.com/recherche/?s=${encodeURIComponent(act.title)}`, label: 'Visorando' },
         ]
-      }))
+        if (isHike) {
+          links.push({ url: `https://www.alltrails.com/explore?q=${encodeURIComponent(act.title)}`, label: 'AllTrails' })
+          links.push({ url: `https://www.visorando.com/recherche/?s=${encodeURIComponent(act.title)}`, label: 'Visorando' })
+        }
+        return { ...act, links }
+      })
       setResults(withLinks)
     } catch (e) { setError(getErrorMsg(e)) }
     finally { setLoading(false) }
@@ -299,26 +303,32 @@ Propose UN programme complet, une activité principale par jour, adaptée au lie
 Ne propose pas d'activités déjà planifiées.
 
 Réponds UNIQUEMENT avec un tableau JSON, une entrée par jour, sans texte avant ou après:
-[{"dayIndex":0,"activity":{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte sans apostrophes","tip":"Conseil pratique sans apostrophes","gear":[],"links":[{"url":"https://www.alltrails.com/explore?q=NomActivite","label":"AllTrails"}]}}]
+[{"dayIndex":0,"activity":{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte sans apostrophes","tip":"Conseil pratique sans apostrophes","gear":[],"type":"randonnée","links":[]}}]
 dayIndex = index du jour (0 = premier jour). difficulty: facile | moyen | sportif | repos
-IMPORTANT: Fournis de vrais liens AllTrails et/ou Visorando pour chaque activité si disponibles.`
+type: randonnée | visite | activité | repos | sport | culture
+IMPORTANT: Le champ "type" détermine les liens. distanceKm et dplus uniquement pour randonnées/treks, sinon mettre 0.`
 
     try {
       const parsed = await callGemini(prompt)
       if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Réponse vide')
 
-      const result = parsed.map(item => ({
-        dayId: tripDays[item.dayIndex]?.id,
-        dayLabel: formatDate(tripDays[item.dayIndex]?.date),
-        activity: {
-          ...item.activity,
-          links: [
-            { url: `https://www.google.com/search?q=${encodeURIComponent((item.activity?.title||'') + ' ' + destination)}`, label: '🔍 Google' },
-            { url: `https://www.alltrails.com/explore?q=${encodeURIComponent(item.activity?.title||'')}`, label: 'AllTrails' },
-            { url: `https://www.visorando.com/recherche/?s=${encodeURIComponent(item.activity?.title||'')}`, label: 'Visorando' },
-          ]
+      const result = parsed.map(item => {
+        const act = item.activity || {}
+        const t = (act.type || '').toLowerCase()
+        const isHike = /rando|trek|marche|sentier/.test(t) || (act.distanceKm > 0 && act.dplus > 0)
+        const links = [
+          { url: `https://www.google.com/search?q=${encodeURIComponent((act.title||'') + ' ' + destination)}`, label: '🔍 Google' },
+        ]
+        if (isHike) {
+          links.push({ url: `https://www.alltrails.com/explore?q=${encodeURIComponent(act.title||'')}`, label: 'AllTrails' })
+          links.push({ url: `https://www.visorando.com/recherche/?s=${encodeURIComponent(act.title||'')}`, label: 'Visorando' })
         }
-      })).filter(item => item.dayId)
+        return {
+          dayId: tripDays[item.dayIndex]?.id,
+          dayLabel: formatDate(tripDays[item.dayIndex]?.date),
+          activity: { ...act, links }
+        }
+      }).filter(item => item.dayId)
 
       setPlanDays(result)
     } catch (e) { setPlanError(getErrorMsg(e)) }
