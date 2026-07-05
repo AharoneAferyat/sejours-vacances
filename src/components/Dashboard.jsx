@@ -5,6 +5,8 @@ import QRCode from './QRCode'
 
 
 function getTripStatus(trip) {
+  if (trip.archived) return 'archived'
+  if (trip.closed) return 'closed'
   if (!trip.startDate) return 'unknown'
   const today = new Date().toISOString().slice(0,10)
   if (today < trip.startDate) return 'upcoming'
@@ -12,15 +14,23 @@ function getTripStatus(trip) {
   return 'ongoing'
 }
 
-function getCountdown(startDate) {
+function getCountdown(startDate, endDate) {
   const now = new Date()
   const start = new Date(startDate + 'T00:00:00')
+  const end = endDate ? new Date(endDate + 'T23:59:59') : null
   const diff = start - now
-  if (diff <= 0) return { j: 0, h: 0, m: 0, ongoing: true }
-  const j = Math.floor(diff / 86400000)
-  const h = Math.floor((diff % 86400000) / 3600000)
-  const m = Math.floor((diff % 3600000) / 60000)
-  return { j, h, m, text: `${j}j ${h}h ${m}m`, ongoing: false }
+  if (diff > 0) {
+    const j = Math.floor(diff / 86400000)
+    const h = Math.floor((diff % 86400000) / 3600000)
+    const m = Math.floor((diff % 3600000) / 60000)
+    return { j, h, m, status: 'upcoming' }
+  }
+  if (end && now > end) {
+    const since = now - end
+    const daysSince = Math.floor(since / 86400000)
+    return { daysSince, status: 'past' }
+  }
+  return { j: 0, h: 0, m: 0, status: 'ongoing' }
 }
 
 function getTodayInfo(trip) {
@@ -119,21 +129,85 @@ function InviteGenerator({ tripId, tripName, ownerUid }) {
   )
 }
 
-export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay, setTab, uid }) {
+/* ── Souvenir Photos per day ── */
+function SouvenirPhotos({ trip, onUpdateTrip }) {
+  const days = trip.days || []
+  const fileInputRef = { current: null }
+
+  const addPhoto = (dayId, e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) return alert('Photo trop lourde (max 2 Mo). Compresse-la avant.')
+    const reader = new FileReader()
+    reader.onload = () => {
+      const photo = { id: 'ph_' + Date.now(), data: reader.result, name: file.name, addedAt: Date.now() }
+      const newDays = days.map(d => d.id === dayId ? { ...d, photos: [...(d.photos || []), photo] } : d)
+      onUpdateTrip(trip.id, { days: newDays })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removePhoto = (dayId, photoId) => {
+    if (!confirm('Supprimer cette photo ?')) return
+    const newDays = days.map(d => d.id === dayId ? { ...d, photos: (d.photos || []).filter(p => p.id !== photoId) } : d)
+    onUpdateTrip(trip.id, { days: newDays })
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem', marginBottom: '.5rem' }}>
+      {days.map(day => {
+        const photos = day.photos || []
+        const acts = day.activities || []
+        return (
+          <div key={day.id} style={{ background: 'var(--bg)', borderRadius: 10, padding: '.6rem .7rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.35rem' }}>
+              <div style={{ fontSize: '.78rem', fontWeight: 600 }}>
+                {day.label}
+                {acts.length > 0 && <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: '.3rem' }}>— {acts.map(a => a.emoji || '').filter(Boolean).join(' ')} {acts[0]?.title}</span>}
+              </div>
+              <label style={{ fontSize: '.7rem', color: 'var(--green)', fontWeight: 500, cursor: 'pointer', flexShrink: 0 }}>
+                ＋ Photo
+                <input type="file" accept="image/*" onChange={e => addPhoto(day.id, e)} style={{ display: 'none' }} />
+              </label>
+            </div>
+            {photos.length > 0 ? (
+              <div style={{ display: 'flex', gap: '.35rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+                {photos.map(p => (
+                  <div key={p.id} style={{ position: 'relative', flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: 'hidden' }}>
+                    <img src={p.data} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button onClick={() => removePhoto(day.id, p.id)}
+                      style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,.6)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: '.7rem', color: 'var(--text-light)', fontStyle: 'italic' }}>Pas encore de photos</div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay, onUpdateTrip, setTab, uid }) {
   const [time, setTime] = useState('')
   const [countdown, setCountdown] = useState(null)
   const [showInvite, setShowInvite] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
+  const [showSouvenirs, setShowSouvenirs] = useState(null) // tripId to show photos
 
   const upcoming = trips.filter(t => getTripStatus(t)==='upcoming').sort((a,b) => a.startDate?.localeCompare(b.startDate))
   const ongoing = trips.filter(t => getTripStatus(t)==='ongoing')
-  const past = trips.filter(t => getTripStatus(t)==='past')
+  const past = trips.filter(t => ['past','closed'].includes(getTripStatus(t)))
+  const archived = trips.filter(t => getTripStatus(t)==='archived')
   const nextTrip = ongoing[0] || upcoming[0]
   const trip = activeTrip || nextTrip || trips[0]
 
   useEffect(() => {
     const tick = () => {
       setTime(new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}))
-      if (trip?.startDate) setCountdown(getCountdown(trip.startDate))
+      if (trip?.startDate) setCountdown(getCountdown(trip.startDate, trip.endDate))
     }
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
   }, [trip?.startDate])
@@ -192,7 +266,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 100%)' }} />
             <div style={{ position: 'relative', zIndex: 1, padding: 'clamp(1rem,3vw,1.5rem)' }}>
               <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.1em', opacity: .75, marginBottom: '.35rem' }}>
-                {getTripStatus(hero) === 'ongoing' ? '🟢 Séjour en cours' : '📅 Prochain séjour'}
+                {getTripStatus(hero) === 'ongoing' ? '🟢 Séjour en cours' : getTripStatus(hero) === 'closed' ? '🔒 Séjour clos' : ['past','archived'].includes(getTripStatus(hero)) ? '📸 Séjour terminé' : '📅 Prochain séjour'}
               </div>
               <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(1.3rem,4vw,1.8rem)', fontWeight: 700, marginBottom: '.1rem' }}>{hero.name}</div>
               {hero.subtitle && <div style={{ fontSize: '.88rem', opacity: .85, marginBottom: '.3rem' }}>{hero.subtitle}</div>}
@@ -214,8 +288,8 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
       {trip && (
         <div className="dashboard-grid" style={{ marginBottom: '1rem' }}>
           <div>
-            {/* Countdown OR Today's program */}
-            {countdown && !countdown.ongoing && (
+            {/* Countdown OR Today's program OR Souvenirs */}
+            {countdown?.status === 'upcoming' && (
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', marginBottom: '.65rem', boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.4rem' }}>⏳ Avant le départ</div>
                 <div style={{ fontFamily: 'monospace', fontSize: '1.6rem', fontWeight: 700, color: 'var(--text)', marginBottom: '.15rem' }}>{countdown.j}j {countdown.h}h {countdown.m}m</div>
@@ -224,7 +298,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                 </div>
               </div>
             )}
-            {countdown?.ongoing && (() => {
+            {countdown?.status === 'ongoing' && (() => {
               const info = getTodayInfo(trip)
               if (!info) return null
               const { todayDay, dayIndex, acts, doneCount, tomorrow } = info
@@ -274,6 +348,65 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                 </div>
               )
             })()}
+            {countdown?.status === 'past' && (
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', marginBottom: '.65rem', boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>📸 Souvenirs</div>
+                <div style={{ fontSize: '.92rem', fontWeight: 600, marginBottom: '.4rem' }}>Le séjour est terminé !</div>
+                <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', marginBottom: '.65rem' }}>
+                  {countdown.daysSince === 0 ? 'Terminé aujourd\'hui' : countdown.daysSince === 1 ? 'Terminé hier' : `Il y a ${countdown.daysSince} jours`}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.4rem', marginBottom: '.5rem' }}>
+                  {[
+                    { icon: '📍', val: `${totalKm.toFixed(1)} km`, lbl: 'parcourus' },
+                    { icon: '⛰', val: `${totalDplus} m`, lbl: 'de dénivelé' },
+                    { icon: '✅', val: `${totalActs}`, lbl: 'activités faites' },
+                    { icon: '📅', val: `${totalDays} jours`, lbl: 'de vacances' },
+                  ].map((s, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+                      <span style={{ fontSize: '.9rem' }}>{s.icon}</span>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '.82rem' }}>{s.val}</div>
+                        <div style={{ fontSize: '.6rem', color: 'var(--text-muted)' }}>{s.lbl}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {budget > 0 && totalSpent > 0 && (
+                  <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', padding: '.4rem .5rem', background: 'var(--bg)', borderRadius: 8, marginBottom: '.65rem' }}>
+                    💰 {totalSpent.toFixed(0)}€ dépensés sur {budget}€ de budget
+                  </div>
+                )}
+
+                {/* Photos souvenirs */}
+                <button onClick={() => setShowSouvenirs(showSouvenirs === trip.id ? null : trip.id)}
+                  style={{ width: '100%', padding: '.5rem', border: '1.5px dashed var(--border)', borderRadius: 10, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.8rem', color: 'var(--text-muted)', marginBottom: '.5rem' }}>
+                  📷 {showSouvenirs === trip.id ? 'Masquer' : 'Voir'} les photos souvenirs ({(trip.days || []).reduce((s, d) => s + (d.photos?.length || 0), 0)} photos)
+                </button>
+
+                {showSouvenirs === trip.id && (
+                  <SouvenirPhotos trip={trip} onUpdateTrip={onUpdateTrip} />
+                )}
+
+                {/* Close / Archive actions */}
+                <div style={{ display: 'flex', gap: '.4rem', marginTop: '.5rem' }}>
+                  {!trip.closed && (
+                    <button onClick={() => { if (confirm('Clore ce séjour ? Il ne sera plus modifiable.')) onUpdateTrip(trip.id, { closed: true }) }}
+                      style={{ flex: 1, padding: '.45rem', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.78rem', color: 'var(--text)', fontWeight: 500 }}>
+                      🔒 Clore le séjour
+                    </button>
+                  )}
+                  {trip.closed && !trip.archived && (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '.3rem', fontSize: '.78rem', color: 'var(--green)', fontWeight: 500 }}>
+                      🔒 Séjour clos
+                    </div>
+                  )}
+                  <button onClick={() => { if (confirm('Archiver ce séjour ? Il sera déplacé dans les archives.')) onUpdateTrip(trip.id, { archived: true }) }}
+                    style={{ flex: 1, padding: '.45rem', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                    📦 Archiver
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Statistiques */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', boxShadow: 'var(--shadow-sm)' }}>
@@ -376,13 +509,13 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
       )}
 
       {/* ── MES SÉJOURS (scroll horizontal) ── */}
-      {trips.length > 1 && (
+      {trips.filter(t => !t.archived).length > 1 && (
         <div>
           <div style={{ fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em', color: 'var(--text-muted)', marginBottom: '.55rem' }}>
-            Mes séjours ({trips.length})
+            Mes séjours ({trips.filter(t => !t.archived).length})
           </div>
           <div style={{ display: 'flex', gap: '.6rem', overflowX: 'auto', paddingBottom: '.5rem', scrollbarWidth: 'thin' }}>
-            {trips.map(t => {
+            {trips.filter(t => !t.archived).map(t => {
               const status = getTripStatus(t)
               const isActive = t.id === trip?.id
               const tripPhoto = t.headerPhoto || getFallbackPhoto(t.name, t.destination)
@@ -396,9 +529,9 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   <div style={{ height: 80, backgroundImage: `url(${tripPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 40%, rgba(0,0,0,.4))' }} />
                     <span style={{ position: 'absolute', bottom: 6, right: 8, fontSize: '.58rem', fontWeight: 600, padding: '1px 6px', borderRadius: 8,
-                      background: status === 'ongoing' ? 'var(--green)' : status === 'upcoming' ? 'var(--blue)' : '#888',
+                      background: status === 'ongoing' ? 'var(--green)' : status === 'upcoming' ? 'var(--blue)' : status === 'closed' ? '#6b5ce7' : '#888',
                       color: '#fff' }}>
-                      {status === 'ongoing' ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminé'}
+                      {status === 'ongoing' ? 'En cours' : status === 'upcoming' ? 'À venir' : status === 'closed' ? '🔒 Clos' : 'Terminé'}
                     </span>
                   </div>
                   <div style={{ padding: '.55rem .65rem' }}>
@@ -422,6 +555,43 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
               <span style={{ fontSize: '.78rem', fontWeight: 500 }}>Nouveau séjour</span>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── ARCHIVES ── */}
+      {archived.length > 0 && (
+        <div style={{ marginTop: '.5rem' }}>
+          <button onClick={() => setShowArchived(!showArchived)} style={{
+            background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: '.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.09em',
+            color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '.3rem', marginBottom: '.4rem', padding: 0
+          }}>
+            📦 Archives ({archived.length}) <span style={{ fontSize: '.7rem' }}>{showArchived ? '▼' : '▶'}</span>
+          </button>
+          {showArchived && (
+            <div style={{ display: 'flex', gap: '.5rem', overflowX: 'auto', paddingBottom: '.5rem', scrollbarWidth: 'thin' }}>
+              {archived.map(t => (
+                <div key={t.id} style={{
+                  flexShrink: 0, width: 180, borderRadius: 12, overflow: 'hidden',
+                  border: '1px solid var(--border)', background: 'var(--card)', opacity: .7,
+                  cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
+                }} onClick={() => onSelectTrip(t.id)}>
+                  <div style={{ height: 60, backgroundImage: `url(${t.headerPhoto || getFallbackPhoto(t.name, t.destination)})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative', filter: 'grayscale(.4)' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 30%, rgba(0,0,0,.35))' }} />
+                    <span style={{ position: 'absolute', bottom: 4, right: 6, fontSize: '.55rem', fontWeight: 600, padding: '1px 5px', borderRadius: 6, background: 'rgba(0,0,0,.5)', color: '#fff' }}>📦 Archivé</span>
+                  </div>
+                  <div style={{ padding: '.4rem .55rem' }}>
+                    <div style={{ fontWeight: 600, fontSize: '.78rem' }}>{t.name}</div>
+                    <div style={{ fontSize: '.62rem', color: 'var(--text-muted)' }}>{t.destination}</div>
+                    <button onClick={e => { e.stopPropagation(); if (confirm('Désarchiver ce séjour ?')) onUpdateTrip(t.id, { archived: false }) }}
+                      style={{ marginTop: '.25rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.65rem', color: 'var(--green)', fontWeight: 500, padding: 0 }}>
+                      ↩ Désarchiver
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
