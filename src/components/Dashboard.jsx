@@ -8,9 +8,16 @@ function getTripStatus(trip) {
   if (trip.archived) return 'archived'
   if (trip.closed) return 'closed'
   if (!trip.startDate) return 'unknown'
-  const today = new Date().toISOString().slice(0,10)
-  if (today < trip.startDate) return 'upcoming'
-  if (today > trip.endDate) return 'past'
+  const today = new Date()
+  const todayStr = today.toISOString().slice(0,10)
+  if (todayStr < trip.startDate) return 'upcoming'
+  if (todayStr > trip.endDate) {
+    // Auto-archive after 6 months
+    const end = new Date(trip.endDate + 'T23:59:59')
+    const sixMonths = 6 * 30 * 86400000
+    if (today - end > sixMonths) return 'archived'
+    return 'past'
+  }
   return 'ongoing'
 }
 
