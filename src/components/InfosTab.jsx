@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { generateShareCode, getShareLinksForTrip, deleteShareLink } from '../firebase'
+import QRCode from './QRCode'
 
 const ICONS = ['📋','🏕','🚄','📞','🗺','🛡','🚌','🍽','💊','🏥','💰','🔑','⚠️','📸','🎒','🌤','🏊','⛷','🦌','🌿','🏔','🌊','🎯','📍','🗓','💡']
 
@@ -161,10 +162,8 @@ function InviteManager({ tripId, tripName, ownerUid }) {
             <button onClick={() => copy(newUrl, 'new')} className="btn btn-primary">{copied === 'new' ? '✅' : '📋'}</button>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', margin: '.75rem 0' }}>
-            <div style={{ width: 140, height: 140, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)', background: '#fff', padding: 6 }}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(newUrl)}&format=svg&margin=1`} alt="QR" width={128} height={128} style={{ display: 'block' }} />
-            </div>
-          </div>
+          <QRCode value={newUrl} size={128} />
+        </div>
           <div style={{ fontSize: '.7rem', color: 'var(--green)', textAlign: 'center', marginBottom: '.4rem' }}>Scanne le QR code pour rejoindre</div>
           <button onClick={() => { setNewUrl(null); setShowCreate(false) }} style={{ display: 'block', width: '100%', marginTop: '.3rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '.75rem', color: 'var(--text-muted)', fontFamily: 'inherit', textAlign: 'center' }}>Fermer</button>
         </div>

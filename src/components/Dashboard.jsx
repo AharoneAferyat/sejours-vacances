@@ -1,21 +1,8 @@
 import { useState, useEffect } from 'react'
+import QRCode from './QRCode'
 
-/* ── Minimal QR Code generator (SVG) ── */
-function QRCode({ value, size = 160 }) {
-  const [svg, setSvg] = useState('')
-  useEffect(() => {
-    if (!value) return
-    // Use an external API for simplicity — generates a QR SVG
-    const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(value)}&format=svg&margin=1`
-    setSvg(url)
-  }, [value, size])
-  if (!svg) return null
-  return (
-    <div style={{ width: size, height: size, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#fff', padding: 8 }}>
-      <img src={svg} alt="QR Code" width={size - 16} height={size - 16} style={{ display: 'block' }} />
-    </div>
-  )
-}
+
+
 
 function getTripStatus(trip) {
   if (!trip.startDate) return 'unknown'
