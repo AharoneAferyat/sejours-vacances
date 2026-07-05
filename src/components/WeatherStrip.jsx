@@ -125,11 +125,6 @@ export default function WeatherStrip({ lat, lon, locationName }) {
         </div>
       </div>
 
-      {/* ── Card 3 : Courbe température ── */}
-      <div style={{ background:'var(--card)', borderRadius:12, border:'1px solid var(--border)', padding:'.5rem .8rem .6rem', boxShadow:'0 1px 2px rgba(0,0,0,.04)' }}>
-        <TempCurve hours={weather.hours} />
-      </div>
-
       {/* Storm warning */}
       {weather.hasStorm && (
         <div style={{ background:'var(--amber-light)', color:'var(--amber)', borderRadius:10, padding:'.5rem .85rem', fontSize:'.75rem', fontWeight:600 }}>

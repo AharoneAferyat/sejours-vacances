@@ -29,11 +29,23 @@ function getCountdown(startDate) {
   const now = new Date()
   const start = new Date(startDate + 'T00:00:00')
   const diff = start - now
-  if (diff <= 0) return null
+  if (diff <= 0) return { j: 0, h: 0, m: 0, ongoing: true }
   const j = Math.floor(diff / 86400000)
   const h = Math.floor((diff % 86400000) / 3600000)
   const m = Math.floor((diff % 3600000) / 60000)
-  return { j, h, m, text: `${j}j ${h}h ${m}m` }
+  return { j, h, m, text: `${j}j ${h}h ${m}m`, ongoing: false }
+}
+
+function getTodayInfo(trip) {
+  if (!trip?.days?.length || !trip.startDate) return null
+  const today = new Date().toISOString().slice(0,10)
+  const todayDay = trip.days.find(d => d.date === today)
+  if (!todayDay) return null
+  const dayIndex = trip.days.indexOf(todayDay)
+  const tomorrow = trip.days[dayIndex + 1] || null
+  const acts = todayDay.activities || []
+  const doneCount = acts.filter(a => a.done).length
+  return { todayDay, dayIndex, tomorrow, acts, doneCount }
 }
 
 const PHOTOS = {
@@ -215,8 +227,8 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
       {trip && (
         <div className="dashboard-grid" style={{ marginBottom: '1rem' }}>
           <div>
-            {/* Countdown */}
-            {countdown && countdown.j >= 0 && (
+            {/* Countdown OR Today's program */}
+            {countdown && !countdown.ongoing && (
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', marginBottom: '.65rem', boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.4rem' }}>⏳ Avant le départ</div>
                 <div style={{ fontFamily: 'monospace', fontSize: '1.6rem', fontWeight: 700, color: 'var(--text)', marginBottom: '.15rem' }}>{countdown.j}j {countdown.h}h {countdown.m}m</div>
@@ -225,6 +237,56 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                 </div>
               </div>
             )}
+            {countdown?.ongoing && (() => {
+              const info = getTodayInfo(trip)
+              if (!info) return null
+              const { todayDay, dayIndex, acts, doneCount, tomorrow } = info
+              return (
+                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', marginBottom: '.65rem', boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--green)', marginBottom: '.5rem' }}>🟢 Aujourd'hui — Jour {dayIndex + 1}</div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.05rem', fontWeight: 700, marginBottom: '.5rem' }}>{todayDay.label}</div>
+
+                  {acts.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
+                      {acts.map((act, i) => (
+                        <div key={act.id || i} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.3rem .5rem', borderRadius: 8, background: act.done ? 'var(--green-light)' : 'var(--bg)' }}>
+                          <span style={{ fontSize: '.85rem' }}>{act.done ? '✅' : (act.emoji || '🎯')}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '.8rem', fontWeight: 500, textDecoration: act.done ? 'line-through' : 'none', color: act.done ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{act.title}</div>
+                            {act.startTime && <span style={{ fontSize: '.65rem', color: 'var(--text-muted)' }}>{act.startTime}</span>}
+                          </div>
+                          {act.distanceKm && <span style={{ fontSize: '.68rem', color: 'var(--text-muted)', flexShrink: 0 }}>{act.distanceKm} km</span>}
+                        </div>
+                      ))}
+                      {/* Progress */}
+                      <div style={{ marginTop: '.3rem' }}>
+                        <div style={{ height: 4, background: 'rgba(0,0,0,.06)', borderRadius: 20, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: (acts.length > 0 ? doneCount / acts.length * 100 : 0) + '%', background: 'var(--green)', borderRadius: 20, transition: 'width .3s' }} />
+                        </div>
+                        <div style={{ fontSize: '.65rem', color: 'var(--text-muted)', marginTop: 3 }}>{doneCount}/{acts.length} terminée{doneCount > 1 ? 's' : ''}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', padding: '.3rem 0' }}>🏖 Journée libre — pas d'activités prévues</div>
+                  )}
+
+                  {/* Tomorrow preview */}
+                  {tomorrow && (tomorrow.activities?.length || 0) > 0 && (
+                    <div style={{ marginTop: '.65rem', paddingTop: '.55rem', borderTop: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.3rem' }}>📅 Demain — {tomorrow.label}</div>
+                      <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
+                        {tomorrow.activities.slice(0, 3).map((act, i) => (
+                          <span key={i} style={{ fontSize: '.72rem', padding: '3px 8px', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-muted)' }}>
+                            {act.emoji || '🎯'} {act.title}
+                          </span>
+                        ))}
+                        {tomorrow.activities.length > 3 && <span style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>+{tomorrow.activities.length - 3}</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Statistiques */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', boxShadow: 'var(--shadow-sm)' }}>
