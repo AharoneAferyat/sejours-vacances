@@ -24,6 +24,7 @@ function parseHours(hourlyData, dayOffset = 0) {
       temp: Math.round(hourlyData.temperature_2m[i]),
       wc: hourlyData.weathercode[i],
       rain: hourlyData.precipitation_probability?.[i] || 0,
+      wind: Math.round(hourlyData.windspeed_10m?.[i] || 0),
       isNow: dayIdx === 0 && dt.getHours() === nowH,
       dayOffset: dayIdx,
     }
@@ -38,65 +39,48 @@ export function useWeather(lat, lon) {
   useEffect(() => {
     if (!lat || !lon) { setLoading(false); return }
     let cancelled = false
-
     async function fetchWeather() {
       setLoading(true)
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m,apparent_temperature,relative_humidity_2m&hourly=temperature_2m,weathercode,precipitation_probability,uv_index&daily=temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max&timezone=auto&forecast_days=2`
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m,apparent_temperature,relative_humidity_2m&hourly=temperature_2m,weathercode,precipitation_probability,windspeed_10m&daily=temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=2`
         const r = await fetch(url)
         const d = await r.json()
         if (cancelled) return
-
         const todayHours = parseHours(d.hourly, 0)
         const tomorrowHours = parseHours(d.hourly, 1)
         const wc = d.current.weathercode
-
-        // UV from daily or hourly
-        const uvMax = d.daily?.uv_index_max?.[0] || 0
-        const rainProbMax = d.daily?.precipitation_probability_max?.[0] || 0
-        const tempMax = d.daily?.temperature_2m_max?.[0] || 0
-        const tempMin = d.daily?.temperature_2m_min?.[0] || 0
-        const feelsLike = Math.round(d.current.apparent_temperature || d.current.temperature_2m)
+        const fmtTime = (iso) => { if (!iso) return '--:--'; const dt = new Date(iso); return dt.getHours().toString().padStart(2,'0')+':'+dt.getMinutes().toString().padStart(2,'0') }
 
         const mkWeather = (hours, dayIdx = 0) => ({
           temp: Math.round(d.current.temperature_2m),
           wind: Math.round(d.current.windspeed_10m),
           wc, icon: WC_ICON[wc] || '🌡', label: WC_LBL[wc] || '',
-          feelsLike,
+          feelsLike: Math.round(d.current.apparent_temperature || d.current.temperature_2m),
+          humidity: d.current.relative_humidity_2m || 0,
           tempMax: Math.round(d.daily?.temperature_2m_max?.[dayIdx] || 0),
           tempMin: Math.round(d.daily?.temperature_2m_min?.[dayIdx] || 0),
           uvMax: Math.round(d.daily?.uv_index_max?.[dayIdx] || 0),
           rainProb: d.daily?.precipitation_probability_max?.[dayIdx] || 0,
+          sunrise: fmtTime(d.daily?.sunrise?.[dayIdx]),
+          sunset: fmtTime(d.daily?.sunset?.[dayIdx]),
           hasStorm: hours.some(h => [95,96,99,80,81,82].includes(h.wc) && h.h >= 12),
           hours,
         })
-
         setWeather(mkWeather(todayHours, 0))
         const midDay = tomorrowHours.find(h => h.h === 12) || tomorrowHours[3] || tomorrowHours[0]
         const tomorrowWc = midDay?.wc || 0
         setTomorrow({
+          ...mkWeather(tomorrowHours, 1),
           temp: tomorrowHours.length ? Math.round(Math.max(...tomorrowHours.map(h => h.temp))) : 0,
-          wind: Math.round(d.current.windspeed_10m),
           wc: tomorrowWc, icon: WC_ICON[tomorrowWc] || '🌡', label: WC_LBL[tomorrowWc] || '',
-          feelsLike: 0,
-          tempMax: Math.round(d.daily?.temperature_2m_max?.[1] || 0),
-          tempMin: Math.round(d.daily?.temperature_2m_min?.[1] || 0),
-          uvMax: Math.round(d.daily?.uv_index_max?.[1] || 0),
-          rainProb: d.daily?.precipitation_probability_max?.[1] || 0,
-          hasStorm: tomorrowHours.some(h => [95,96,99,80,81,82].includes(h.wc)),
-          hours: tomorrowHours,
         })
       } catch {
         if (!cancelled) { setWeather(null); setTomorrow(null) }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+      } finally { if (!cancelled) setLoading(false) }
     }
-
     fetchWeather()
     const id = setInterval(fetchWeather, 5 * 60 * 1000)
     return () => { cancelled = true; clearInterval(id) }
   }, [lat, lon])
-
   return { weather, tomorrow, loading }
 }
