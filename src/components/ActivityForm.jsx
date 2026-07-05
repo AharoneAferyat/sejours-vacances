@@ -77,7 +77,7 @@ const FEATURES = [
 
 const EMPTY = {
   emoji: '🥾', title: '', subtitle: '', type: 'rando', difficulty: 'facile',
-  startTime: '', endTime: '', distanceKm: '', dplus: '', durationMin: '',
+  startTime: '', endTime: '', distanceKm: '', dplus: '', durationMin: '', durationH: '', durationM: '',
   features: [], desc: '', gear: '', tip: '',
   links: '', // "url|label,url|label"
   notes: [], done: false,
@@ -98,6 +98,8 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
       tip: initial.tip || '',
       notes: Array.isArray(initial.notes) ? initial.notes : [],
       features: Array.isArray(initial.features) ? initial.features : [],
+      durationH: initial.durationMin ? String(Math.floor(initial.durationMin / 60)) : '',
+      durationM: initial.durationMin ? String(initial.durationMin % 60) : '',
     }
   })
 
@@ -121,7 +123,7 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
       links,
       distanceKm: parseFloat(form.distanceKm) || 0,
       dplus: parseFloat(form.dplus) || 0,
-      durationMin: parseFloat(form.durationMin) || 0,
+      durationMin: (parseFloat(form.durationH) || 0) * 60 + (parseFloat(form.durationM) || 0),
     })
   }
 
@@ -207,9 +209,13 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
         </div>
 
         <div className="form-group">
-          <label>Durée estimée (minutes)</label>
-          <input type="number" value={form.durationMin}
-            onChange={e => set('durationMin', e.target.value)} placeholder="ex: 180 (= 3h)" />
+          <label>Durée estimée</label>
+          <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
+            <input type="number" min="0" value={form.durationH || ''} onChange={e => set('durationH', e.target.value)} placeholder="0" style={{ width: 60 }} />
+            <span style={{ fontSize: '.82rem', color: 'var(--text-muted)' }}>h</span>
+            <input type="number" min="0" max="59" value={form.durationM || ''} onChange={e => set('durationM', e.target.value)} placeholder="00" style={{ width: 60 }} />
+            <span style={{ fontSize: '.82rem', color: 'var(--text-muted)' }}>min</span>
+          </div>
         </div>
 
         <div className="form-group">
