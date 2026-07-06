@@ -1,4 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+
+function useIsMobile() {
+  const [m, setM] = useState(window.innerWidth < 768)
+  useEffect(() => { const h = () => setM(window.innerWidth < 768); window.addEventListener('resize', h); return () => window.removeEventListener('resize', h) }, [])
+  return m
+}
 
 /* ─── DESIGN TOKENS ────────────────────────────────────────────── */
 const R = 16, SP = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 }
@@ -211,7 +217,7 @@ function ExpenseCard({ exp, voyageurs, onDelete, onEdit }) {
 /* ═══════════════════════════════════════════════════════════════════
    TAB 1 — VUE D'ENSEMBLE
    ═══════════════════════════════════════════════════════════════════ */
-function VueEnsemble({ budget, totalCommon, totalPerso, totalAll, pct, barColor, voyageurs, paid, balances, byCat, commonExpenses, myPersonalExpenses, days, onShowAdd }) {
+function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct, barColor, voyageurs, paid, balances, byCat, commonExpenses, myPersonalExpenses, days, onShowAdd }) {
   const recentExpenses = [...commonExpenses, ...myPersonalExpenses].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0, 4)
   const perDay = days.length > 0 ? Math.round(totalAll / days.length) : 0
 
@@ -242,7 +248,7 @@ function VueEnsemble({ budget, totalCommon, totalPerso, totalAll, pct, barColor,
       </Card>
 
       {/* Metrics row */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:SP.sm, marginBottom:SP.lg }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap:SP.sm, marginBottom:SP.lg }}>
         <MetricCard label="Total dépensé" value={fmt(totalAll)} />
         <MetricCard label="Commun" value={fmt(totalCommon)} accent="var(--blue)" />
         <MetricCard label="Perso" value={fmt(totalPerso)} accent="var(--green)" />
@@ -250,7 +256,7 @@ function VueEnsemble({ budget, totalCommon, totalPerso, totalAll, pct, barColor,
       </div>
 
       {/* Two columns: categories + expenses by day */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:SP.lg, marginBottom:SP.lg }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? SP.md : SP.lg, marginBottom:SP.lg }}>
         {/* Donut categories */}
         <Card>
           <SectionLabel>Répartition par catégorie</SectionLabel>
@@ -296,7 +302,7 @@ function VueEnsemble({ budget, totalCommon, totalPerso, totalAll, pct, barColor,
       </div>
 
       {/* Recent expenses + Balance */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:SP.lg }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? SP.md : SP.lg }}>
         {/* Recent */}
         <Card>
           <SectionLabel>Dépenses récentes</SectionLabel>
@@ -513,7 +519,7 @@ function Remboursements({ debts, voyageurs, balances, paid, commonExpenses, acti
 /* ═══════════════════════════════════════════════════════════════════
    TAB 4 — STATISTIQUES
    ═══════════════════════════════════════════════════════════════════ */
-function Statistiques({ totalCommon, totalPerso, totalAll, voyageurs, paid, byCat, commonExpenses, myPersonalExpenses, days, budget }) {
+function Statistiques({ isMobile, totalCommon, totalPerso, totalAll, voyageurs, paid, byCat, commonExpenses, myPersonalExpenses, days, budget }) {
   const allExpenses = [...commonExpenses, ...myPersonalExpenses]
 
   // Who spends the most (common)
@@ -532,14 +538,14 @@ function Statistiques({ totalCommon, totalPerso, totalAll, voyageurs, paid, byCa
   return (
     <div>
       {/* Aperçu général */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:SP.sm, marginBottom:SP.lg }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap:SP.sm, marginBottom:SP.lg }}>
         <MetricCard label="Total dépensé" value={fmt(totalAll)} accent="var(--text)" />
         <MetricCard label="Commun" value={fmt(totalCommon)} accent="var(--blue)" />
         <MetricCard label="Perso" value={fmt(totalPerso)} accent="var(--green)" />
         <MetricCard label="Par jour (moy.)" value={fmt(days.length>0?Math.round(totalAll/days.length):0)} />
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:SP.lg, marginBottom:SP.lg }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? SP.md : SP.lg, marginBottom:SP.lg }}>
         {/* Evolution by day - bar chart */}
         <Card>
           <SectionLabel>Évolution des dépenses</SectionLabel>
@@ -584,7 +590,7 @@ function Statistiques({ totalCommon, totalPerso, totalAll, voyageurs, paid, byCa
         </Card>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:SP.lg }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? SP.md : SP.lg }}>
         {/* Who spends the most */}
         <Card>
           <SectionLabel>Qui dépense le plus ?</SectionLabel>
@@ -640,6 +646,7 @@ function Statistiques({ totalCommon, totalPerso, totalAll, voyageurs, paid, byCa
    ═══════════════════════════════════════════════════════════════════ */
 export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onUpdate }) {
   const [tab, setTab] = useState('vue')
+  const isMobile = useIsMobile()
   const [showAdd, setShowAdd] = useState(false)
 
   const budget = trip.budget || 0
@@ -708,10 +715,10 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
       </div>
 
       {/* Content */}
-      {tab === 'vue' && <VueEnsemble budget={budget} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} pct={pct} barColor={barColor} voyageurs={voyageurs} paid={paid} balances={balances} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} onShowAdd={()=>setShowAdd(true)} />}
+      {tab === 'vue' && <VueEnsemble isMobile={isMobile} budget={budget} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} pct={pct} barColor={barColor} voyageurs={voyageurs} paid={paid} balances={balances} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} onShowAdd={()=>setShowAdd(true)} />}
       {tab === 'depenses' && <Depenses commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} voyageurs={voyageurs} onDeleteCommon={handleDeleteCommon} onDeletePerso={handleDeletePerso} onShowAdd={()=>setShowAdd(true)} />}
       {tab === 'remb' && <Remboursements debts={debts} voyageurs={voyageurs} balances={balances} paid={paid} commonExpenses={commonExpenses} activeVoyageurId={activeVoyageurId} onSettle={handleSettle} isGuest={isGuest} />}
-      {tab === 'stats' && <Statistiques totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} voyageurs={voyageurs} paid={paid} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} budget={budget} />}
+      {tab === 'stats' && <Statistiques isMobile={isMobile} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} voyageurs={voyageurs} paid={paid} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} budget={budget} />}
 
       {showAdd && <AddExpenseForm voyageurs={voyageurs} days={days} onAdd={handleAdd} onClose={()=>setShowAdd(false)} currentVoyageurId={activeVoyageurId} />}
     </div>

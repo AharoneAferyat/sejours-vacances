@@ -1,4 +1,11 @@
+import { useState, useEffect } from 'react'
 import { useWeather } from '../hooks/useWeather'
+
+function useIsMobile() {
+  const [m, setM] = useState(window.innerWidth < 768)
+  useEffect(() => { const h = () => setM(window.innerWidth < 768); window.addEventListener('resize', h); return () => window.removeEventListener('resize', h) }, [])
+  return m
+}
 
 const WC_ICON = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',61:'🌧',63:'🌧',80:'🌦',81:'🌧',95:'⛈',96:'⛈' }
 
@@ -26,6 +33,7 @@ function TempCurve({ hours }) {
 
 export default function WeatherStrip({ lat, lon, locationName }) {
   const { weather, loading } = useWeather(lat, lon)
+  const isMobile = useIsMobile()
   if (!lat || !lon) return <div className="weather-strip">📍 Localisez le séjour pour voir la météo</div>
   if (loading) return <div className="weather-strip">🌤 Chargement météo…</div>
   if (!weather) return <div className="weather-strip">🌤 Météo indisponible</div>
@@ -70,25 +78,25 @@ export default function WeatherStrip({ lat, lon, locationName }) {
           </div>
 
           {/* Right — 4 metric boxes */}
-          <div style={{ flex:1, display:'flex', border:'1px solid var(--border)', borderRadius:10, overflow:'hidden', marginLeft:'auto' }}>
+          <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', border:'1px solid var(--border)', borderRadius:10, overflow:'hidden', width: isMobile ? '100%' : 'auto', marginLeft: isMobile ? 0 : 'auto', flex: isMobile ? 'none' : 1 }}>
             <div style={metricBox}>
               <div style={metricIcon}>🌡</div>
               <div style={metricLabel}>Min / Max</div>
               <div style={metricValue}>{weather.tempMin}° / {weather.tempMax}°</div>
             </div>
-            <div style={{ width:1, background:'var(--border)' }} />
+            {!isMobile && <div style={{ width:1, background:'var(--border)' }} />}
             <div style={metricBox}>
               <div style={metricIcon}>💨</div>
               <div style={metricLabel}>Vent</div>
               <div style={metricValue}>{weather.wind} km/h</div>
             </div>
-            <div style={{ width:1, background:'var(--border)' }} />
+            {!isMobile && <div style={{ width:1, background:'var(--border)' }} />}
             <div style={metricBox}>
               <div style={metricIcon}>💧</div>
               <div style={metricLabel}>Humidité</div>
               <div style={metricValue}>{weather.humidity} %</div>
             </div>
-            <div style={{ width:1, background:'var(--border)' }} />
+            {!isMobile && <div style={{ width:1, background:'var(--border)' }} />}
             <div style={metricBox}>
               <div style={metricIcon}>🌅</div>
               <div style={metricLabel}>Lever / Coucher</div>
