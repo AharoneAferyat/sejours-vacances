@@ -410,7 +410,7 @@ export async function validateShareCode(code) {
 }
 
 // Ajouter un voyageur au séjour d'un autre utilisateur via share link
-export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurEmail, shareCode = '') {
+export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurEmail, shareCode = '', joinerUid = '') {
   try {
     const snap = await getDoc(doc(db, 'users', ownerUid))
     if (!snap.exists()) return false
@@ -421,7 +421,9 @@ export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurE
     
     const trip = trips[tripIdx]
     const vid = 'v_' + Date.now()
-    const voyageurs = [...(trip.voyageurs || []), { id: vid, name: voyageurName, email: voyageurEmail }]
+    const voyageur = { id: vid, name: voyageurName, email: voyageurEmail }
+    if (joinerUid) voyageur.uid = joinerUid
+    const voyageurs = [...(trip.voyageurs || []), voyageur]
     trips[tripIdx] = { ...trip, voyageurs }
     
     await setDoc(doc(db, 'users', ownerUid), { ...data, trips, updatedAt: Date.now() })
@@ -434,7 +436,7 @@ export async function joinTripViaShare(ownerUid, tripId, voyageurName, voyageurE
         await setDoc(doc(db, 'guestAccess', shareCode), {
           ...codeData,
           usedCount: (codeData.usedCount || 0) + 1,
-          usedBy: [...(codeData.usedBy || []), { name: voyageurName, email: voyageurEmail, joinedAt: Date.now() }]
+          usedBy: [...(codeData.usedBy || []), { name: voyageurName, email: voyageurEmail, uid: joinerUid || '', joinedAt: Date.now() }]
         })
       }
     } catch {}

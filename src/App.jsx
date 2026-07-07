@@ -246,6 +246,7 @@ export default function App() {
     return (
       <JoinTripModal
         shareCode={shareCode}
+        joinerUid={store.uid || ''}
         onJoined={() => { setShareCode(null); window.history.replaceState({}, '', '/'); window.location.reload() }}
         onClose={() => { setShareCode(null); window.history.replaceState({}, '', '/') }}
       />

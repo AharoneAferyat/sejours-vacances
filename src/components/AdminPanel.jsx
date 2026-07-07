@@ -64,9 +64,12 @@ function TripDetailView({ trip, ownerEmail, onBack, onManage, onDelete }) {
             const totalDepenses = depenses.reduce((s, d) => s + (d.amount || 0), 0)
             return (
               <div key={v.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.8rem 1rem', marginBottom: '.5rem' }}>
-                <div style={{ fontWeight: 600, fontSize: '.85rem', marginBottom: '.4rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '.85rem', marginBottom: '.4rem', display: 'flex', alignItems: 'center', gap: '.4rem', flexWrap: 'wrap' }}>
                   {v.name} {v.email && <span style={{ color: 'var(--text-muted)', fontSize: '.72rem', fontWeight: 400 }}>({v.email})</span>}
+                  {v.uid && <span style={{ fontSize: '.58rem', padding: '1px 6px', borderRadius: 6, background: 'var(--blue-light)', color: 'var(--blue)', fontWeight: 500 }}>🔗 Compte lié</span>}
+                  {!v.uid && <span style={{ fontSize: '.58rem', padding: '1px 6px', borderRadius: 6, background: 'var(--gray-light)', color: 'var(--text-muted)', fontWeight: 500 }}>Sans compte</span>}
                 </div>
+                {v.uid && <div style={{ fontSize: '.62rem', color: 'var(--text-muted)', marginBottom: '.4rem', fontFamily: 'monospace' }}>UID: {v.uid}</div>}
                 <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap', fontSize: '.78rem', color: 'var(--text-muted)' }}>
                   <span>🧳 Valise : {valise.filter(i => i.done).length}/{valise.length}</span>
                   <span>🎒 Sac : {sac.filter(i => i.done).length}/{sac.length}</span>
@@ -177,10 +180,22 @@ function UsersTree({ users, loading, onSelectTrip, onRefresh }) {
                 {u.email || (u.trips[0]?.voyageurs?.[0]?.name ? `${u.trips[0].voyageurs[0].name} (sans email)` : `Utilisateur anonyme · ${u.uid.slice(0, 8)}…`)}
               </div>
               <div style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>
-                {u.trips.length} séjour{u.trips.length > 1 ? 's' : ''}
+                {u.trips.length} séjour{u.trips.length > 1 ? 's' : ''} propre{u.trips.length > 1 ? 's' : ''}
                 {u.joinedAt && ` · rejoint le ${fmtDate(u.joinedAt)}`}
                 {u.inviteCode && ` · code ${u.inviteCode}`}
               </div>
+              {/* Show trips where this user is a voyageur (in other users' trips) */}
+              {(() => {
+                const guestIn = users.filter(other => other.uid !== u.uid).flatMap(other =>
+                  other.trips.filter(t => t.voyageurs?.some(v => v.uid === u.uid || (v.email && v.email === u.email)))
+                    .map(t => ({ tripName: t.name, ownerEmail: other.email }))
+                )
+                return guestIn.length > 0 ? (
+                  <div style={{ fontSize: '.62rem', color: 'var(--blue)', marginTop: 2 }}>
+                    🔗 Invité dans : {guestIn.map(g => `${g.tripName} (${g.ownerEmail})`).join(', ')}
+                  </div>
+                ) : null
+              })()}
             </div>
             {/* Actions utilisateur */}
             <div className="admin-actions" style={{ display: 'flex', gap: '.35rem', flexShrink: 0 }}>

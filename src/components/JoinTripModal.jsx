@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { validateShareCode, joinTripViaShare } from '../firebase'
 
-export default function JoinTripModal({ shareCode, onJoined, onClose }) {
+export default function JoinTripModal({ shareCode, joinerUid, onJoined, onClose }) {
   const [step, setStep] = useState('loading')
   const [shareData, setShareData] = useState(null)
   const [name, setName] = useState('')
@@ -31,7 +31,7 @@ export default function JoinTripModal({ shareCode, onJoined, onClose }) {
     
     setStep('joining')
     try {
-      const ok = await joinTripViaShare(shareData.ownerUid, shareData.tripId, name.trim(), email.trim(), shareCode)
+      const ok = await joinTripViaShare(shareData.ownerUid, shareData.tripId, name.trim(), email.trim(), shareCode, joinerUid || '')
       if (ok) {
         setStep('done')
         setTimeout(() => onJoined(), 2500)

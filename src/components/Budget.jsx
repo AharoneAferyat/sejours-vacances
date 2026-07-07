@@ -75,7 +75,7 @@ function MetricCard({ label, value, sub, accent }) {
 }
 
 /* ─── DONUT CHART ──────────────────────────────────────────────── */
-function DonutChart({ data, total, size=140 }) {
+function DonutChart({ data, total, size=140, isMobile=false }) {
   const r = size/2, ir = r*.62, c = Math.PI*2*((r+ir)/2)
   let offset = 0
   return (
@@ -260,9 +260,9 @@ function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct,
         {/* Donut categories */}
         <Card>
           <SectionLabel>Répartition par catégorie</SectionLabel>
-          <div style={{ display:'flex', alignItems:'center', gap:SP.lg }}>
+          <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems:'center', gap: isMobile ? SP.md : SP.lg }}>
             <DonutChart
-              data={Object.entries(byCat).map(([cat,amt])=>({ value:amt, color:CAT_COLORS[cat]||'#888' }))}
+              data={Object.entries(byCat)}.map(([cat,amt])=>({ value:amt, color:CAT_COLORS[cat]||'#888' }))}
               total={totalCommon}
             />
             <div style={{ flex:1 }}>
@@ -549,7 +549,7 @@ function Statistiques({ isMobile, totalCommon, totalPerso, totalAll, voyageurs, 
         {/* Evolution by day - bar chart */}
         <Card>
           <SectionLabel>Évolution des dépenses</SectionLabel>
-          <div style={{ display:'flex', alignItems:'flex-end', gap:4, height:120, marginTop:SP.md }}>
+          <div style={{ display:'flex', alignItems:'flex-end', gap: isMobile ? 2 : 4, height: isMobile ? 80 : 120, marginTop:SP.md }}>
             {dayTotals.map((d, i) => {
               const total = d.common + d.perso
               const h = maxDayTotal > 0 ? (total / maxDayTotal * 100) : 0
@@ -576,8 +576,8 @@ function Statistiques({ isMobile, totalCommon, totalPerso, totalAll, voyageurs, 
         {/* Donut categories */}
         <Card>
           <SectionLabel>Répartition par catégorie</SectionLabel>
-          <div style={{ display:'flex', alignItems:'center', gap:SP.lg, marginTop:SP.sm }}>
-            <DonutChart data={Object.entries(byCat).map(([cat,amt])=>({ value:amt, color:CAT_COLORS[cat]||'#888' }))} total={totalCommon} size={120} />
+          <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems:'center', gap: isMobile ? SP.md : SP.lg, marginTop:SP.sm }}>
+            <DonutChart data={Object.entries(byCat)}.map(([cat,amt])=>({ value:amt, color:CAT_COLORS[cat]||'#888' }))} total={totalCommon} size={120} />
             <div style={{ flex:1 }}>
               {Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>(
                 <div key={cat} style={{ display:'flex', justifyContent:'space-between', padding:'3px 0', fontSize:'.78rem' }}>
