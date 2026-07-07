@@ -577,7 +577,7 @@ function Statistiques({ isMobile, totalCommon, totalPerso, totalAll, voyageurs, 
         <Card>
           <SectionLabel>Répartition par catégorie</SectionLabel>
           <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems:'center', gap: isMobile ? SP.md : SP.lg, marginTop:SP.sm }}>
-            <DonutChart data={Object.entries(byCat)}.map(([cat,amt])=>({ value:amt, color:CAT_COLORS[cat]||'#888' }))} total={totalCommon} size={120} />
+            <DonutChart data={Object.entries(byCat).map(([cat,amt])=>({ value:amt, color:CAT_COLORS[cat]||'#888' }))} total={totalCommon} size={isMobile ? 100 : 120} />
             <div style={{ flex:1 }}>
               {Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>(
                 <div key={cat} style={{ display:'flex', justifyContent:'space-between', padding:'3px 0', fontSize:'.78rem' }}>
