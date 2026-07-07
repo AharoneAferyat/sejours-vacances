@@ -262,6 +262,13 @@ export default function App() {
   const trip = isAdminManaging ? adminMode.trip : realTrip
   const today = getTodayStr()
 
+  // Helper: get ALL days across all destinations (for stats, dashboard, budget)
+  const getAllDays = (t) => {
+    if (!t) return []
+    if (t.destinations?.length > 0) return t.destinations.flatMap(d => d.days || [])
+    return t.days || []
+  }
+
   // Multi-destination resolution
   const isMultiDest = trip?.destinations?.length > 0
   const destinations = isMultiDest ? trip.destinations : (trip ? [{ id: 'default', name: trip.destination, startDate: trip.startDate, endDate: trip.endDate, color: trip.color, lat: trip.lat, lon: trip.lon, headerPhoto: trip.headerPhoto, accommodation: trip.accommodation, accommodationPhone: trip.accommodationPhone, days: trip.days || [] }] : [])
@@ -420,6 +427,17 @@ export default function App() {
     }
   }
 
+  const normalizedTrip = trip ? {
+    ...trip,
+    days: getAllDays(trip),
+    destination: destName,
+    color: destColor,
+    lat: destLat, lon: destLon,
+    accommodation: destAccommodation,
+    headerPhoto: destPhoto,
+    startDate: isMultiDest ? destinations[0]?.startDate : trip.startDate,
+    endDate: isMultiDest ? destinations[destinations.length-1]?.endDate : trip.endDate,
+  } : null
   const tripColor = destColor
 
   return (
@@ -427,7 +445,7 @@ export default function App() {
       {/* ── SIDEBAR (desktop) + MOBILE TOP BAR ── */}
       <Header
         trips={trips}
-        activeTrip={trip}
+        activeTrip={normalizedTrip}
         onSelectTrip={id => { if (isAdminManaging) adminSelectTrip(id); else { store.setActiveTrip(id); setTab('dashboard') } }}
         onNewTrip={() => setShowTripForm(true)}
         onEditTrip={t => setEditingTrip(t)}
@@ -461,7 +479,7 @@ export default function App() {
         />
 
         {/* ── HEADER PLEINE LARGEUR (titre + horloge + photo) — DESKTOP UNIQUEMENT ── */}
-        <MainHeader trips={trips} activeTrip={trip} onSelectTrip={id => { if (isAdminManaging) adminSelectTrip(id); else { store.setActiveTrip(id); setTab('dashboard') } }} onEditTrip={t => setEditingTrip(t)} onDeleteTrip={id => store.deleteTrip(id)} onNewTrip={() => setShowTripForm(true)} onOpenVoyageurs={() => setShowVoyageurs(true)} onOpenGlobalBudget={() => setTab('globalbudget')} isAdmin={store.isAdmin} onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null} onSignOut={store.signOut} userEmail={isAdminManaging ? `⚙️ Admin — ${adminMode.email}` : (store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : (store.userDisplayName || store.userEmail))} syncing={store.syncing} tab={tab} onUpdatePhoto={(url) => trip && (isAdminManaging ? adminUpdateTripLocal({ headerPhoto: url }) : store.updateTrip(trip.id, { headerPhoto: url }))} />
+        <MainHeader trips={trips} activeTrip={normalizedTrip} onSelectTrip={id => { if (isAdminManaging) adminSelectTrip(id); else { store.setActiveTrip(id); setTab('dashboard') } }} onEditTrip={t => setEditingTrip(t)} onDeleteTrip={id => store.deleteTrip(id)} onNewTrip={() => setShowTripForm(true)} onOpenVoyageurs={() => setShowVoyageurs(true)} onOpenGlobalBudget={() => setTab('globalbudget')} isAdmin={store.isAdmin} onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null} onSignOut={store.signOut} userEmail={isAdminManaging ? `⚙️ Admin — ${adminMode.email}` : (store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : (store.userDisplayName || store.userEmail))} syncing={store.syncing} tab={tab} onUpdatePhoto={(url) => trip && (isAdminManaging ? adminUpdateTripLocal({ headerPhoto: url }) : store.updateTrip(trip.id, { headerPhoto: url }))} />
 
         {/* ── BANDEAU SÉJOUR + DESTINATIONS + MÉTÉO ── */}
         {trip && tab !== 'admin' && (
@@ -556,7 +574,7 @@ export default function App() {
               onSelectTrip={id => { if (isAdminManaging) adminSelectTrip(id); else { store.setActiveTrip(id); setTab('planning') } }}
               onCreateTrip={() => setShowTripForm(true)}
               userName={store.isGuest ? store.guestSession?.voyageurName : (store.userDisplayName?.split(' ')[0] || store.userEmail?.split('@')[0])}
-              activeTrip={trip}
+              activeTrip={normalizedTrip}
               tomorrowWeather={tomorrowWeather}
               onUpdateDay={(dayId, changes) => { if (!trip) return; if (isAdminManaging) adminUpdateTripLocal({ days: (isMultiDest ? trip.destinations[activeDestIdx]?.days : trip.days).map(d => d.id === dayId ? { ...d, ...changes } : d) }); else if (isMultiDest) { const nd = destDays.map(d => d.id === dayId ? { ...d, ...changes } : d); saveDestDays(nd) } else store.updateDay(trip.id, dayId, changes) }}
               onUpdateTrip={(tripId, changes) => isAdminManaging ? adminUpdateTripLocal(changes) : store.updateTrip(tripId, changes)}
@@ -617,7 +635,7 @@ export default function App() {
         {/* BUDGET */}
         {tab === 'budget' && trip && (
           <div className="content-pane">
-            <Budget trip={trip} voyageurs={trip?.voyageurs || []} isGuest={store.isGuest} activeVoyageurId={vid} onUpdate={(changes) => isAdminManaging ? adminUpdateTripLocal(changes) : store.updateTrip(trip.id, changes)} />
+            <Budget trip={normalizedTrip} voyageurs={trip?.voyageurs || []} isGuest={store.isGuest} activeVoyageurId={vid} onUpdate={(changes) => isAdminManaging ? adminUpdateTripLocal(changes) : store.updateTrip(trip.id, changes)} />
           </div>
         )}
 

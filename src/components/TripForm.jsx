@@ -38,6 +38,17 @@ export default function TripForm({ initial, onSave, onClose }) {
     color: '#185FA5', lat: null, lon: null,
   })
 
+  // Multi-destination: extra destinations (the first one uses main form fields)
+  const existingDests = initial?.destinations || []
+  const [extraDests, setExtraDests] = useState(
+    existingDests.length > 1 ? existingDests.slice(1).map(d => ({
+      id: d.id, name: d.name || '', startDate: d.startDate || '', endDate: d.endDate || '',
+      accommodation: d.accommodation || '', color: d.color || '#A32D2D',
+      lat: d.lat || null, lon: d.lon || null,
+    })) : []
+  )
+  const [showAddExtra, setShowAddExtra] = useState(false)
+
   const [geocoding, setGeocoding] = useState(false)
   const [geoResult, setGeoResult] = useState(null)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -85,7 +96,25 @@ export default function TripForm({ initial, onSave, onClose }) {
       }))
     }
 
-    onSave({ id: initial?.id || genId('trip'), ...form, days })
+    onSave({ id: initial?.id || genId('trip'), ...form, days, ...(extraDests.length > 0 ? {
+      destinations: [
+        { id: existingDests[0]?.id || 'dest_main', name: form.destination, startDate: form.startDate, endDate: form.endDate, color: form.color, lat: form.lat, lon: form.lon, headerPhoto: initial?.headerPhoto || null, accommodation: form.accommodation, accommodationPhone: form.accommodationPhone, days },
+        ...extraDests.map(ed => {
+          const edDates = ed.startDate && ed.endDate ? getDaysBetween(ed.startDate, ed.endDate) : []
+          const existDest = existingDests.find(d => d.id === ed.id)
+          let edDays
+          if (existDest?.days) {
+            const kept = existDest.days.filter(d => edDates.includes(d.date))
+            const keptDates = new Set(kept.map(d => d.date))
+            const added = edDates.filter(d => !keptDates.has(d)).map(date => ({ id: genId('day'), date, label: formatDate(date), validated: false, activities: [] }))
+            edDays = [...kept, ...added].sort((a, b) => a.date.localeCompare(b.date))
+          } else {
+            edDays = edDates.sort().map(date => ({ id: genId('day'), date, label: formatDate(date), validated: false, activities: [] }))
+          }
+          return { id: ed.id || genId('dest'), name: ed.name, startDate: ed.startDate, endDate: ed.endDate, color: ed.color, lat: ed.lat, lon: ed.lon, headerPhoto: existDest?.headerPhoto || null, accommodation: ed.accommodation, accommodationPhone: '', days: edDays }
+        })
+      ]
+    } : {}) })
   }
 
   return (
@@ -159,6 +188,53 @@ export default function TripForm({ initial, onSave, onClose }) {
             ))}
           </div>
         </div>
+
+        {/* ── ÉTAPES SUPPLÉMENTAIRES ── */}
+        {extraDests.length > 0 && (
+          <div style={{ marginBottom: '.75rem' }}>
+            <div style={{ fontSize: '.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--text-muted)', marginBottom: '.5rem' }}>Étapes supplémentaires</div>
+            {extraDests.map((ed, idx) => (
+              <div key={ed.id || idx} style={{ background: 'var(--bg)', borderRadius: 12, padding: '.75rem', marginBottom: '.4rem', border: `2px solid ${ed.color || 'var(--border)'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.4rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '.3rem' }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: ed.color }} />
+                    <span style={{ fontSize: '.82rem', fontWeight: 600 }}>Étape {idx + 2}</span>
+                  </div>
+                  <button onClick={() => setExtraDests(prev => prev.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.75rem', color: 'var(--red)' }}>✕ Supprimer</button>
+                </div>
+                <div className="form-group" style={{ marginBottom: '.4rem' }}>
+                  <input value={ed.name} onChange={e => setExtraDests(prev => prev.map((d, i) => i === idx ? { ...d, name: e.target.value } : d))} placeholder="Destination (ex: Grenoble)" style={{ fontSize: '.82rem' }} />
+                </div>
+                <div className="form-row" style={{ gap: '.4rem', marginBottom: '.4rem' }}>
+                  <div className="form-group"><input type="date" value={ed.startDate} onChange={e => setExtraDests(prev => prev.map((d, i) => i === idx ? { ...d, startDate: e.target.value } : d))} style={{ fontSize: '.8rem' }} /></div>
+                  <div className="form-group"><input type="date" value={ed.endDate} onChange={e => setExtraDests(prev => prev.map((d, i) => i === idx ? { ...d, endDate: e.target.value } : d))} style={{ fontSize: '.8rem' }} /></div>
+                </div>
+                <div className="form-group" style={{ marginBottom: '.3rem' }}>
+                  <input value={ed.accommodation} onChange={e => setExtraDests(prev => prev.map((d, i) => i === idx ? { ...d, accommodation: e.target.value } : d))} placeholder="Hébergement (optionnel)" style={{ fontSize: '.82rem' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
+                  {COLORS.map(c => (
+                    <div key={c} onClick={() => setExtraDests(prev => prev.map((d, i) => i === idx ? { ...d, color: c } : d))} style={{
+                      width: 20, height: 20, borderRadius: '50%', background: c, cursor: 'pointer',
+                      border: ed.color === c ? '2px solid #1a1a18' : '2px solid transparent',
+                    }} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button onClick={() => {
+          const usedColors = [form.color, ...extraDests.map(d => d.color)]
+          const nextColor = COLORS.find(c => !usedColors.includes(c)) || COLORS[2]
+          setExtraDests(prev => [...prev, { id: genId('dest'), name: '', startDate: '', endDate: '', accommodation: '', color: nextColor, lat: null, lon: null }])
+        }} style={{
+          width: '100%', padding: '.5rem', border: '2px dashed var(--border)', borderRadius: 10,
+          background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.8rem',
+          color: 'var(--text-muted)', marginBottom: '.75rem', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', gap: '.3rem'
+        }}>📍 Ajouter une étape</button>
 
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>Annuler</button>
