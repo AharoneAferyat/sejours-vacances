@@ -197,7 +197,7 @@ function SouvenirPhotos({ trip, onUpdateTrip }) {
   )
 }
 
-export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay, onUpdateTrip, setTab, uid }) {
+export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName, activeTrip, tomorrowWeather, onUpdateDay, onUpdateTrip, onScrollToDay, setTab, uid }) {
   const [time, setTime] = useState('')
   const [countdown, setCountdown] = useState(null)
   const [showInvite, setShowInvite] = useState(false)
@@ -317,7 +317,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   {acts.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
                       {acts.map((act, i) => (
-                        <div key={act.id || i} onClick={() => goTrip('planning')} style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', padding: '.5rem .6rem', borderRadius: 10, background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer' }}>
+                        <div key={act.id || i} onClick={() => onScrollToDay(todayDay.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', padding: '.5rem .6rem', borderRadius: 10, background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer' }}>
                           <span style={{ fontSize: '.9rem', marginTop: 1, flexShrink: 0 }}>{act.done ? '✅' : (act.emoji || '🎯')}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '.82rem', fontWeight: 500, textDecoration: act.done ? 'line-through' : 'none', color: act.done ? 'var(--text-muted)' : 'var(--text)', lineHeight: 1.35 }}>{act.title}</div>
@@ -345,8 +345,8 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   {/* Tomorrow preview */}
                   {tomorrow && (tomorrow.activities?.length || 0) > 0 && (
                     <div style={{ marginTop: '.65rem', paddingTop: '.55rem', borderTop: '1px solid var(--border)' }}>
-                      <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.3rem' }}>📅 Demain — {tomorrow.label}</div>
-                      <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
+                      <div onClick={() => onScrollToDay(tomorrow.id)} style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.3rem', cursor: 'pointer' }}>📅 Demain — {tomorrow.label} ›</div>
+                      <div onClick={() => onScrollToDay(tomorrow.id)} style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap', cursor: 'pointer' }}>
                         {tomorrow.activities.slice(0, 3).map((act, i) => (
                           <span key={i} style={{ fontSize: '.72rem', padding: '3px 8px', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-muted)' }}>
                             {act.emoji || '🎯'} {act.title}

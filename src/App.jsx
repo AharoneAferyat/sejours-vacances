@@ -192,6 +192,7 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false)
   const [showInviteScreen, setShowInviteScreen] = useState(false)
   const [aiTargetDayId, setAiTargetDayId] = useState(null)
+  const [scrollToDayId, setScrollToDayId] = useState(null)
 
   // Admin mode: manage another user's trip
   const [adminMode, setAdminMode] = useState(null) // { uid, email, trip, trips }
@@ -559,13 +560,23 @@ export default function App() {
               tomorrowWeather={tomorrowWeather}
               onUpdateDay={(dayId, changes) => trip && store.updateDay(trip.id, dayId, changes)}
               onUpdateTrip={(tripId, changes) => store.updateTrip(tripId, changes)}
+              onScrollToDay={(dayId) => { setScrollToDayId(dayId); setTab('planning') }}
               setTab={setTab}
               uid={store.uid}
             />
           )}
 
         {/* PLANNING */}
-        {tab === 'planning' && trip && (
+        {tab === 'planning' && trip && (() => {
+          // Scroll to target day after render
+          if (scrollToDayId) {
+            setTimeout(() => {
+              const el = document.getElementById('day-' + scrollToDayId)
+              if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); el.style.outline = '2px solid var(--green)'; el.style.borderRadius = '14px'; setTimeout(() => { el.style.outline = 'none' }, 2000) }
+              setScrollToDayId(null)
+            }, 100)
+          }
+          return (
           <div className="content-pane">
             <div className="progress-wrap">
               <div className="progress-bar"><div className="progress-bar-fill" style={{ width: pct + '%' }} /></div>
@@ -577,8 +588,9 @@ export default function App() {
               </div>
             )}
             {trip.days.map(day => (
+              <div key={day.id} id={'day-' + day.id}>
               <DayCard
-                key={day.id} day={day} tripId={trip.id} isToday={day.date === today}
+                day={day} tripId={trip.id} isToday={day.date === today}
                 onValidateDay={() => store.validateDay(trip.id, day.id)}
                 onDeleteDay={() => store.deleteDay(trip.id, day.id)}
                 onAddActivity={(dayId, act) => store.addActivity(trip.id, dayId, act)}
@@ -588,9 +600,11 @@ export default function App() {
                 onValidateActivity={(dayId, actId) => store.validateActivity(trip.id, dayId, actId)}
                 onAISearch={(dayId) => { setAiTargetDayId(dayId); setShowAI(true) }}
               />
+              </div>
             ))}
           </div>
-        )}
+          )
+        })()}
 
         {/* INFOS */}
         {tab === 'infos' && (
