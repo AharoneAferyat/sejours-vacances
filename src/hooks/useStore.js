@@ -3,6 +3,7 @@ import { genId } from '../utils'
 import {
   saveToCloud, loadFromCloud, subscribeToCloud,
   onAuthChange, signInWithGoogle, signOutUser, isUserAllowed, consumeInviteCode,
+  autoLinkVoyageur,
   registerGuestAccess, findGuestByCode, saveGuestData, subscribeToOwnerTrip
 } from '../firebase'
 
@@ -96,6 +97,8 @@ export function useStore() {
         setIsAdmin(admin)
         setIsAllowed(admin ? true : await isUserAllowed(user.uid, emailFromProvider))
         setAllowedLoading(false)
+        // Auto-lier ce compte aux voyageurs existants qui ont le même email
+        autoLinkVoyageur(user.uid, emailFromProvider).catch(() => {})
       } else {
         setIsAdmin(false)
         setIsAllowed(false)

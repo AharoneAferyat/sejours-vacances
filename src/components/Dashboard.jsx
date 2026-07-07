@@ -317,12 +317,12 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   {acts.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
                       {acts.map((act, i) => (
-                        <div key={act.id || i} onClick={() => goTrip('planning')} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.4rem .6rem', borderRadius: 10, background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer', transition: 'transform .1s' }}
+                        <div key={act.id || i} onClick={() => goTrip('planning')} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.4rem .6rem', borderRadius: 10, overflow: 'hidden', background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer', transition: 'transform .1s' }}
                           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.01)'}
                           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
                           <span style={{ fontSize: '.9rem' }}>{act.done ? '✅' : (act.emoji || '🎯')}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '.82rem', fontWeight: 500, textDecoration: act.done ? 'line-through' : 'none', color: act.done ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{act.title}</div>
+                            <div style={{ fontSize: '.82rem', fontWeight: 500, textDecoration: act.done ? 'line-through' : 'none', color: act.done ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{act.title}</div>
                             <div style={{ display: 'flex', gap: '.5rem', fontSize: '.65rem', color: 'var(--text-muted)' }}>
                               {act.startTime && <span>🕐 {act.startTime}</span>}
                               {act.durationMin > 0 && <span>⏱ {act.durationMin >= 60 ? Math.floor(act.durationMin/60)+'h'+(act.durationMin%60 ? (act.durationMin%60<10?'0':'')+act.durationMin%60 : '') : act.durationMin+'min'}</span>}

@@ -464,3 +464,30 @@ export async function deleteShareLink(code) {
     return true
   } catch (e) { console.error('deleteShareLink failed:', e); return false }
 }
+
+// Auto-lier un compte Google à un voyageur existant (par email)
+export async function autoLinkVoyageur(uid, email) {
+  if (!uid || !email) return
+  try {
+    // Chercher dans tous les utilisateurs
+    const usersSnap = await getDocs(collection(db, 'users'))
+    for (const userDoc of usersSnap.docs) {
+      const data = userDoc.data()
+      const trips = data.trips || []
+      let changed = false
+      const updatedTrips = trips.map(t => {
+        const voyageurs = (t.voyageurs || []).map(v => {
+          if (v.email?.toLowerCase() === email.toLowerCase() && !v.uid) {
+            changed = true
+            return { ...v, uid }
+          }
+          return v
+        })
+        return { ...t, voyageurs }
+      })
+      if (changed) {
+        await setDoc(doc(db, 'users', userDoc.id), { ...data, trips: updatedTrips, updatedAt: Date.now() })
+      }
+    }
+  } catch (e) { console.warn('autoLinkVoyageur:', e.message) }
+}

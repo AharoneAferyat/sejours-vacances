@@ -241,15 +241,36 @@ export default function App() {
     )
   }
 
-  // Lien d'invitation partagé — afficher AVANT le login
-  if (shareCode) {
+  // Lien d'invitation partagé — APRÈS login Google
+  if (shareCode && store.uid) {
     return (
       <JoinTripModal
         shareCode={shareCode}
-        joinerUid={store.uid || ''}
+        joinerUid={store.uid}
+        joinerName={store.userDisplayName || ''}
+        joinerEmail={store.userEmail || ''}
         onJoined={() => { setShareCode(null); window.history.replaceState({}, '', '/'); window.location.reload() }}
         onClose={() => { setShareCode(null); window.history.replaceState({}, '', '/') }}
       />
+    )
+  }
+
+  // Lien d'invitation — pas encore connecté, forcer login
+  if (shareCode && !store.uid) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--bg)', fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ background: 'var(--card)', borderRadius: 16, padding: '2rem', maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,.08)' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>🔗</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.2rem', marginBottom: '.5rem' }}>Invitation à rejoindre un séjour</h2>
+          <p style={{ fontSize: '.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Connecte-toi avec Google pour rejoindre le séjour et accéder à toutes les fonctionnalités.</p>
+          <button onClick={store.signIn} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px', borderRadius: 12, fontSize: '.9rem' }}>
+            🔐 Se connecter avec Google
+          </button>
+          <button onClick={() => { setShareCode(null); window.history.replaceState({}, '', '/') }} style={{ marginTop: '.75rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '.78rem', color: 'var(--text-muted)', fontFamily: 'inherit' }}>
+            Annuler
+          </button>
+        </div>
+      </div>
     )
   }
 
