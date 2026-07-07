@@ -195,7 +195,8 @@ export default function App() {
   const [scrollToDayId, setScrollToDayId] = useState(null)
 
   // Admin mode: manage another user's trip
-  const [adminMode, setAdminMode] = useState(null) // { uid, email, trip, trips }
+  const [adminMode, setAdminMode] = useState(null)
+  const [adminVid, setAdminVid] = useState(null) // { uid, email, trip, trips }
   const [adminTab, setAdminTab] = useState('planning')
 
   const enterAdminMode = async (user, tripData) => {
@@ -205,6 +206,7 @@ export default function App() {
     const freshTrip = userData.trips.find(t => t.id === tripData.id)
     if (!freshTrip) return alert('Séjour introuvable.')
     setAdminMode({ uid: user.uid, email: user.email, trip: freshTrip, trips: userData.trips })
+    setAdminVid(freshTrip.voyageurs?.[0]?.id || null)
     setAdminTab('planning')
     setTab('planning')
   }
@@ -257,7 +259,37 @@ export default function App() {
   const trips = isAdminManaging ? (adminMode.trips || []) : store.trips
   const trip = isAdminManaging ? adminMode.trip : realTrip
   const today = getTodayStr()
-  const vid = isAdminManaging ? (trip?.voyageurs?.[0]?.id || null) : store.activeVoyageurId
+  const vid = isAdminManaging ? (adminVid || trip?.voyageurs?.[0]?.id || null) : store.activeVoyageurId
+
+  // Admin: valise/sac data from managed trip
+  const adminVoyageurData = isAdminManaging ? (adminMode.trip.voyageurData?.[vid] || {}) : {}
+  const adminValise = adminVoyageurData.valise || []
+  const adminSac = adminVoyageurData.sac || []
+
+  const adminToggleItem = async (listKey, itemId) => {
+    const vd = adminMode.trip.voyageurData || {}
+    const myVd = vd[vid] || {}
+    const items = (myVd[listKey] || []).map(i => i.id === itemId ? { ...i, done: !i.done } : i)
+    await adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, [listKey]: items } } })
+  }
+  const adminAddItem = async (listKey, text) => {
+    const vd = adminMode.trip.voyageurData || {}
+    const myVd = vd[vid] || {}
+    const items = [...(myVd[listKey] || []), { id: 'item_' + Date.now(), text, done: false, qty: 1 }]
+    await adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, [listKey]: items } } })
+  }
+  const adminRemoveItem = async (listKey, itemId) => {
+    const vd = adminMode.trip.voyageurData || {}
+    const myVd = vd[vid] || {}
+    const items = (myVd[listKey] || []).filter(i => i.id !== itemId)
+    await adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, [listKey]: items } } })
+  }
+  const adminUpdateItemQty = async (listKey, itemId, qty) => {
+    const vd = adminMode.trip.voyageurData || {}
+    const myVd = vd[vid] || {}
+    const items = (myVd[listKey] || []).map(i => i.id === itemId ? { ...i, qty } : i)
+    await adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, [listKey]: items } } })
+  }
 
   // Admin: switch active trip within the managed user's trips
   const adminSelectTrip = (tripId) => {
@@ -536,11 +568,11 @@ export default function App() {
             {visibleVoyageurs.length > 1 && (
               <div className="tabs" style={{ marginBottom: '.5rem' }}>
                 {visibleVoyageurs.map(v => (
-                  <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`} onClick={() => store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
+                  <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`} onClick={() => isAdminManaging ? setAdminVid(v.id) : store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
                 ))}
               </div>
             )}
-            <CheckList items={store.currentValise} onToggle={id => store.toggleValiseItem(trip?.id, vid, id)} onAdd={text => store.addValiseItem(trip?.id, vid, text)} onRemove={id => store.removeValiseItem(trip?.id, vid, id)} onUpdateQty={(id, qty) => store.updateValiseItemQty(trip?.id, vid, id, qty)} emptyEmoji="🧳" />
+            <CheckList items={isAdminManaging ? adminValise : store.currentValise} onToggle={id => isAdminManaging ? adminToggleItem("valise", id) : store.toggleValiseItem(trip?.id, vid, id)} onAdd={text => isAdminManaging ? adminAddItem("valise", text) : store.addValiseItem(trip?.id, vid, text)} onRemove={id => isAdminManaging ? adminRemoveItem("valise", id) : store.removeValiseItem(trip?.id, vid, id)} onUpdateQty={(id, qty) => isAdminManaging ? adminUpdateItemQty("valise", id, qty) : store.updateValiseItemQty(trip?.id, vid, id, qty)} emptyEmoji="🧳" />
           </div>
         )}
 
@@ -551,11 +583,11 @@ export default function App() {
             {visibleVoyageurs.length > 1 && (
               <div className="tabs" style={{ marginBottom: '.5rem' }}>
                 {visibleVoyageurs.map(v => (
-                  <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`} onClick={() => store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
+                  <button key={v.id} className={`tab-btn${v.id === vid ? ' active' : ''}`} onClick={() => isAdminManaging ? setAdminVid(v.id) : store.setActiveVoyageur(trip.id, v.id)}>{v.name}</button>
                 ))}
               </div>
             )}
-            <CheckList items={store.currentSac} onToggle={id => store.toggleSacItem(trip?.id, vid, id)} onAdd={text => store.addSacItem(trip?.id, vid, text)} onRemove={id => store.removeSacItem(trip?.id, vid, id)} onUpdateQty={(id, qty) => store.updateSacItemQty(trip?.id, vid, id, qty)} emptyEmoji="🎒" />
+            <CheckList items={isAdminManaging ? adminSac : store.currentSac} onToggle={id => isAdminManaging ? adminToggleItem("sac", id) : store.toggleSacItem(trip?.id, vid, id)} onAdd={text => isAdminManaging ? adminAddItem("sac", text) : store.addSacItem(trip?.id, vid, text)} onRemove={id => isAdminManaging ? adminRemoveItem("sac", id) : store.removeSacItem(trip?.id, vid, id)} onUpdateQty={(id, qty) => isAdminManaging ? adminUpdateItemQty("sac", id, qty) : store.updateSacItemQty(trip?.id, vid, id, qty)} emptyEmoji="🎒" />
           </div>
         )}
 
@@ -592,9 +624,18 @@ export default function App() {
         <VoyageursModal
           trip={trip}
           voyageurs={tripVoyageurs}
-          onAdd={(name, email) => store.addVoyageur(trip.id, name, email)}
-          onRemove={vid => store.removeVoyageur(trip.id, vid)}
-          onUpdateEmail={(vid, email) => store.updateVoyageurEmail(trip.id, vid, email)}
+          onAdd={(name, email) => {
+            if (isAdminManaging) { adminUpdateTripLocal({ voyageurs: [...(trip.voyageurs||[]), { id: 'v_'+Date.now(), name, email }] }) }
+            else store.addVoyageur(trip.id, name, email)
+          }}
+          onRemove={vId => {
+            if (isAdminManaging) { adminUpdateTripLocal({ voyageurs: (trip.voyageurs||[]).filter(v => v.id !== vId) }) }
+            else store.removeVoyageur(trip.id, vId)
+          }}
+          onUpdateEmail={(vId, email) => {
+            if (isAdminManaging) { adminUpdateTripLocal({ voyageurs: (trip.voyageurs||[]).map(v => v.id === vId ? { ...v, email } : v) }) }
+            else store.updateVoyageurEmail(trip.id, vId, email)
+          }}
           onClose={() => setShowVoyageurs(false)}
         />
       )}
