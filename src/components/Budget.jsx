@@ -262,7 +262,7 @@ function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct,
           <SectionLabel>Répartition par catégorie</SectionLabel>
           <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems:'center', gap: isMobile ? SP.md : SP.lg }}>
             <DonutChart
-              data={Object.entries(byCat)}.map(([cat,amt])=>({ value:amt, color:CAT_COLORS[cat]||'#888' }))}
+              data={Object.entries(byCat).map(([cat,amt])=>({ value:amt, color:CAT_COLORS[cat]||'#888' }))}
               total={totalCommon}
             />
             <div style={{ flex:1 }}>
