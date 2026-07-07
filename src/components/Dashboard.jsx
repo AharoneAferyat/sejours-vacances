@@ -315,21 +315,19 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.05rem', fontWeight: 700, marginBottom: '.5rem' }}>{todayDay.label}</div>
 
                   {acts.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
                       {acts.map((act, i) => (
-                        <div key={act.id || i} onClick={() => goTrip('planning')} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.4rem .6rem', borderRadius: 10, overflow: 'hidden', background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer', transition: 'transform .1s' }}
-                          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.01)'}
-                          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-                          <span style={{ fontSize: '.9rem' }}>{act.done ? '✅' : (act.emoji || '🎯')}</span>
+                        <div key={act.id || i} onClick={() => goTrip('planning')} style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', padding: '.5rem .6rem', borderRadius: 10, background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer' }}>
+                          <span style={{ fontSize: '.9rem', marginTop: 1, flexShrink: 0 }}>{act.done ? '✅' : (act.emoji || '🎯')}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '.82rem', fontWeight: 500, textDecoration: act.done ? 'line-through' : 'none', color: act.done ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{act.title}</div>
-                            <div style={{ display: 'flex', gap: '.5rem', fontSize: '.65rem', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '.82rem', fontWeight: 500, textDecoration: act.done ? 'line-through' : 'none', color: act.done ? 'var(--text-muted)' : 'var(--text)', lineHeight: 1.35 }}>{act.title}</div>
+                            <div style={{ display: 'flex', gap: '.5rem', fontSize: '.65rem', color: 'var(--text-muted)', marginTop: 2, flexWrap: 'wrap' }}>
                               {act.startTime && <span>🕐 {act.startTime}</span>}
                               {act.durationMin > 0 && <span>⏱ {act.durationMin >= 60 ? Math.floor(act.durationMin/60)+'h'+(act.durationMin%60 ? (act.durationMin%60<10?'0':'')+act.durationMin%60 : '') : act.durationMin+'min'}</span>}
                               {act.distanceKm > 0 && <span>📍 {act.distanceKm} km</span>}
                             </div>
                           </div>
-                          <span style={{ fontSize: '.7rem', color: 'var(--text-light)', flexShrink: 0 }}>›</span>
+                          <span style={{ fontSize: '.7rem', color: 'var(--text-light)', flexShrink: 0, marginTop: 2 }}>›</span>
                         </div>
                       ))}
                       {/* Progress */}
@@ -468,14 +466,12 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                 const acts = day.activities || []
                 const emojis = acts.map(a => a.emoji || (a.title?.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u)?.[0]) || '').filter(Boolean).slice(0, 3)
                 return (
-                <div key={day.id} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.35rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem', overflow: 'hidden' }}>
-                  <span style={{ fontWeight: 600, minWidth: 42, flexShrink: 0 }}>{day.label?.split('.')[0]}.</span>
-                  {emojis.length > 0 && <span style={{ fontSize: '.85rem', flexShrink: 0, display: 'flex', gap: 2 }}>{emojis.join('')}</span>}
-                  <span style={{ flex: 1, color: 'var(--text-muted)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    className="dash-prog-text">
+                <div key={day.id} style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem', padding: '.4rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem' }}>
+                  <span style={{ fontWeight: 600, minWidth: 38, flexShrink: 0 }}>{day.label?.split('.')[0]}.</span>
+                  {emojis.length > 0 && <span style={{ fontSize: '.8rem', flexShrink: 0 }}>{emojis.join('')}</span>}
+                  <span style={{ flex: 1, color: 'var(--text-muted)', minWidth: 0, lineHeight: 1.35 }}>
                     {acts.length > 1 ? `${acts[0]?.title || '—'} +${acts.length - 1}` : (acts[0]?.title || '—')}
                   </span>
-                  {acts[0]?.distanceKm && <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>{acts[0].distanceKm}km</span>}
                 </div>
                 )
               })}
