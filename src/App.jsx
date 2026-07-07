@@ -468,13 +468,19 @@ export default function App() {
           <div className="app-header-zone">
             <DangerAlert weather={tomorrowWeather} destination={destName || trip.name} />
             <div style={{ background: tripColor, color: '#fff', padding: '.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.1rem', fontWeight: 700 }}>
                   {trip.name}
                   {trip.subtitle && <span style={{ fontFamily: 'Inter', fontSize: '.85rem', fontWeight: 400, opacity: .85, marginLeft: '.5rem' }}>— {trip.subtitle}</span>}
                 </div>
                 {destAccommodation && <div style={{ fontSize: '.73rem', opacity: .8 }}>{destAccommodation}</div>}
               </div>
+              <button onClick={() => setShowAddDest(true)} style={{
+                background: 'rgba(255,255,255,.15)', border: '1px solid rgba(255,255,255,.25)',
+                borderRadius: 8, padding: '5px 12px', color: '#fff', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: '.72rem', fontWeight: 500, whiteSpace: 'nowrap',
+                display: 'flex', alignItems: 'center', gap: '.3rem', flexShrink: 0
+              }}>＋ Étape</button>
             </div>
 
             {/* Destination tabs (multi-destination only) */}
