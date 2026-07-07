@@ -164,8 +164,10 @@ function ActivityDetail({ act, onUpdate, onDelete, onMove, onValidate }) {
 }
 
 export default function DayCard({ day, tripId, isToday, onValidateDay, onDeleteDay,
-  onAddActivity, onUpdateActivity, onDeleteActivity, onMoveActivity, onValidateActivity, onAISearch }) {
+  onAddActivity, onUpdateActivity, onDeleteActivity, onMoveActivity, onValidateActivity, onAISearch, onReorderActivities }) {
   const [showForm, setShowForm] = useState(false)
+  const [dragIdx, setDragIdx] = useState(null)
+  const [dragOverIdx, setDragOverIdx] = useState(null)
 
   const stats = calcDayStats(day.activities)
   const isVoyage = day.activities.some(a => a.type === 'voyage')
@@ -204,15 +206,31 @@ export default function DayCard({ day, tripId, isToday, onValidateDay, onDeleteD
 
         <div style={{ padding: '.15rem .9rem .8rem' }}>
           {/* Activities list */}
-          {day.activities.map(act => (
+          {day.activities.map((act, actIdx) => (
+            <div key={act.id}
+              draggable
+              onDragStart={() => setDragIdx(actIdx)}
+              onDragOver={e => { e.preventDefault(); setDragOverIdx(actIdx) }}
+              onDragEnd={() => {
+                if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx && onReorderActivities) {
+                  onReorderActivities(day.id, dragIdx, dragOverIdx)
+                }
+                setDragIdx(null); setDragOverIdx(null)
+              }}
+              onTouchStart={(e) => { setDragIdx(actIdx) }}
+              style={{ transition: 'transform .15s', transform: dragOverIdx === actIdx && dragIdx !== actIdx ? 'translateY(4px)' : 'none', opacity: dragIdx === actIdx ? .5 : 1, cursor: 'grab', position: 'relative' }}
+            >
+              {dragIdx !== null && dragOverIdx === actIdx && dragIdx !== actIdx && (
+                <div style={{ position: 'absolute', top: -2, left: 0, right: 0, height: 3, background: 'var(--green)', borderRadius: 2 }} />
+              )}
             <ActivityDetail
-              key={act.id}
               act={act}
               onUpdate={(updated) => onUpdateActivity(day.id, act.id, updated)}
               onDelete={() => onDeleteActivity(day.id, act.id)}
               onMove={(date) => onMoveActivity(day.id, act.id, date)}
               onValidate={() => onValidateActivity(day.id, act.id)}
             />
+            </div>
           ))}
 
           {/* Add activity button */}

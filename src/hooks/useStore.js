@@ -360,6 +360,23 @@ export function useStore() {
     })
   }, [update])
 
+  const reorderActivities = useCallback((tripId, dayId, fromIndex, toIndex) => {
+    update(s => {
+      const trip = s.trips.find(t => t.id === tripId)
+      if (!trip) return s
+      return { ...s, trips: s.trips.map(t => {
+        if (t.id !== tripId) return t
+        return { ...t, days: t.days.map(d => {
+          if (d.id !== dayId) return d
+          const acts = [...(d.activities || [])]
+          const [moved] = acts.splice(fromIndex, 1)
+          acts.splice(toIndex, 0, moved)
+          return { ...d, activities: acts }
+        })}
+      })}
+    })
+  }, [update])
+
   const validateActivity = useCallback((tripId, dayId, actId) => {
     update(s => ({
       ...s,
@@ -523,7 +540,7 @@ export function useStore() {
     currentValise, currentSac,
     addTrip, updateTrip, deleteTrip, setActiveTrip,
     addDay, updateDay, deleteDay, validateDay,
-    addActivity, updateActivity, deleteActivity, moveActivity, validateActivity,
+    addActivity, updateActivity, deleteActivity, moveActivity, reorderActivities, validateActivity,
     addVoyageur, removeVoyageur, updateVoyageurEmail, setActiveVoyageur,
     updateValiseItemQty, updateSacItemQty,
     toggleValiseItem, addValiseItem, removeValiseItem,

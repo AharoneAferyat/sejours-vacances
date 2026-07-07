@@ -105,6 +105,7 @@ function ActivityCard({ act, days, targetDayId, selectedDayId, onSelectDay, onAd
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '.6rem', marginTop: '.4rem' }}>
           {act.desc && <div style={{ fontSize: '.8rem', color: 'var(--text)', marginBottom: '.4rem', lineHeight: 1.6 }}>{act.desc}</div>}
           {act.tip && <div style={{ fontSize: '.75rem', color: '#0a5040', background: 'var(--green-light)', padding: '4px 8px', borderRadius: 6, marginBottom: '.5rem' }}>💡 {act.tip}</div>}
+          {act.source && <div style={{ fontSize: '.68rem', color: 'var(--text-muted)', marginBottom: '.4rem', fontStyle: 'italic' }}>📖 Source : {act.source}</div>}
           {act.gear?.length > 0 && (
             <div style={{ fontSize: '.78rem', marginBottom: '.4rem' }}>
               <strong>🎒 Matériel :</strong> {act.gear.join(', ')}
@@ -177,6 +178,7 @@ function PlanningDayCard({ dayPlan, dayObj, onAccept, onRefuse, onAlternative, s
 
         {act.desc && <div style={{ fontSize: '.78rem', color: 'var(--text)', lineHeight: 1.6, marginBottom: '.45rem' }}>{act.desc}</div>}
         {act.tip && <div style={{ fontSize: '.74rem', color: '#0a5040', background: 'var(--green-light)', padding: '4px 8px', borderRadius: 6, marginBottom: '.5rem' }}>💡 {act.tip}</div>}
+        {act.source && <div style={{ fontSize: '.66rem', color: 'var(--text-muted)', marginBottom: '.4rem', fontStyle: 'italic' }}>📖 Source : {act.source}</div>}
 
         {/* Boutons */}
         {!isAccepted && !isRefused && (
@@ -243,19 +245,30 @@ export default function AIRandoSearch({ trip, destination, days, targetDayId, on
     const prompt = `Tu es un expert en activités de voyage à ${destination || 'France'}.
 Recherche: "${query}"
 Lieu: ${destination || 'France'}
-Activités déjà planifiées: ${existingActs}
+Activités DÉJÀ planifiées (NE PAS reproposer celles-ci ni des variantes trop similaires): ${existingActs}
 
 Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant ou après, sans markdown.
 Format exact (3 activités):
-[{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte","tip":"Conseil pratique","gear":["Item 1"],"type":"randonnée","links":[]}]
+[{"emoji":"🥾","title":"Nom","subtitle":"Court résumé","difficulty":"facile","distanceKm":5,"dplus":300,"durationMin":180,"price":"gratuit","desc":"Description courte","tip":"Conseil pratique","gear":["Item 1"],"type":"randonnée","source":"Nom de la source (site office tourisme, guide, topo...)","links":[]}]
 difficulty: facile | moyen | sportif | repos
 type: randonnée | visite | activité | repos | sport | culture
-IMPORTANT: Le champ "type" est crucial pour déterminer les liens pertinents. distanceKm et dplus ne sont pertinents que pour les randonnées/treks.`
+RÈGLES IMPORTANTES:
+- NE PROPOSE PAS d'activités déjà planifiées ou trop similaires.
+- distanceKm et dplus uniquement pour randonnées/treks, sinon mettre 0.
+- Le champ "source" indique d'où viennent tes données (office de tourisme local, guide IGN, topo communautaire, etc). Si tu n'as pas de source fiable, écris "Estimation Gemini".
+- Sois honnête sur les chiffres: si tu n'es pas sûr de la distance ou du dénivelé, indique-le dans "tip".`
 
     try {
       const activities = await callGemini(prompt)
       if (!Array.isArray(activities) || activities.length === 0) throw new Error('Réponse vide')
-      const withLinks = activities.map(act => {
+      // Filter out anything too similar to existing
+      const existingLower = (days?.flatMap(d => d.activities?.map(a => a.title?.toLowerCase()) || []) || [])
+      const filtered = activities.filter(act => {
+        const titleLower = (act.title || '').toLowerCase()
+        return !existingLower.some(ex => ex && (titleLower.includes(ex) || ex.includes(titleLower) || titleLower === ex))
+      })
+      const results = filtered.length > 0 ? filtered : activities
+      const withLinks = results.map(act => {
         const t = (act.type || '').toLowerCase()
         const isHike = /rando|trek|marche|sentier/.test(t) || (act.distanceKm > 0 && act.dplus > 0)
         const links = [
