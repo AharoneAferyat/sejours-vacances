@@ -361,7 +361,7 @@ export default function App() {
       </div>
     )
   }
-  const tripVoyageurs = store.tripVoyageurs
+  const tripVoyageurs = isAdminManaging ? (trip?.voyageurs || []) : store.tripVoyageurs
   // Guests only see their own voyageur in valise/sac tabs
   const visibleVoyageurs = store.isGuest
     ? tripVoyageurs.filter(v => v.id === vid)
