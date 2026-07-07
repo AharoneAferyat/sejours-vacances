@@ -52,6 +52,76 @@ function getTodayInfo(trip) {
   return { todayDay, dayIndex, tomorrow, acts, doneCount }
 }
 
+/* ── Activity Detail Modal (from hype up) ── */
+function ActivityModal({ act, dayLabel, onClose, onValidate, onGoTo }) {
+  if (!act) return null
+  const dur = act.durationMin || 0
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 460 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.75rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>{act.emoji || '🎯'}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', lineHeight: 1.3 }}>{act.title}</div>
+            {act.subtitle && <div style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>{act.subtitle}</div>}
+          </div>
+          {act.done && <span style={{ fontSize: '.72rem', padding: '2px 8px', borderRadius: 8, background: 'var(--green-light)', color: 'var(--green)', fontWeight: 600 }}>✅ Validée</span>}
+        </div>
+
+        {dayLabel && <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', marginBottom: '.5rem' }}>📅 {dayLabel}</div>}
+
+        {/* Stats */}
+        <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', marginBottom: '.65rem' }}>
+          {act.startTime && <span style={{ fontSize: '.78rem', padding: '3px 10px', borderRadius: 8, background: 'var(--bg)', color: 'var(--text-muted)' }}>🕐 {act.startTime}{act.endTime ? ` – ${act.endTime}` : ''}</span>}
+          {dur > 0 && <span style={{ fontSize: '.78rem', padding: '3px 10px', borderRadius: 8, background: 'var(--bg)', color: 'var(--text-muted)' }}>⏱ {dur >= 60 ? Math.floor(dur/60)+'h'+(dur%60||'') : dur+'min'}</span>}
+          {act.distanceKm > 0 && <span style={{ fontSize: '.78rem', padding: '3px 10px', borderRadius: 8, background: 'var(--bg)', color: 'var(--text-muted)' }}>📍 {act.distanceKm} km</span>}
+          {act.dplus > 0 && <span style={{ fontSize: '.78rem', padding: '3px 10px', borderRadius: 8, background: 'var(--bg)', color: 'var(--text-muted)' }}>⬆️ {act.dplus}m D+</span>}
+          {act.difficulty && <span style={{ fontSize: '.78rem', padding: '3px 10px', borderRadius: 8, background: 'var(--bg)', color: 'var(--text-muted)' }}>{act.difficulty}</span>}
+          {act.price && <span style={{ fontSize: '.78rem', padding: '3px 10px', borderRadius: 8, background: 'var(--bg)', color: 'var(--text-muted)' }}>💰 {act.price}</span>}
+        </div>
+
+        {/* Description */}
+        {act.desc && <div style={{ fontSize: '.84rem', color: 'var(--text)', lineHeight: 1.55, marginBottom: '.65rem', padding: '.5rem .6rem', background: 'var(--bg)', borderRadius: 10 }}>{act.desc}</div>}
+
+        {/* Tip */}
+        {act.tip && <div style={{ fontSize: '.8rem', color: 'var(--amber)', background: 'var(--amber-light)', borderRadius: 10, padding: '.5rem .7rem', marginBottom: '.65rem' }}>💡 {act.tip}</div>}
+
+        {/* Links */}
+        {(act.links || []).length > 0 && (
+          <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', marginBottom: '.65rem' }}>
+            {act.links.map((l, i) => (
+              <a key={i} href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: '.78rem', padding: '4px 12px', borderRadius: 8, background: 'var(--blue-light)', color: 'var(--blue)', textDecoration: 'none', fontWeight: 500 }}>
+                {l.label} ↗
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Gear */}
+        {(act.gear || []).length > 0 && (
+          <div style={{ marginBottom: '.65rem' }}>
+            <div style={{ fontSize: '.72rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.3rem' }}>🎒 Matériel recommandé</div>
+            <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
+              {act.gear.map((g, i) => <span key={i} style={{ fontSize: '.75rem', padding: '2px 8px', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-muted)' }}>{g}</span>)}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '.4rem', marginTop: '.5rem' }}>
+          <button onClick={() => { onValidate(); onClose() }} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', borderRadius: 10 }}>
+            {act.done ? '↩ Dé-valider' : '✅ Valider'}
+          </button>
+          <button onClick={() => { onClose(); onGoTo?.() }} className="btn" style={{ flex: 1, justifyContent: 'center', borderRadius: 10 }}>
+            📋 Aller à l'activité
+          </button>
+          <button onClick={onClose} className="btn" style={{ justifyContent: 'center', borderRadius: 10, padding: '8px 14px' }}>✕</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const PHOTOS = {
   mountain:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80&fit=crop&crop=entropy&h=350',
   default:'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80&fit=crop&crop=entropy&h=350',
@@ -202,7 +272,8 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
   const [countdown, setCountdown] = useState(null)
   const [showInvite, setShowInvite] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
-  const [showSouvenirs, setShowSouvenirs] = useState(null) // tripId to show photos
+  const [showSouvenirs, setShowSouvenirs] = useState(null)
+  const [selectedAct, setSelectedAct] = useState(null) // { act, dayLabel, dayId } // tripId to show photos
 
   const upcoming = trips.filter(t => getTripStatus(t)==='upcoming').sort((a,b) => a.startDate?.localeCompare(b.startDate))
   const ongoing = trips.filter(t => getTripStatus(t)==='ongoing')
@@ -317,7 +388,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   {acts.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
                       {acts.map((act, i) => (
-                        <div key={act.id || i} onClick={() => onScrollToDay(todayDay.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', padding: '.5rem .6rem', borderRadius: 10, background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer' }}>
+                        <div key={act.id || i} onClick={() => setSelectedAct({ act, dayLabel: todayDay.label, dayId: todayDay.id })} style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', padding: '.5rem .6rem', borderRadius: 10, background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer' }}>
                           <span style={{ fontSize: '.9rem', marginTop: 1, flexShrink: 0 }}>{act.done ? '✅' : (act.emoji || '🎯')}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '.82rem', fontWeight: 500, textDecoration: act.done ? 'line-through' : 'none', color: act.done ? 'var(--text-muted)' : 'var(--text)', lineHeight: 1.35 }}>{act.title}</div>
@@ -345,10 +416,10 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   {/* Tomorrow preview */}
                   {tomorrow && (tomorrow.activities?.length || 0) > 0 && (
                     <div style={{ marginTop: '.65rem', paddingTop: '.55rem', borderTop: '1px solid var(--border)' }}>
-                      <div onClick={() => onScrollToDay(tomorrow.id)} style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.3rem', cursor: 'pointer' }}>📅 Demain — {tomorrow.label} ›</div>
-                      <div onClick={() => onScrollToDay(tomorrow.id)} style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap', cursor: 'pointer' }}>
+                      <div style={{ fontSize: '.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--text-muted)', marginBottom: '.3rem' }}>📅 Demain — {tomorrow.label}</div>
+                      <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
                         {tomorrow.activities.slice(0, 3).map((act, i) => (
-                          <span key={i} style={{ fontSize: '.72rem', padding: '3px 8px', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-muted)' }}>
+                          <span key={i} onClick={() => setSelectedAct({ act, dayLabel: tomorrow.label, dayId: tomorrow.id })} style={{ fontSize: '.72rem', padding: '3px 8px', borderRadius: 6, background: 'var(--bg)', color: 'var(--text-muted)', cursor: 'pointer' }}>
                             {act.emoji || '🎯'} {act.title}
                           </span>
                         ))}
@@ -602,6 +673,27 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
             </div>
           )}
         </div>
+      )}
+
+      {/* ── ACTIVITY DETAIL MODAL ── */}
+      {selectedAct && (
+        <ActivityModal
+          act={selectedAct.act}
+          dayLabel={selectedAct.dayLabel}
+          onClose={() => setSelectedAct(null)}
+          onGoTo={() => { setSelectedAct(null); onScrollToDay(selectedAct.dayId) }}
+          onValidate={() => {
+            if (trip && selectedAct.dayId) {
+              const day = trip.days.find(d => d.id === selectedAct.dayId)
+              const act = day?.activities?.find(a => a.id === selectedAct.act.id)
+              if (act && onUpdateDay) {
+                const updatedActs = day.activities.map(a => a.id === act.id ? { ...a, done: !a.done } : a)
+                onUpdateDay(selectedAct.dayId, { activities: updatedActs })
+                setSelectedAct(prev => ({ ...prev, act: { ...prev.act, done: !prev.act.done } }))
+              }
+            }
+          }}
+        />
       )}
 
       {/* ── MODAL INVITATION ── */}
