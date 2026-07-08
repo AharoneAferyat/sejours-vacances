@@ -191,6 +191,7 @@ export default function App() {
   const [showGlobalBudget, setShowGlobalBudget] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
   const [showInviteScreen, setShowInviteScreen] = useState(false)
+  const [showCode, setShowCode] = useState(false)
   const [aiTargetDayId, setAiTargetDayId] = useState(null)
   const [scrollToDayId, setScrollToDayId] = useState(null)
   const [activeDestIdx, setActiveDestIdx] = useState(0) // multi-destination: which destination is active
@@ -368,8 +369,69 @@ export default function App() {
   }
 
   if (!store.uid && !store.isGuest) {
-    if (showInviteScreen) return <InviteScreen onBack={() => setShowInviteScreen(false)} onSuccess={store.signIn} />
-    return <LoginScreen onGoogleSignIn={store.signIn} onCodeLogin={store.loginWithCode} onInviteLogin={() => setShowInviteScreen(true)} />
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'linear-gradient(135deg, #1a4a2e 0%, #2d7a4f 50%, #0d5e38 100%)', fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '2rem', fontWeight: 700, color: '#fff', marginBottom: '.3rem' }}>Séjours Vacances</div>
+          <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '.9rem' }}>Organise tes séjours entre amis</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '2rem', maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,.15)' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🏔</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.2rem', marginBottom: '.5rem' }}>Bienvenue !</h2>
+          <p style={{ fontSize: '.85rem', color: '#888', marginBottom: '1.5rem' }}>Connecte-toi avec Google pour accéder à tes séjours ou rejoindre une invitation.</p>
+          <button onClick={store.signIn} style={{
+            width: '100%', padding: '14px', border: 'none', borderRadius: 12,
+            background: '#2F8F6B', color: '#fff', fontSize: '1rem', fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(47,143,107,.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem'
+          }}>
+            🔐 Se connecter avec Google
+          </button>
+          <div style={{ margin: '1rem 0', fontSize: '.78rem', color: '#aaa' }}>— ou —</div>
+          {!showCode ? (
+            <button onClick={() => setShowCode(true)} style={{
+              width: '100%', padding: '12px', border: '1.5px solid #ddd', borderRadius: 12,
+              background: 'transparent', color: '#555', fontSize: '.88rem', fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit'
+            }}>
+              🔑 Rejoindre avec un code d'invitation
+            </button>
+          ) : (
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '.82rem', fontWeight: 600, marginBottom: '.5rem', color: '#333' }}>🔑 Code d'invitation</div>
+              <p style={{ fontSize: '.75rem', color: '#888', marginBottom: '.75rem' }}>Entre le code reçu. Tu seras ensuite redirigé vers la connexion Google.</p>
+              <input id="invite-code-input" placeholder="ex: INV-ABCDEF" style={{
+                width: '100%', padding: '10px 12px', border: '1.5px solid #ddd', borderRadius: 10,
+                fontSize: '.88rem', fontFamily: 'inherit', marginBottom: '.5rem', boxSizing: 'border-box'
+              }} />
+              <div style={{ display: 'flex', gap: '.4rem' }}>
+                <button onClick={() => setShowCode(false)} style={{
+                  flex: 1, padding: '10px', border: '1px solid #ddd', borderRadius: 10,
+                  background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.82rem', color: '#888'
+                }}>Annuler</button>
+                <button onClick={async () => {
+                  const code = document.getElementById('invite-code-input')?.value?.trim()
+                  if (!code) return alert('Entre un code')
+                  const { validateShareCode } = await import('./firebase')
+                  const result = await validateShareCode(code)
+                  if (result?.valid) {
+                    // Store the code, then force Google login — after login the shareCode flow handles the rest
+                    window.history.replaceState({}, '', `?share=${code}`)
+                    store.signIn()
+                  } else {
+                    alert(result?.error || 'Code invalide ou expiré')
+                  }
+                }} style={{
+                  flex: 1, padding: '10px', border: 'none', borderRadius: 10,
+                  background: '#2F8F6B', color: '#fff', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: '.82rem', fontWeight: 600
+                }}>Vérifier → Connexion Google</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   // TODO: vérification d'accès invité à réactiver quand le système sera stable
@@ -461,7 +523,7 @@ export default function App() {
         onOpenVoyageurs={() => setShowVoyageurs(true)}
         syncing={store.syncing}
         onOpenGlobalBudget={() => setTab('globalbudget')}
-        userEmail={isAdminManaging ? `⚙️ Admin — ${adminMode.email}` : (store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : (store.userDisplayName || store.userEmail))}
+        userEmail={isAdminManaging ? `⚙️ Admin — ${adminMode.email}` : (store.userDisplayName || store.userEmail)}
         onSignOut={store.signOut}
         isAdmin={store.isAdmin}
         onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
@@ -481,12 +543,12 @@ export default function App() {
           isAdmin={store.isAdmin}
           onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null}
           onSignOut={store.signOut}
-          userEmail={isAdminManaging ? `⚙️ Admin — ${adminMode.email}` : (store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : (store.userDisplayName || store.userEmail))}
+          userEmail={isAdminManaging ? `⚙️ Admin — ${adminMode.email}` : (store.userDisplayName || store.userEmail)}
           trip={trip}
         />
 
         {/* ── HEADER PLEINE LARGEUR (titre + horloge + photo) — DESKTOP UNIQUEMENT ── */}
-        <MainHeader trips={trips} activeTrip={normalizedTrip} onSelectTrip={id => { if (isAdminManaging) adminSelectTrip(id); else { store.setActiveTrip(id); setTab('dashboard') } }} onEditTrip={t => setEditingTrip(t)} onDeleteTrip={id => store.deleteTrip(id)} onNewTrip={() => setShowTripForm(true)} onOpenVoyageurs={() => setShowVoyageurs(true)} onOpenGlobalBudget={() => setTab('globalbudget')} isAdmin={store.isAdmin} onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null} onSignOut={store.signOut} userEmail={isAdminManaging ? `⚙️ Admin — ${adminMode.email}` : (store.isGuest ? `👤 ${store.guestSession?.voyageurName}` : (store.userDisplayName || store.userEmail))} syncing={store.syncing} tab={tab} onUpdatePhoto={(url) => trip && (isAdminManaging ? adminUpdateTripLocal({ headerPhoto: url }) : store.updateTrip(trip.id, { headerPhoto: url }))} />
+        <MainHeader trips={trips} activeTrip={normalizedTrip} onSelectTrip={id => { if (isAdminManaging) adminSelectTrip(id); else { store.setActiveTrip(id); setTab('dashboard') } }} onEditTrip={t => setEditingTrip(t)} onDeleteTrip={id => store.deleteTrip(id)} onNewTrip={() => setShowTripForm(true)} onOpenVoyageurs={() => setShowVoyageurs(true)} onOpenGlobalBudget={() => setTab('globalbudget')} isAdmin={store.isAdmin} onOpenAdmin={store.isAdmin ? () => setShowAdmin(true) : null} onSignOut={store.signOut} userEmail={isAdminManaging ? `⚙️ Admin — ${adminMode.email}` : (store.userDisplayName || store.userEmail)} syncing={store.syncing} tab={tab} onUpdatePhoto={(url) => trip && (isAdminManaging ? adminUpdateTripLocal({ headerPhoto: url }) : store.updateTrip(trip.id, { headerPhoto: url }))} />
 
         {/* ── BANDEAU SÉJOUR + DESTINATIONS + MÉTÉO ── */}
         {trip && tab !== 'admin' && (
@@ -580,7 +642,7 @@ export default function App() {
               trips={trips}
               onSelectTrip={id => { if (isAdminManaging) adminSelectTrip(id); else { store.setActiveTrip(id); setTab('planning') } }}
               onCreateTrip={() => setShowTripForm(true)}
-              userName={store.isGuest ? store.guestSession?.voyageurName : (store.userDisplayName?.split(' ')[0] || store.userEmail?.split('@')[0])}
+              userName={store.userDisplayName?.split(' ')[0] || store.userEmail?.split('@')[0]}
               activeTrip={normalizedTrip}
               tomorrowWeather={tomorrowWeather}
               onUpdateDay={(dayId, changes) => { if (!trip) return; if (isAdminManaging) adminUpdateTripLocal({ days: (isMultiDest ? trip.destinations[activeDestIdx]?.days : trip.days).map(d => d.id === dayId ? { ...d, ...changes } : d) }); else if (isMultiDest) { const nd = destDays.map(d => d.id === dayId ? { ...d, ...changes } : d); saveDestDays(nd) } else store.updateDay(trip.id, dayId, changes) }}
