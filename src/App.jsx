@@ -383,6 +383,13 @@ export default function App() {
       </div>
     )
   }
+  // Voyageurs filtered for active destination
+  const getDestVoyageurs = (voyageurs, destId) => {
+    if (!destId || !voyageurs) return voyageurs || []
+    return voyageurs.filter(v => !v.destinationIds || v.destinationIds.includes(destId))
+  }
+  const destVoyageurs = getDestVoyageurs(trip?.voyageurs, activeDest?.id)
+
   const tripVoyageurs = isAdminManaging ? (trip?.voyageurs || []) : store.tripVoyageurs
   // Guests only see their own voyageur in valise/sac tabs
   const visibleVoyageurs = store.isGuest
@@ -635,7 +642,7 @@ export default function App() {
         {/* BUDGET */}
         {tab === 'budget' && trip && (
           <div className="content-pane">
-            <Budget trip={normalizedTrip} voyageurs={trip?.voyageurs || []} isGuest={store.isGuest} activeVoyageurId={vid} onUpdate={(changes) => isAdminManaging ? adminUpdateTripLocal(changes) : store.updateTrip(trip.id, changes)} />
+            <Budget trip={normalizedTrip} voyageurs={destVoyageurs} isGuest={store.isGuest} activeVoyageurId={vid} onUpdate={(changes) => isAdminManaging ? adminUpdateTripLocal(changes) : store.updateTrip(trip.id, changes)} />
           </div>
         )}
 
@@ -766,19 +773,26 @@ export default function App() {
 
       {showVoyageurs && trip && (
         <VoyageursModal
-          trip={trip}
+          trip={normalizedTrip}
           voyageurs={tripVoyageurs}
-          onAdd={(name, email) => {
-            if (isAdminManaging) { adminUpdateTripLocal({ voyageurs: [...(trip.voyageurs||[]), { id: 'v_'+Date.now(), name, email }] }) }
-            else store.addVoyageur(trip.id, name, email)
+          destinations={destinations}
+          onAdd={(name, email, destinationIds) => {
+            const newV = { id: 'v_'+Date.now(), name, email }
+            if (destinationIds) newV.destinationIds = destinationIds
+            if (isAdminManaging) { adminUpdateTripLocal({ voyageurs: [...(trip.voyageurs||[]), newV] }) }
+            else store.updateTrip(trip.id, { voyageurs: [...(trip.voyageurs||[]), newV] })
           }}
           onRemove={vId => {
             if (isAdminManaging) { adminUpdateTripLocal({ voyageurs: (trip.voyageurs||[]).filter(v => v.id !== vId) }) }
-            else store.removeVoyageur(trip.id, vId)
+            else store.updateTrip(trip.id, { voyageurs: (trip.voyageurs||[]).filter(v => v.id !== vId) })
           }}
           onUpdateEmail={(vId, email) => {
             if (isAdminManaging) { adminUpdateTripLocal({ voyageurs: (trip.voyageurs||[]).map(v => v.id === vId ? { ...v, email } : v) }) }
-            else store.updateVoyageurEmail(trip.id, vId, email)
+            else store.updateTrip(trip.id, { voyageurs: (trip.voyageurs||[]).map(v => v.id === vId ? { ...v, email } : v) })
+          }}
+          onUpdateVoyageur={(vId, changes) => {
+            if (isAdminManaging) { adminUpdateTripLocal({ voyageurs: (trip.voyageurs||[]).map(v => v.id === vId ? { ...v, ...changes } : v) }) }
+            else store.updateTrip(trip.id, { voyageurs: (trip.voyageurs||[]).map(v => v.id === vId ? { ...v, ...changes } : v) })
           }}
           onClose={() => setShowVoyageurs(false)}
         />

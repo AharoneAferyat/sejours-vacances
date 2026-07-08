@@ -290,8 +290,8 @@ RÈGLES IMPORTANTES:
   const buildTripContext = () => {
     const voyageurs = trip?.voyageurs?.length || 1
     const budget = trip?.budget ? `budget total ${trip.budget}€` : 'budget non précisé'
-    const dateRange = trip?.startDate && trip?.endDate ? `du ${formatDate(trip.startDate)} au ${formatDate(trip.endDate)}` : ''
-    const accom = trip?.accommodation ? `hébergement: ${trip.accommodation}` : ''
+    const dateRange = days?.length ? `du ${formatDate(days[0]?.date)} au ${formatDate(days[days.length-1]?.date)}` : ''
+    const accom = ''
     const existingActs = days?.flatMap(d => d.activities?.map(a => a.title) || []).join(', ') || 'aucune'
     return `Lieu: ${destination}, ${dateRange}, ${voyageurs} voyageur(s), ${budget}${accom ? ', ' + accom : ''}. Activités déjà planifiées: ${existingActs}.`
   }
@@ -477,7 +477,7 @@ Réponds UNIQUEMENT avec un objet JSON:
               <div style={{ fontWeight: 600, marginBottom: '.25rem' }}>📋 Séjour détecté</div>
               <div style={{ color: 'var(--text-muted)', lineHeight: 1.6 }}>
                 <strong>{trip?.name}</strong> · {destination}
-                {trip?.startDate && trip?.endDate && ` · ${formatDate(trip.startDate)} → ${formatDate(trip.endDate)}`}
+                {days?.length > 0 && ` · ${formatDate(days[0]?.date)} → ${formatDate(days[days.length-1]?.date)}`}
                 {trip?.voyageurs?.length > 0 && ` · ${trip.voyageurs.length} voyageur${trip.voyageurs.length > 1 ? 's' : ''}`}
                 {trip?.budget && ` · Budget ${trip.budget}€`}
               </div>

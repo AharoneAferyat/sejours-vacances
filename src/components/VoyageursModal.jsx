@@ -41,20 +41,33 @@ function Avatar({ name, size = 44, color = '#0F6E56', index = 0 }) {
   )
 }
 
-export default function VoyageursModal({ trip, voyageurs, onAdd, onRemove, onUpdateEmail, onClose }) {
+export default function VoyageursModal({ trip, voyageurs, destinations, onAdd, onRemove, onUpdateEmail, onUpdateVoyageur, onClose }) {
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [showAccess, setShowAccess] = useState(null)
+  const [newDestIds, setNewDestIds] = useState([]) // for new voyageur
 
+  const isMultiDest = destinations?.length > 1
   const COLORS = ['#0F6E56','#185FA5','#A32D2D','#BA7517','#7C3AED','#0891B2','#BE185D']
 
   const handleAdd = () => {
     if (!name.trim()) return alert('Prénom requis')
-    onAdd(name.trim(), email.trim() || null)
-    setName('')
-    setEmail('')
-    setAdding(false)
+    const v = { name: name.trim(), email: email.trim() || null }
+    if (isMultiDest && newDestIds.length > 0 && newDestIds.length < destinations.length) {
+      v.destinationIds = newDestIds
+    }
+    onAdd(v.name, v.email, v.destinationIds || null)
+    setName(''); setEmail(''); setNewDestIds([]); setAdding(false)
+  }
+
+  const toggleDest = (vid, destId) => {
+    const v = voyageurs.find(x => x.id === vid)
+    if (!v) return
+    const current = v.destinationIds || destinations.map(d => d.id)
+    const updated = current.includes(destId) ? current.filter(id => id !== destId) : [...current, destId]
+    if (updated.length === 0) return // must have at least one
+    onUpdateVoyageur?.(vid, { destinationIds: updated.length === destinations.length ? null : updated })
   }
 
   return (
@@ -120,6 +133,30 @@ export default function VoyageursModal({ trip, voyageurs, onAdd, onRemove, onUpd
                   <div style={{ fontSize: '.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '.4rem' }}>
                     🔑 Accès au séjour
                   </div>
+
+                  {/* Destination assignment */}
+                  {isMultiDest && (
+                    <div style={{ marginBottom: '.6rem' }}>
+                      <div style={{ fontSize: '.68rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '.3rem' }}>📍 Étapes</div>
+                      <div style={{ display: 'flex', gap: '.25rem', flexWrap: 'wrap' }}>
+                        {destinations.map(dest => {
+                          const assigned = !v.destinationIds || v.destinationIds.includes(dest.id)
+                          return (
+                            <button key={dest.id} onClick={() => toggleDest(v.id, dest.id)} style={{
+                              padding: '3px 10px', borderRadius: 8, fontSize: '.72rem', fontWeight: 500,
+                              border: `1.5px solid ${assigned ? (dest.color || 'var(--green)') : 'var(--border)'}`,
+                              background: assigned ? (dest.color || 'var(--green)') : 'transparent',
+                              color: assigned ? '#fff' : 'var(--text-muted)',
+                              cursor: 'pointer', fontFamily: 'inherit'
+                            }}>{dest.name}</button>
+                          )
+                        })}
+                      </div>
+                      <div style={{ fontSize: '.62rem', color: 'var(--text-muted)', marginTop: '.2rem' }}>
+                        {!v.destinationIds ? 'Toutes les étapes' : `${(v.destinationIds || []).length} étape(s)`}
+                      </div>
+                    </div>
+                  )}
                   {v.email ? (
                     <div style={{ fontSize: '.82rem' }}>
                       <div style={{ color: 'var(--text-muted)', fontSize: '.73rem', marginBottom: '.2rem' }}>Connexion Google avec :</div>
@@ -164,6 +201,25 @@ export default function VoyageursModal({ trip, voyageurs, onAdd, onRemove, onUpd
             {name.trim() && !email.trim() && (
               <div style={{ fontSize: '.73rem', color: 'var(--green)', marginBottom: '.5rem' }}>
                 Code d'accès : <strong style={{ fontFamily: 'monospace' }}>{makePassword(name.trim(), trip?.name || '')}</strong>
+              </div>
+            )}
+            {isMultiDest && (
+              <div className="form-group">
+                <label>Étapes (laisser vide = toutes)</label>
+                <div style={{ display: 'flex', gap: '.25rem', flexWrap: 'wrap' }}>
+                  {destinations.map(dest => {
+                    const sel = newDestIds.includes(dest.id)
+                    return (
+                      <button key={dest.id} type="button" onClick={() => setNewDestIds(prev => sel ? prev.filter(id => id !== dest.id) : [...prev, dest.id])} style={{
+                        padding: '3px 10px', borderRadius: 8, fontSize: '.72rem', fontWeight: 500,
+                        border: `1.5px solid ${sel ? (dest.color || 'var(--green)') : 'var(--border)'}`,
+                        background: sel ? (dest.color || 'var(--green)') : 'transparent',
+                        color: sel ? '#fff' : 'var(--text-muted)',
+                        cursor: 'pointer', fontFamily: 'inherit'
+                      }}>{dest.name}</button>
+                    )
+                  })}
+                </div>
               </div>
             )}
             <div style={{ display: 'flex', gap: '.4rem' }}>
