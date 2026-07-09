@@ -217,7 +217,7 @@ function ExpenseCard({ exp, voyageurs, onDelete, onEdit }) {
 /* ═══════════════════════════════════════════════════════════════════
    TAB 1 — VUE D'ENSEMBLE
    ═══════════════════════════════════════════════════════════════════ */
-function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct, barColor, voyageurs, paid, balances, byCat, commonExpenses, myPersonalExpenses, days, onShowAdd }) {
+function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct, barColor, voyageurs, paid, balances, byCat, commonExpenses, myPersonalExpenses, days, onShowAdd, onGoToDepenses }) {
   const recentExpenses = [...commonExpenses, ...myPersonalExpenses].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0, 4)
   const perDay = days.length > 0 ? Math.round(totalAll / days.length) : 0
 
@@ -321,7 +321,7 @@ function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct,
               </div>
             )
           })}
-          {recentExpenses.length > 0 && <button onClick={()=>{}} style={{ display:'block', width:'100%', border:'none', background:'none', color:'var(--green)', fontSize:'.78rem', fontWeight:600, padding:`${SP.sm}px 0`, cursor:'pointer', fontFamily:'inherit', textAlign:'center', marginTop:SP.sm }}>Voir tout →</button>}
+          {recentExpenses.length > 0 && <button onClick={onGoToDepenses} style={{ display:'block', width:'100%', border:'none', background:'none', color:'var(--green)', fontSize:'.78rem', fontWeight:600, padding:`${SP.sm}px 0`, cursor:'pointer', fontFamily:'inherit', textAlign:'center', marginTop:SP.sm }}>Voir tout →</button>}
         </Card>
 
         {/* Balance per person */}
@@ -715,7 +715,7 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
       </div>
 
       {/* Content */}
-      {tab === 'vue' && <VueEnsemble isMobile={isMobile} budget={budget} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} pct={pct} barColor={barColor} voyageurs={voyageurs} paid={paid} balances={balances} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} onShowAdd={()=>setShowAdd(true)} />}
+      {tab === 'vue' && <VueEnsemble isMobile={isMobile} budget={budget} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} pct={pct} barColor={barColor} voyageurs={voyageurs} paid={paid} balances={balances} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} onShowAdd={()=>setShowAdd(true)} onGoToDepenses={()=>setTab('depenses')} />}
       {tab === 'depenses' && <Depenses commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} voyageurs={voyageurs} onDeleteCommon={handleDeleteCommon} onDeletePerso={handleDeletePerso} onShowAdd={()=>setShowAdd(true)} />}
       {tab === 'remb' && <Remboursements debts={debts} voyageurs={voyageurs} balances={balances} paid={paid} commonExpenses={commonExpenses} activeVoyageurId={activeVoyageurId} onSettle={handleSettle} isGuest={isGuest} />}
       {tab === 'stats' && <Statistiques isMobile={isMobile} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} voyageurs={voyageurs} paid={paid} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} budget={budget} />}

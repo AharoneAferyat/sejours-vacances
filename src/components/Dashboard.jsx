@@ -542,12 +542,15 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                 const acts = day.activities || []
                 const emojis = acts.map(a => a.emoji || (a.title?.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F)/u)?.[0]) || '').filter(Boolean).slice(0, 3)
                 return (
-                <div key={day.id} style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem', padding: '.4rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem' }}>
+                <div key={day.id} onClick={() => onScrollToDay(day.id)} style={{ display: 'flex', alignItems: 'baseline', gap: '.4rem', padding: '.4rem 0', borderBottom: '1px solid var(--border)', fontSize: '.78rem', cursor: 'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <span style={{ fontWeight: 600, minWidth: 38, flexShrink: 0 }}>{day.label?.split('.')[0]}.</span>
                   {emojis.length > 0 && <span style={{ fontSize: '.8rem', flexShrink: 0 }}>{emojis.join('')}</span>}
                   <span style={{ flex: 1, color: 'var(--text-muted)', minWidth: 0, lineHeight: 1.35 }}>
                     {acts.length > 1 ? `${acts[0]?.title || '—'} +${acts.length - 1}` : (acts[0]?.title || '—')}
                   </span>
+                  <span style={{ fontSize: '.65rem', color: 'var(--text-light)', flexShrink: 0 }}>›</span>
                 </div>
                 )
               })}
