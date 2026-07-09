@@ -70,12 +70,14 @@ function ActivityDetail({ act, onUpdate, onDelete, onMove, onValidate }) {
           {act.emoji}
         </div>
         <div className="act-main-info">
-          <div className="act-main-title" style={act.done ? { textDecoration: 'line-through', color: 'var(--text-muted)' } : {}}>
+          <div className="act-main-title" style={act.done ? { textDecoration: 'line-through', color: 'var(--text-muted)' } : act.skipped ? { textDecoration: 'line-through', color: 'var(--text-muted)', opacity: .5 } : {}}>
             {act.title}
           </div>
           {act.subtitle && <div className="act-main-sub">{act.subtitle}</div>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+          {act.skipped && <span style={{ fontSize: '.62rem', padding: '1px 6px', borderRadius: 6, background: 'var(--amber-light)', color: 'var(--amber)', fontWeight: 600 }}>Non fait</span>}
+          {act.done && <span style={{ fontSize: '.62rem', padding: '1px 6px', borderRadius: 6, background: 'var(--green-light)', color: 'var(--green)', fontWeight: 600 }}>✅</span>}
           <span className={`badge badge-${act.difficulty}`}>{diff.label}</span>
           <span style={{ color: 'var(--text-muted)', fontSize: '.8rem' }}>{open ? '▴' : '▾'}</span>
         </div>
@@ -135,6 +137,9 @@ function ActivityDetail({ act, onUpdate, onDelete, onMove, onValidate }) {
           <div className="card-actions">
             <button className={`btn btn-validate${act.done ? ' done' : ''}`} onClick={onValidate}>
               {act.done ? '✅ Validée' : '○ Valider'}
+            </button>
+            <button className={`btn${act.skipped ? ' btn-skipped' : ''}`} onClick={() => onUpdate({ skipped: !act.skipped, done: false })} style={act.skipped ? { background: 'var(--amber-light)', color: 'var(--amber)', borderColor: 'var(--amber)' } : {}}>
+              {act.skipped ? '⏭ Non fait' : '⏭ Non fait'}
             </button>
             <button className="btn" onClick={() => setEditing(true)}>✏️ Modifier</button>
             <button className="btn" onClick={() => setMoving(true)}>📅 Déplacer</button>

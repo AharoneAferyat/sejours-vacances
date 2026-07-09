@@ -49,11 +49,13 @@ function getTodayInfo(trip) {
   const tomorrow = trip.days[dayIndex + 1] || null
   const acts = todayDay.activities || []
   const doneCount = acts.filter(a => a.done).length
-  return { todayDay, dayIndex, tomorrow, acts, doneCount }
+  const skippedCount = acts.filter(a => a.skipped).length
+  const activeActs = acts.filter(a => !a.skipped)
+  return { todayDay, dayIndex, tomorrow, acts, doneCount, skippedCount, activeActs }
 }
 
 /* ── Activity Detail Modal (from hype up) ── */
-function ActivityModal({ act, dayLabel, onClose, onValidate, onGoTo }) {
+function ActivityModal({ act, dayLabel, onClose, onValidate, onSkip, onGoTo }) {
   if (!act) return null
   const dur = act.durationMin || 0
   return (
@@ -111,6 +113,9 @@ function ActivityModal({ act, dayLabel, onClose, onValidate, onGoTo }) {
         <div style={{ display: 'flex', gap: '.4rem', marginTop: '.5rem' }}>
           <button onClick={() => { onValidate(); onClose() }} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', borderRadius: 10 }}>
             {act.done ? '↩ Dé-valider' : '✅ Valider'}
+          </button>
+          <button onClick={() => { onSkip?.(); onClose() }} className="btn" style={{ justifyContent: 'center', borderRadius: 10, padding: '8px 12px', background: act.skipped ? 'var(--amber-light)' : 'transparent', color: act.skipped ? 'var(--amber)' : 'var(--text-muted)' }}>
+            ⏭
           </button>
           <button onClick={() => { onClose(); onGoTo?.() }} className="btn" style={{ flex: 1, justifyContent: 'center', borderRadius: 10 }}>
             📋 Aller à l'activité
@@ -291,11 +296,11 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
   }, [trip?.startDate])
 
   // Stats du séjour
-  const totalKm = trip?.days?.reduce((s,d) => s + d.activities.reduce((a,act) => a + (parseFloat(act.distanceKm)||0), 0), 0) || 0
-  const totalDplus = trip?.days?.reduce((s,d) => s + d.activities.reduce((a,act) => a + (parseFloat(act.dplus)||0), 0), 0) || 0
-  const totalDuration = trip?.days?.reduce((s,d) => s + d.activities.reduce((a,act) => a + (parseFloat(act.durationMin)||0), 0), 0) || 0
+  const totalKm = trip?.days?.reduce((s,d) => s + d.activities.filter(a=>!a.skipped).reduce((a,act) => a + (parseFloat(act.distanceKm)||0), 0), 0) || 0
+  const totalDplus = trip?.days?.reduce((s,d) => s + d.activities.filter(a=>!a.skipped).reduce((a,act) => a + (parseFloat(act.dplus)||0), 0), 0) || 0
+  const totalDuration = trip?.days?.reduce((s,d) => s + d.activities.filter(a=>!a.skipped).reduce((a,act) => a + (parseFloat(act.durationMin)||0), 0), 0) || 0
   const totalDays = trip?.days?.length || 0
-  const totalActs = trip?.days?.reduce((s,d) => s + (d.activities?.length||0), 0) || 0
+  const totalActs = trip?.days?.reduce((s,d) => s + (d.activities?.filter(a=>!a.skipped).length||0), 0) || 0
   const voyageurs = trip?.voyageurs || []
   const photo = trip?.headerPhoto || getFallbackPhoto(trip?.name, trip?.destination)
 
@@ -379,7 +384,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
             {countdown?.status === 'ongoing' && (() => {
               const info = getTodayInfo(trip)
               if (!info) return null
-              const { todayDay, dayIndex, acts, doneCount, tomorrow } = info
+              const { todayDay, dayIndex, acts, doneCount, skippedCount, activeActs, tomorrow } = info
               return (
                 <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1rem', marginBottom: '.65rem', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ fontSize: '.62rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--green)', marginBottom: '.5rem' }}>🟢 Aujourd'hui — Jour {dayIndex + 1}</div>
@@ -388,10 +393,10 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   {acts.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
                       {acts.map((act, i) => (
-                        <div key={act.id || i} onClick={() => setSelectedAct({ act, dayLabel: todayDay.label, dayId: todayDay.id })} style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', padding: '.5rem .6rem', borderRadius: 10, background: act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer' }}>
-                          <span style={{ fontSize: '.9rem', marginTop: 1, flexShrink: 0 }}>{act.done ? '✅' : (act.emoji || '🎯')}</span>
+                        <div key={act.id || i} onClick={() => setSelectedAct({ act, dayLabel: todayDay.label, dayId: todayDay.id })} style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', padding: '.5rem .6rem', borderRadius: 10, background: act.skipped ? 'var(--amber-light)' : act.done ? 'var(--green-light)' : 'var(--bg)', cursor: 'pointer' }}>
+                          <span style={{ fontSize: '.9rem', marginTop: 1, flexShrink: 0 }}>{act.skipped ? '⏭' : act.done ? '✅' : (act.emoji || '🎯')}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '.82rem', fontWeight: 500, textDecoration: act.done ? 'line-through' : 'none', color: act.done ? 'var(--text-muted)' : 'var(--text)', lineHeight: 1.35 }}>{act.title}</div>
+                            <div style={{ fontSize: '.82rem', fontWeight: 500, textDecoration: (act.done || act.skipped) ? 'line-through' : 'none', color: (act.done || act.skipped) ? 'var(--text-muted)' : 'var(--text)', opacity: act.skipped ? .5 : 1, lineHeight: 1.35 }}>{act.title}</div>
                             <div style={{ display: 'flex', gap: '.5rem', fontSize: '.65rem', color: 'var(--text-muted)', marginTop: 2, flexWrap: 'wrap' }}>
                               {act.startTime && <span>🕐 {act.startTime}</span>}
                               {act.durationMin > 0 && <span>⏱ {act.durationMin >= 60 ? Math.floor(act.durationMin/60)+'h'+(act.durationMin%60 ? (act.durationMin%60<10?'0':'')+act.durationMin%60 : '') : act.durationMin+'min'}</span>}
@@ -404,9 +409,9 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                       {/* Progress */}
                       <div style={{ marginTop: '.3rem' }}>
                         <div style={{ height: 4, background: 'rgba(0,0,0,.06)', borderRadius: 20, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: (acts.length > 0 ? doneCount / acts.length * 100 : 0) + '%', background: 'var(--green)', borderRadius: 20, transition: 'width .3s' }} />
+                          <div style={{ height: '100%', width: (activeActs.length > 0 ? doneCount / activeActs.length * 100 : 0) + '%', background: 'var(--green)', borderRadius: 20, transition: 'width .3s' }} />
                         </div>
-                        <div style={{ fontSize: '.65rem', color: 'var(--text-muted)', marginTop: 3 }}>{doneCount}/{acts.length} terminée{doneCount > 1 ? 's' : ''}</div>
+                        <div style={{ fontSize: '.65rem', color: 'var(--text-muted)', marginTop: 3 }}>{doneCount}/{activeActs.length} terminée{doneCount > 1 ? 's' : ''}{skippedCount > 0 ? ` · ${skippedCount} non fait${skippedCount > 1 ? 'es' : ''}` : ''}</div>
                       </div>
                     </div>
                   ) : (
@@ -682,6 +687,17 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
           dayLabel={selectedAct.dayLabel}
           onClose={() => setSelectedAct(null)}
           onGoTo={() => { setSelectedAct(null); onScrollToDay(selectedAct.dayId) }}
+          onSkip={() => {
+            if (trip && selectedAct.dayId) {
+              const day = trip.days.find(d => d.id === selectedAct.dayId)
+              const act = day?.activities?.find(a => a.id === selectedAct.act.id)
+              if (act && onUpdateDay) {
+                const updatedActs = day.activities.map(a => a.id === act.id ? { ...a, skipped: !a.skipped, done: false } : a)
+                onUpdateDay(selectedAct.dayId, { activities: updatedActs })
+                setSelectedAct(prev => ({ ...prev, act: { ...prev.act, skipped: !prev.act.skipped, done: false } }))
+              }
+            }
+          }}
           onValidate={() => {
             if (trip && selectedAct.dayId) {
               const day = trip.days.find(d => d.id === selectedAct.dayId)

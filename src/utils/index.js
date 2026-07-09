@@ -87,9 +87,10 @@ export function getMsTripStart(trip) {
 }
 
 export function calcDayStats(activities) {
-  const totalKm = activities.reduce((s, a) => s + (a.distanceKm || 0), 0)
-  const totalDplus = activities.reduce((s, a) => s + (a.dplus || 0), 0)
-  const totalMin = activities.reduce((s, a) => s + (a.durationMin || 0), 0)
+  const active = activities.filter(a => !a.skipped)
+  const totalKm = active.reduce((s, a) => s + (a.distanceKm || 0), 0)
+  const totalDplus = active.reduce((s, a) => s + (a.dplus || 0), 0)
+  const totalMin = active.reduce((s, a) => s + (a.durationMin || 0), 0)
   return { totalKm, totalDplus, totalMin }
 }
 

@@ -174,41 +174,27 @@ function UsersTree({ users, loading, onSelectTrip, onRefresh }) {
             display: 'flex', alignItems: 'center', gap: '.65rem',
             background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: '.75rem 1rem'
           }} className="admin-user-row">
-            <span style={{ fontSize: '1.1rem', cursor: 'pointer' }} onClick={() => toggle(u.uid)}>
-              {expanded[u.uid] ? '📂' : '📁'}
-            </span>
+            <span style={{ fontSize: '1.1rem', cursor: 'pointer' }} onClick={() => toggle(u.uid)}>{expanded[u.uid] ? '📂' : '📁'}</span>
             <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggle(u.uid)}>
               <div style={{ fontWeight: 600, fontSize: '.88rem' }}>
-                {u.email || `⚠️ Sans email · UID: ${u.uid.slice(0, 12)}…`}
+                {u.email || (u.trips[0]?.voyageurs?.[0]?.name ? `${u.trips[0].voyageurs[0].name} (sans email)` : `Utilisateur anonyme · ${u.uid.slice(0, 8)}…`)}
               </div>
+              <div style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>
+                {u.trips.length} séjour{u.trips.length > 1 ? 's' : ''} propre{u.trips.length > 1 ? 's' : ''}
+                {u.joinedAt && ` · rejoint le ${fmtDate(u.joinedAt)}`}
+                {u.inviteCode && ` · code ${u.inviteCode}`}
+              </div>
+              {/* Show trips where this user is a voyageur (in other users' trips) */}
               {(() => {
                 const guestIn = users.filter(other => other.uid !== u.uid).flatMap(other =>
                   other.trips.filter(t => t.voyageurs?.some(v => v.uid === u.uid || (v.email && v.email === u.email)))
                     .map(t => ({ tripName: t.name, ownerEmail: other.email }))
                 )
-                const ownCount = u.trips.length
-                const joinedCount = guestIn.length
-                return (
-                  <div>
-                    <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      {ownCount > 0 && <span>📋 {ownCount} séjour{ownCount > 1 ? 's' : ''} créé{ownCount > 1 ? 's' : ''}</span>}
-                      {joinedCount > 0 && <span style={{ color: 'var(--blue)' }}>🔗 {joinedCount} séjour{joinedCount > 1 ? 's' : ''} rejoint{joinedCount > 1 ? 's' : ''}</span>}
-                      {ownCount === 0 && joinedCount === 0 && <span>Aucun séjour</span>}
-                      {u.joinedAt && <span>· inscrit le {fmtDate(u.joinedAt)}</span>}
-                      {u.inviteCode && <span>· code {u.inviteCode}</span>}
-                    </div>
-                    {joinedCount > 0 && (
-                      <div style={{ fontSize: '.65rem', color: 'var(--blue)', marginTop: 2 }}>
-                        → {guestIn.map(g => `${g.tripName} (${g.ownerEmail})`).join(', ')}
-                      </div>
-                    )}
-                    {!u.email && (
-                      <div style={{ fontSize: '.65rem', color: 'var(--red)', marginTop: 2 }}>
-                        ⚠️ Utilisateur sans email Google — session invité ou anonyme
-                      </div>
-                    )}
+                return guestIn.length > 0 ? (
+                  <div style={{ fontSize: '.62rem', color: 'var(--blue)', marginTop: 2 }}>
+                    🔗 Invité dans : {guestIn.map(g => `${g.tripName} (${g.ownerEmail})`).join(', ')}
                   </div>
-                )
+                ) : null
               })()}
             </div>
             {/* Actions utilisateur */}
