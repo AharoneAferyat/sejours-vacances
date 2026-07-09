@@ -99,13 +99,14 @@ function DonutChart({ data, total, size=140, isMobile=false }) {
 }
 
 /* ─── ADD EXPENSE MODAL ────────────────────────────────────────── */
-function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId }) {
+function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId, initial }) {
   const [form, setForm] = useState({
-    label:'', amount:'', category:'repas', type:'common',
-    payerId: currentVoyageurId || voyageurs[0]?.id || '',
-    participants: voyageurs.map(v => v.id),
-    dayId: days[0]?.id || '', date: days[0]?.date || ''
+    label: initial?.label || '', amount: initial?.amount || '', category: initial?.category || 'repas', type: initial?.type || 'common',
+    payerId: initial?.payerId || currentVoyageurId || voyageurs[0]?.id || '',
+    participants: initial?.participants || voyageurs.map(v => v.id),
+    dayId: initial?.dayId || days[0]?.id || '', date: initial?.date || days[0]?.date || ''
   })
+  const isEditing = !!initial
   const set = (k,v) => setForm(f => ({ ...f, [k]: v }))
   const toggleP = (vid) => {
     const p = form.participants.includes(vid) ? form.participants.filter(x=>x!==vid) : [...form.participants, vid]
@@ -113,13 +114,17 @@ function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId }) 
   }
   const submit = () => {
     if (!form.label.trim() || !form.amount) return alert('Titre et montant requis')
-    onAdd({ ...form, id:'exp_'+Date.now(), amount:parseFloat(form.amount), createdAt:Date.now() })
+    if (isEditing) {
+      onAdd({ ...initial, ...form, amount:parseFloat(form.amount) })
+    } else {
+      onAdd({ ...form, id:'exp_'+Date.now(), amount:parseFloat(form.amount), createdAt:Date.now() })
+    }
     onClose()
   }
   return (
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth:480 }}>
-        <h2 style={{ marginBottom:SP.lg }}>💰 Nouvelle dépense</h2>
+        <h2 style={{ marginBottom:SP.lg }}>{isEditing ? '✏️ Modifier la dépense' : '💰 Nouvelle dépense'}</h2>
         <div className="form-group"><label>Description *</label><input value={form.label} onChange={e=>set('label',e.target.value)} placeholder="ex: Déjeuner au refuge…" autoFocus /></div>
         <div className="form-row">
           <div className="form-group"><label>Montant (€) *</label><input type="number" step="0.01" value={form.amount} onChange={e=>set('amount',e.target.value)} placeholder="0" /></div>
@@ -170,7 +175,7 @@ function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId }) 
         </>)}
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>Annuler</button>
-          <button className="btn btn-primary" onClick={submit}>＋ Ajouter</button>
+          <button className="btn btn-primary" onClick={submit}>{isEditing ? '✓ Enregistrer' : '＋ Ajouter'}</button>
         </div>
       </div>
     </div>
@@ -201,6 +206,7 @@ function ExpenseCard({ exp, voyageurs, onDelete, onEdit }) {
           <button onClick={()=>setMenuOpen(!menuOpen)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:'1rem', padding:'4px 6px', color:'var(--text-muted)' }}>⋯</button>
           {menuOpen && (
             <div style={{ position:'absolute', right:0, top:'100%', background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, boxShadow:'0 8px 24px rgba(0,0,0,.12)', zIndex:10, minWidth:160, overflow:'hidden' }}>
+              {onEdit && <button onClick={()=>{setMenuOpen(false);onEdit()}} style={{ display:'block', width:'100%', padding:'10px 16px', border:'none', background:'none', cursor:'pointer', fontSize:'.82rem', fontFamily:'inherit', textAlign:'left', color:'var(--text)' }}>✏️ Modifier</button>}
               {onDelete && <button onClick={()=>{setMenuOpen(false);onDelete()}} style={{ display:'block', width:'100%', padding:'10px 16px', border:'none', background:'none', cursor:'pointer', fontSize:'.82rem', fontFamily:'inherit', textAlign:'left', color:'var(--red)' }}>🗑 Supprimer</button>}
             </div>
           )}
@@ -232,7 +238,7 @@ function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct,
           </div>
           {budget > 0 && (
             <div style={{ padding:'6px 14px', borderRadius:20, background: pct >= 100 ? 'var(--red-light)' : pct >= 80 ? 'var(--amber-light)' : 'var(--green-light)', color: pct >= 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--green)', fontSize:'.78rem', fontWeight:600 }}>
-              {pct >= 100 ? '⚠️ Budget dépassé' : pct >= 80 ? '⚠️ Attention' : '✅ En bonne voie'}
+              {pct >= 100 ? `⚠️ Dépassé de ${fmt(totalAll - budget)}` : pct >= 80 ? '⚠️ Attention' : '✅ En bonne voie'}
             </div>
           )}
         </div>
@@ -242,7 +248,7 @@ function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct,
           </div>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:'.75rem', color:'var(--text-muted)' }}>
             <span>{fmt(totalAll)} dépensé</span>
-            <span style={{ fontWeight:600, color: pct>=100?'var(--red)':'var(--text)' }}>{fmt(Math.max(0,budget-totalAll))} restant</span>
+            <span style={{ fontWeight:600, color: pct>=100?'var(--red)':'var(--text)' }}>{pct >= 100 ? `-${fmt(totalAll - budget)} dépassé` : `${fmt(budget - totalAll)} restant`}</span>
           </div>
         </>)}
       </Card>
@@ -356,7 +362,7 @@ function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct,
 /* ═══════════════════════════════════════════════════════════════════
    TAB 2 — DÉPENSES
    ═══════════════════════════════════════════════════════════════════ */
-function Depenses({ commonExpenses, myPersonalExpenses, voyageurs, onDeleteCommon, onDeletePerso, onShowAdd }) {
+function Depenses({ commonExpenses, myPersonalExpenses, voyageurs, onDeleteCommon, onDeletePerso, onEditCommon, onEditPerso, onShowAdd }) {
   const [filter, setFilter] = useState('all') // all | common | perso
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('')
@@ -400,7 +406,8 @@ function Depenses({ commonExpenses, myPersonalExpenses, voyageurs, onDeleteCommo
         <div style={{ textAlign:'center', padding:`${SP.xl}px`, color:'var(--text-muted)', fontSize:'.88rem' }}>Aucune dépense trouvée</div>
       ) : all.map(exp => (
         <ExpenseCard key={exp.id} exp={exp} voyageurs={voyageurs}
-          onDelete={exp.type==='common' ? ()=>onDeleteCommon(exp.id) : ()=>onDeletePerso(exp.id)} />
+          onDelete={exp.type==='common' ? ()=>onDeleteCommon(exp.id) : ()=>onDeletePerso(exp.id)}
+          onEdit={exp.type==='common' ? ()=>onEditCommon(exp) : ()=>onEditPerso(exp)} />
       ))}
 
       <button onClick={onShowAdd} className="btn btn-primary" style={{ width:'100%', justifyContent:'center', marginTop:SP.lg, borderRadius:R, padding:'12px' }}>
@@ -648,6 +655,7 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
   const [tab, setTab] = useState('vue')
   const isMobile = useIsMobile()
   const [showAdd, setShowAdd] = useState(false)
+  const [editingExp, setEditingExp] = useState(null) // expense being edited
 
   const budget = trip.budget || 0
   const commonExpenses = trip.expenses || []
@@ -679,6 +687,13 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
     if (!confirm('Supprimer cette dépense ?')) return
     const vd = trip.voyageurData || {}; const myVd = vd[activeVoyageurId] || {}
     onUpdate({ voyageurData: { ...vd, [activeVoyageurId]: { ...myVd, depenses: (myVd.depenses||[]).filter(e=>e.id!==id) } } })
+  }
+  const handleEditCommon = (updated) => {
+    onUpdate({ expenses: commonExpenses.map(e => e.id === updated.id ? { ...e, ...updated } : e) })
+  }
+  const handleEditPerso = (updated) => {
+    const vd = trip.voyageurData || {}; const myVd = vd[activeVoyageurId] || {}
+    onUpdate({ voyageurData: { ...vd, [activeVoyageurId]: { ...myVd, depenses: (myVd.depenses||[]).map(e => e.id === updated.id ? { ...e, ...updated } : e) } } })
   }
   const handleSettle = (debt) => {
     const settle = { id:'exp_settle_'+Date.now(), label:`Remboursement ${debt.from.name} → ${debt.to.name}`, amount:debt.amount, category:'autre', type:'common', payerId:debt.from.id, participants:[debt.to.id], dayId:'', date:'', settled:true, createdAt:Date.now() }
@@ -716,11 +731,14 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
 
       {/* Content */}
       {tab === 'vue' && <VueEnsemble isMobile={isMobile} budget={budget} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} pct={pct} barColor={barColor} voyageurs={voyageurs} paid={paid} balances={balances} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} onShowAdd={()=>setShowAdd(true)} onGoToDepenses={()=>setTab('depenses')} />}
-      {tab === 'depenses' && <Depenses commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} voyageurs={voyageurs} onDeleteCommon={handleDeleteCommon} onDeletePerso={handleDeletePerso} onShowAdd={()=>setShowAdd(true)} />}
+      {tab === 'depenses' && <Depenses commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} voyageurs={voyageurs} onDeleteCommon={handleDeleteCommon} onDeletePerso={handleDeletePerso} onEditCommon={(exp) => setEditingExp(exp)} onEditPerso={(exp) => setEditingExp(exp)} onShowAdd={()=>setShowAdd(true)} />}
       {tab === 'remb' && <Remboursements debts={debts} voyageurs={voyageurs} balances={balances} paid={paid} commonExpenses={commonExpenses} activeVoyageurId={activeVoyageurId} onSettle={handleSettle} isGuest={isGuest} />}
       {tab === 'stats' && <Statistiques isMobile={isMobile} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} voyageurs={voyageurs} paid={paid} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} budget={budget} />}
 
       {showAdd && <AddExpenseForm voyageurs={voyageurs} days={days} onAdd={handleAdd} onClose={()=>setShowAdd(false)} currentVoyageurId={activeVoyageurId} />}
+      {editingExp && <AddExpenseForm voyageurs={voyageurs} days={days} initial={editingExp}
+        onAdd={(updated) => { editingExp.type === 'common' ? handleEditCommon(updated) : handleEditPerso(updated) }}
+        onClose={() => setEditingExp(null)} currentVoyageurId={activeVoyageurId} />}
     </div>
   )
 }
