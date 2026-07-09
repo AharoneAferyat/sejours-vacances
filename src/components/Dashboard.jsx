@@ -301,6 +301,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
   const totalDuration = trip?.days?.reduce((s,d) => s + d.activities.filter(a=>!a.skipped).reduce((a,act) => a + (parseFloat(act.durationMin)||0), 0), 0) || 0
   const totalDays = trip?.days?.length || 0
   const totalActs = trip?.days?.reduce((s,d) => s + (d.activities?.filter(a=>!a.skipped).length||0), 0) || 0
+  const totalPrice = trip?.days?.reduce((s,d) => s + d.activities.filter(a=>!a.skipped).reduce((a,act) => a + (parseFloat(act.price)||0), 0), 0) || 0
   const voyageurs = trip?.voyageurs || []
   const photo = trip?.headerPhoto || getFallbackPhoto(trip?.name, trip?.destination)
 
@@ -504,6 +505,7 @@ export default function Dashboard({ trips, onSelectTrip, onCreateTrip, userName,
                   { val: `${Math.floor(totalDuration/60)}h${String(totalDuration%60).padStart(2,'0')}`, label: 'Activités prévues', icon: '⏱' },
                   { val: `${totalDplus} m D+`, label: 'Dénivelé positif', icon: '⛰' },
                   { val: `${totalDays} jours`, label: 'Durée du séjour', icon: '📅' },
+                  ...(totalPrice > 0 ? [{ val: `${totalPrice.toFixed(0)}€`, label: 'Coût activités', icon: '💰' }] : []),
                 ].map((s,i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '.45rem' }}>
                     <span style={{ fontSize: '1.1rem' }}>{s.icon}</span>

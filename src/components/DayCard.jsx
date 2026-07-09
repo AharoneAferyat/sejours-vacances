@@ -91,6 +91,7 @@ function ActivityDetail({ act, onUpdate, onDelete, onMove, onValidate }) {
               {act.distanceKm > 0 && <span className="stat">📍 {act.distanceKm} km</span>}
               {act.dplus > 0 && <span className="stat">⬆️ {act.dplus}m D+</span>}
               {act.durationMin > 0 && <span className="stat">⏱ {formatDuration(act.durationMin)}</span>}
+              {act.price && parseFloat(act.price) > 0 && <span className="stat">💰 {parseFloat(act.price)}€</span>}
               {act.startTime && (
                 <span className="stat">🕗 {act.startTime}{act.endTime ? `–${act.endTime}` : ''}</span>
               )}

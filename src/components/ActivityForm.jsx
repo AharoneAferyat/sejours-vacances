@@ -77,7 +77,7 @@ const FEATURES = [
 
 const EMPTY = {
   emoji: '🥾', title: '', subtitle: '', type: 'rando', difficulty: 'facile',
-  startTime: '', endTime: '', distanceKm: '', dplus: '', durationMin: '', durationH: '', durationM: '',
+  startTime: '', endTime: '', distanceKm: '', dplus: '', durationMin: '', durationH: '', durationM: '', price: '',
   features: [], desc: '', gear: '', tip: '',
   links: '', // "url|label,url|label"
   notes: [], done: false,
@@ -100,6 +100,7 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
       features: Array.isArray(initial.features) ? initial.features : [],
       durationH: initial.durationMin ? String(Math.floor(initial.durationMin / 60)) : '',
       durationM: initial.durationMin ? String(initial.durationMin % 60) : '',
+      price: initial.price || '',
     }
   })
 
@@ -124,6 +125,7 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
       distanceKm: parseFloat(form.distanceKm) || 0,
       dplus: parseFloat(form.dplus) || 0,
       durationMin: (parseFloat(form.durationH) || 0) * 60 + (parseFloat(form.durationM) || 0),
+      price: form.price || '',
     })
   }
 
@@ -215,6 +217,14 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
             <span style={{ fontSize: '.82rem', color: 'var(--text-muted)' }}>h</span>
             <input type="number" min="0" max="59" value={form.durationM || ''} onChange={e => set('durationM', e.target.value)} placeholder="00" style={{ width: 60 }} />
             <span style={{ fontSize: '.82rem', color: 'var(--text-muted)' }}>min</span>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Prix (€)</label>
+          <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
+            <input type="number" min="0" step="0.01" value={form.price || ''} onChange={e => set('price', e.target.value)} placeholder="Gratuit" style={{ width: 100 }} />
+            <span style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>€ / personne</span>
           </div>
         </div>
 
