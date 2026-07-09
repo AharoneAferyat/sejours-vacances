@@ -104,10 +104,13 @@ function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId, in
     label: initial?.label || '', amount: initial?.amount || '', category: initial?.category || 'repas', type: initial?.type || 'common',
     payerId: initial?.payerId || currentVoyageurId || voyageurs[0]?.id || '',
     participants: initial?.participants || voyageurs.map(v => v.id),
-    dayId: initial?.dayId || days[0]?.id || '', date: initial?.date || days[0]?.date || ''
+    dayId: initial?.dayId || days[0]?.id || '', date: initial?.date || days[0]?.date || '',
+    activityId: initial?.activityId || ''
   })
   const isEditing = !!initial
   const set = (k,v) => setForm(f => ({ ...f, [k]: v }))
+  const selectedDay = days.find(d => d.id === form.dayId)
+  const dayActivities = selectedDay?.activities?.filter(a => !a.skipped) || []
   const toggleP = (vid) => {
     const p = form.participants.includes(vid) ? form.participants.filter(x=>x!==vid) : [...form.participants, vid]
     if (p.length > 0) set('participants', p)
@@ -115,9 +118,9 @@ function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId, in
   const submit = () => {
     if (!form.label.trim() || !form.amount) return alert('Titre et montant requis')
     if (isEditing) {
-      onAdd({ ...initial, ...form, amount:parseFloat(form.amount) })
+      onAdd({ ...initial, ...form, amount:parseFloat(form.amount), activityId: form.activityId || '' })
     } else {
-      onAdd({ ...form, id:'exp_'+Date.now(), amount:parseFloat(form.amount), createdAt:Date.now() })
+      onAdd({ ...form, id:'exp_'+Date.now(), amount:parseFloat(form.amount), createdAt:Date.now(), activityId: form.activityId || '' })
     }
     onClose()
   }
@@ -133,11 +136,19 @@ function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId, in
           </div>
         </div>
         <div className="form-group"><label>Journée</label>
-          <select value={form.dayId} onChange={e => { const day=days.find(d=>d.id===e.target.value); set('dayId',e.target.value); set('date',day?.date||'') }}>
+          <select value={form.dayId} onChange={e => { const day=days.find(d=>d.id===e.target.value); set('dayId',e.target.value); set('date',day?.date||''); set('activityId','') }}>
             <option value="">Sans journée</option>
             {days.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
           </select>
         </div>
+        {dayActivities.length > 0 && (
+          <div className="form-group"><label>Associer à une activité</label>
+            <select value={form.activityId} onChange={e => set('activityId', e.target.value)} style={{ fontSize: '.82rem' }}>
+              <option value="">Aucune activité</option>
+              {dayActivities.map(a => <option key={a.id} value={a.id}>{a.emoji || '🎯'} {a.title}</option>)}
+            </select>
+          </div>
+        )}
         <div className="form-group"><label>Type de dépense</label>
           <div style={{ display:'flex', gap:SP.sm }}>
             {[['common','👥 Commune','Partagée entre voyageurs'],['perso','👤 Perso','Visible uniquement par toi']].map(([val,lbl,desc])=>(
@@ -183,11 +194,12 @@ function AddExpenseForm({ voyageurs, days, onAdd, onClose, currentVoyageurId, in
 }
 
 /* ─── EXPENSE CARD ─────────────────────────────────────────────── */
-function ExpenseCard({ exp, voyageurs, onDelete, onEdit }) {
+function ExpenseCard({ exp, voyageurs, days, onDelete, onEdit }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const payer = voyageurs.find(v => v.id === exp.payerId)
   const catColor = CAT_COLORS[exp.category] || '#888'
   const catIcon = CAT_ICONS[exp.category] || '📦'
+  const linkedActivity = exp.activityId ? days?.flatMap(d => d.activities || []).find(a => a.id === exp.activityId) : null
   return (
     <Card style={{ padding:`${SP.md}px ${SP.lg}px`, marginBottom:SP.sm, position:'relative' }}>
       <div style={{ display:'flex', alignItems:'center', gap:SP.md }}>
@@ -215,6 +227,7 @@ function ExpenseCard({ exp, voyageurs, onDelete, onEdit }) {
       <div style={{ display:'flex', gap:SP.xs, marginTop:SP.sm }}>
         <Badge label={CAT_LABELS[exp.category]||exp.category} color={catColor} bg={catColor+'18'} />
         <Badge label={exp.type==='common'?'Commun':'Perso'} color={exp.type==='common'?'var(--blue)':'var(--text-muted)'} bg={exp.type==='common'?'var(--blue-light)':'var(--gray-light)'} />
+        {linkedActivity && <Badge label={`🎯 ${linkedActivity.title}`} color='var(--green)' bg='var(--green-light)' />}
       </div>
     </Card>
   )
@@ -362,7 +375,7 @@ function VueEnsemble({ isMobile, budget, totalCommon, totalPerso, totalAll, pct,
 /* ═══════════════════════════════════════════════════════════════════
    TAB 2 — DÉPENSES
    ═══════════════════════════════════════════════════════════════════ */
-function Depenses({ commonExpenses, myPersonalExpenses, voyageurs, onDeleteCommon, onDeletePerso, onEditCommon, onEditPerso, onShowAdd }) {
+function Depenses({ commonExpenses, myPersonalExpenses, voyageurs, days, onDeleteCommon, onDeletePerso, onEditCommon, onEditPerso, onShowAdd }) {
   const [filter, setFilter] = useState('all') // all | common | perso
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('')
@@ -405,7 +418,7 @@ function Depenses({ commonExpenses, myPersonalExpenses, voyageurs, onDeleteCommo
       {all.length === 0 ? (
         <div style={{ textAlign:'center', padding:`${SP.xl}px`, color:'var(--text-muted)', fontSize:'.88rem' }}>Aucune dépense trouvée</div>
       ) : all.map(exp => (
-        <ExpenseCard key={exp.id} exp={exp} voyageurs={voyageurs}
+        <ExpenseCard key={exp.id} exp={exp} voyageurs={voyageurs} days={days}
           onDelete={exp.type==='common' ? ()=>onDeleteCommon(exp.id) : ()=>onDeletePerso(exp.id)}
           onEdit={exp.type==='common' ? ()=>onEditCommon(exp) : ()=>onEditPerso(exp)} />
       ))}
@@ -731,7 +744,7 @@ export default function Budget({ trip, voyageurs, isGuest, activeVoyageurId, onU
 
       {/* Content */}
       {tab === 'vue' && <VueEnsemble isMobile={isMobile} budget={budget} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} pct={pct} barColor={barColor} voyageurs={voyageurs} paid={paid} balances={balances} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} onShowAdd={()=>setShowAdd(true)} onGoToDepenses={()=>setTab('depenses')} />}
-      {tab === 'depenses' && <Depenses commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} voyageurs={voyageurs} onDeleteCommon={handleDeleteCommon} onDeletePerso={handleDeletePerso} onEditCommon={(exp) => setEditingExp(exp)} onEditPerso={(exp) => setEditingExp(exp)} onShowAdd={()=>setShowAdd(true)} />}
+      {tab === 'depenses' && <Depenses commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} voyageurs={voyageurs} days={days} onDeleteCommon={handleDeleteCommon} onDeletePerso={handleDeletePerso} onEditCommon={(exp) => setEditingExp(exp)} onEditPerso={(exp) => setEditingExp(exp)} onShowAdd={()=>setShowAdd(true)} />}
       {tab === 'remb' && <Remboursements debts={debts} voyageurs={voyageurs} balances={balances} paid={paid} commonExpenses={commonExpenses} activeVoyageurId={activeVoyageurId} onSettle={handleSettle} isGuest={isGuest} />}
       {tab === 'stats' && <Statistiques isMobile={isMobile} totalCommon={totalCommon} totalPerso={totalPerso} totalAll={totalAll} voyageurs={voyageurs} paid={paid} byCat={byCat} commonExpenses={commonExpenses} myPersonalExpenses={myPersonalExpenses} days={days} budget={budget} />}
 

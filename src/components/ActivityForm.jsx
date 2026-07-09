@@ -126,6 +126,8 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
       dplus: parseFloat(form.dplus) || 0,
       durationMin: (parseFloat(form.durationH) || 0) * 60 + (parseFloat(form.durationM) || 0),
       price: form.price || '',
+      _addToBudget: form.addToBudget || false,
+      _budgetType: form.budgetType || 'common',
     })
   }
 
@@ -226,6 +228,26 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
             <input type="number" min="0" step="0.01" value={form.price || ''} onChange={e => set('price', e.target.value)} placeholder="Gratuit" style={{ width: 100 }} />
             <span style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>€ / personne</span>
           </div>
+          {form.price && parseFloat(form.price) > 0 && !initial?.id && (
+            <div style={{ marginTop: '.4rem', background: 'var(--bg)', borderRadius: 10, padding: '.5rem .65rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.8rem', cursor: 'pointer', marginBottom: '.3rem' }}>
+                <input type="checkbox" checked={form.addToBudget || false} onChange={e => set('addToBudget', e.target.checked)} />
+                <span>💰 Ajouter au budget</span>
+              </label>
+              {form.addToBudget && (
+                <div style={{ display: 'flex', gap: '.4rem', marginLeft: '1.4rem' }}>
+                  {[['common','👥 Commune'],['perso','👤 Perso']].map(([v,l]) => (
+                    <button key={v} type="button" onClick={() => set('budgetType', v)} style={{
+                      padding: '4px 12px', borderRadius: 8, fontSize: '.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+                      border: `1.5px solid ${(form.budgetType||'common') === v ? 'var(--green)' : 'var(--border)'}`,
+                      background: (form.budgetType||'common') === v ? 'var(--green-light)' : 'transparent',
+                      color: (form.budgetType||'common') === v ? 'var(--green)' : 'var(--text-muted)',
+                    }}>{l}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="form-group">

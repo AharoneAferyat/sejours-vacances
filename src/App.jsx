@@ -231,8 +231,28 @@ export default function App() {
 
   // Admin-aware wrappers
   const doAddActivity = async (tripId, dayId, act) => {
-    if (adminMode) { const ok = await adminAddActivity(adminMode.uid, tripId, dayId, act); if (ok) refreshAdminTrip() }
-    else if (isMultiDest) { const nd = destDays.map(d => d.id === dayId ? { ...d, activities: [...(d.activities||[]), act] } : d); saveDestDays(nd) } else store.addActivity(tripId, dayId, act)
+    // Handle auto-add to budget
+    if (act._addToBudget && act.price && parseFloat(act.price) > 0) {
+      const budgetType = act._budgetType || 'common'
+      const expense = {
+        id: 'exp_' + Date.now(), label: act.title || 'Activité', amount: parseFloat(act.price),
+        category: 'activites', type: budgetType, payerId: vid || '', participants: [],
+        dayId, date: '', createdAt: Date.now(), activityId: act.id
+      }
+      if (budgetType === 'common') {
+        const currentExpenses = trip?.expenses || []
+        if (isAdminManaging) { await adminUpdateTripLocal({ expenses: [...currentExpenses, expense] }) }
+        else if (!isMultiDest) store.updateTrip(tripId, { expenses: [...currentExpenses, expense] })
+      } else {
+        const vd = trip?.voyageurData || {}; const myVd = vd[vid] || {}
+        const persoExpenses = [...(myVd.depenses || []), expense]
+        if (isAdminManaging) { await adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, depenses: persoExpenses } } }) }
+        else if (!isMultiDest) store.updateTrip(tripId, { voyageurData: { ...vd, [vid]: { ...myVd, depenses: persoExpenses } } })
+      }
+    }
+    const cleanAct = { ...act }; delete cleanAct._addToBudget; delete cleanAct._budgetType
+    if (adminMode) { const ok = await adminAddActivity(adminMode.uid, tripId, dayId, cleanAct); if (ok) refreshAdminTrip() }
+    else if (isMultiDest) { const nd = destDays.map(d => d.id === dayId ? { ...d, activities: [...(d.activities||[]), cleanAct] } : d); saveDestDays(nd) } else store.addActivity(tripId, dayId, cleanAct)
   }
   const doUpdateActivity = async (tripId, dayId, actId, ch) => {
     if (adminMode) { const ok = await adminUpdateActivity(adminMode.uid, tripId, dayId, actId, ch); if (ok) refreshAdminTrip() }
