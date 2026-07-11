@@ -389,11 +389,6 @@ export default function App() {
     )
   }
 
-  if (!store.uid && !store.isGuest) {
-    if (showInviteScreen) return <InviteScreen onBack={() => setShowInviteScreen(false)} onSuccess={store.signIn} />
-    return <LoginScreen onGoogleSignIn={store.signIn} onCodeLogin={store.loginWithCode} onInviteLogin={() => setShowInviteScreen(true)} />
-  }
-
   // TODO: vérification d'accès invité à réactiver quand le système sera stable
 
   if (!store.dataLoaded) {
