@@ -15,7 +15,7 @@ function getBg() {
 
 export default function AppHeader({
   trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip,
-  voyageurs, onOpenVoyageurs, syncing, onSignOut, userEmail,
+  voyageurs, onOpenVoyageurs, onOpenFAQ, syncing, onSignOut, userEmail,
   onOpenGlobalBudget, isAdmin, onOpenAdmin,
   // onglet actif passé depuis App.jsx
   tab, setTab
@@ -109,6 +109,7 @@ export default function AppHeader({
           {icon:'👥',label:'Voyageurs',fn:onOpenVoyageurs},
           onOpenGlobalBudget&&{icon:'💰',label:'Budget global',fn:onOpenGlobalBudget},
 
+          onOpenFAQ&&{icon:'❓',label:'Aide & FAQ',fn:onOpenFAQ},
           isAdmin&&onOpenAdmin&&{icon:'⚙️',label:'Administration',fn:()=>setTab('admin'),color:'rgba(255,200,80,.85)'},
           {icon:'→',label:'Déconnexion',fn:()=>{setMobileMenu(null);onSignOut()},color:'rgba(255,110,90,.85)'},
         ].filter(Boolean).map((item,i)=>(

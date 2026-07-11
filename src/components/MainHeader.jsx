@@ -103,7 +103,7 @@ function getBg() {
   return su?'linear-gradient(160deg,#0a0a20,#1a1245,#2d0d30)':wi?'linear-gradient(160deg,#0d0d25,#1a1040,#2a0a3a)':'linear-gradient(160deg,#0d0d22,#18103c,#260c2e)'
 }
 
-export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip, onOpenVoyageurs, onOpenGlobalBudget, isAdmin, onOpenAdmin, onSignOut, userEmail, syncing, tab, onUpdatePhoto }) {
+export default function MainHeader({ trips, activeTrip, onSelectTrip, onNewTrip, onEditTrip, onDeleteTrip, onOpenVoyageurs, onOpenFAQ, onOpenGlobalBudget, isAdmin, onOpenAdmin, onSignOut, userEmail, syncing, tab, onUpdatePhoto }) {
   const [time, setTime] = useState({ local: '', dateFR: '', utc: '', dateEN: '' })
   const [bg, setBg] = useState(getBg())
   const [photo, setPhoto] = useState(null)
