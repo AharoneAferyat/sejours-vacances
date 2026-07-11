@@ -5,31 +5,31 @@ const SECTIONS = [
     { q: "C'est quoi Séjours Vacances ?", a: "Une application pour organiser tes séjours entre amis : planning d'activités, budget partagé, valise, météo, et plus. Tout le monde peut y accéder et collaborer." },
     { q: "Comment créer un séjour ?", a: "Depuis le tableau de bord, clique sur '+ Nouveau séjour'. Remplis le nom, la destination, les dates, et c'est parti ! Tu peux aussi ajouter plusieurs étapes (multi-destination)." },
     { q: "C'est quoi le multi-destination ?", a: "Un séjour peut avoir plusieurs étapes (ex: Val d'Isère → Grenoble → Annecy). Chaque étape a son propre planning, hébergement et météo. Clique sur '+ Étape' dans le bandeau du séjour pour en ajouter une." },
-    { q: "Comment modifier ou supprimer un séjour ?", a: "Dans le header, clique sur l'icône ✏️ à côté du nom du séjour pour le modifier, ou l'icône 🗑 pour le supprimer." },
+    { q: "Comment modifier ou supprimer un séjour ?", a: "En haut de la page, à côté du nom de ton séjour, tu trouveras un bouton ✏️ pour le modifier et un bouton 🗑 pour le supprimer." },
   ]},
   { title: '👥 Invitations & Voyageurs', items: [
-    { q: "Comment inviter quelqu'un ?", a: "Depuis le tableau de bord ou l'onglet Infos, clique sur 'Inviter'. Tu peux générer un lien de partage ou un QR code. La personne devra se connecter avec Google pour rejoindre." },
+    { q: "Comment inviter quelqu'un ?", a: "Depuis la page d'accueil ou la page Infos de ton séjour, clique sur 'Inviter'. Tu pourras créer un lien à envoyer ou un QR code à faire scanner. La personne invitée devra se connecter avec son compte Google pour rejoindre." },
     { q: "Et si je veux inviter par code ?", a: "Sur l'écran de connexion, la personne peut cliquer '🔑 Rejoindre avec un code'. Elle entre le code, puis se connecte obligatoirement avec Google." },
-    { q: "Comment gérer les voyageurs ?", a: "Clique sur '👥 Voyageurs' dans la sidebar. Tu peux ajouter, supprimer des participants, et en multi-destination, assigner chaque voyageur à certaines étapes." },
+    { q: "Comment gérer les voyageurs ?", a: "Dans le menu à gauche (ou en bas sur téléphone), clique sur '👥 Voyageurs'. Tu pourras ajouter ou retirer des participants. Si ton séjour a plusieurs étapes, tu peux choisir qui participe à quelle étape." },
     { q: "Un voyageur peut participer à une seule étape ?", a: "Oui ! En multi-destination, chaque voyageur peut être assigné à certaines étapes seulement dans la gestion des voyageurs." },
   ]},
   { title: '📋 Planning & Activités', items: [
     { q: "Comment ajouter une activité ?", a: "Dans le planning, clique sur '+ Ajouter une activité' sous le jour voulu. Remplis le titre, l'heure, la durée, la distance, le prix, etc." },
-    { q: "L'IA peut proposer des activités ?", a: "Oui ! Clique sur '🤖 IA' dans la sidebar ou sur la carte IA du tableau de bord. L'IA propose des activités adaptées à ta destination. Elle ne repropose pas ce qui est déjà planifié." },
+    { q: "L'IA peut proposer des activités ?", a: "Oui ! Depuis la page d'accueil, clique sur la carte '🤖 IA' ou sur le bouton IA dans le menu. L'intelligence artificielle te proposera des idées d'activités en fonction de ta destination. Elle ne te reproposera pas celles que tu as déjà ajoutées." },
     { q: "D'où viennent les infos de l'IA ?", a: "L'IA (Gemini) utilise ses connaissances générales. La source est indiquée sous chaque suggestion. Pour les randonnées, vérifie toujours les infos sur les sites officiels (office de tourisme, topos IGN)." },
-    { q: "Comment réorganiser les activités ?", a: "Tu peux glisser-déposer (drag & drop) les activités dans un jour pour changer l'ordre. Tu peux aussi déplacer une activité vers un autre jour avec le bouton '📅 Déplacer'." },
+    { q: "Comment réorganiser les activités ?", a: "Tu peux maintenir une activité et la faire glisser pour changer l'ordre dans la journée. Tu peux aussi la déplacer vers un autre jour avec le bouton '📅 Déplacer'." },
     { q: "C'est quoi 'Non fait' ?", a: "Si tu décides de ne pas faire une activité, clique '⏭ Non fait'. Elle sera barrée et exclue des statistiques (km, durée, coût) mais pas supprimée du planning." },
     { q: "Je peux ajouter un prix aux activités ?", a: "Oui ! Le champ 'Prix (€)' est dans le formulaire. Tu peux aussi cocher 'Ajouter au budget' pour créer automatiquement une dépense (commune ou perso)." },
   ]},
   { title: '💰 Budget & Dépenses', items: [
-    { q: "Comment fonctionne le budget ?", a: "Définis un budget global, puis ajoute des dépenses communes (partagées) ou personnelles. Le budget a 4 onglets : Vue d'ensemble, Dépenses, Remboursements, Statistiques." },
+    { q: "Comment fonctionne le budget ?", a: "Commence par définir un montant de budget, puis ajoute tes dépenses au fur et à mesure. Tu as 4 sections : la vue d'ensemble pour savoir où tu en es, la liste de toutes les dépenses, les remboursements entre amis (qui doit combien à qui), et les statistiques pour analyser tes dépenses." },
     { q: "Comment fonctionnent les remboursements ?", a: "Façon Splitwise : le système calcule automatiquement qui doit combien à qui, en fonction des dépenses communes. Tu peux marquer un remboursement comme réglé." },
-    { q: "Je peux lier une dépense à une activité ?", a: "Oui ! Quand tu ajoutes ou modifies une dépense, choisis la journée puis l'activité associée. Un badge vert apparaît sur la dépense pour voir le lien." },
+    { q: "Je peux lier une dépense à une activité ?", a: "Oui ! Quand tu ajoutes ou modifies une dépense, tu peux choisir la journée puis l'activité concernée. Un petit indicateur vert s'affichera sur la dépense pour que tu saches à quelle activité elle est liée." },
     { q: "Comment modifier ou supprimer une dépense ?", a: "Clique sur le menu '⋯' sur la dépense, puis 'Modifier' ou 'Supprimer'." },
   ]},
   { title: '🧳 Valise & Sac à dos', items: [
     { q: "Quelle différence entre valise et sac ?", a: "La valise = ce que tu emportes pour tout le séjour. Le sac à dos = ce que tu prends chaque jour en rando/sortie. Les deux sont des listes à cocher partagées par voyageur." },
-    { q: "Chaque voyageur a sa propre liste ?", a: "Oui ! Les onglets en haut permettent de switcher entre les voyageurs pour voir/modifier leur valise ou sac." },
+    { q: "Chaque voyageur a sa propre liste ?", a: "Oui ! En haut de la page valise ou sac, tu verras les prénoms des voyageurs. Clique sur un prénom pour voir et modifier sa liste." },
   ]},
   { title: '🌤 Météo', items: [
     { q: "D'où vient la météo ?", a: "Les données proviennent d'Open-Meteo (API gratuite). C'est indicatif — pour les alertes officielles, consulte Météo France Vigilance." },
@@ -37,7 +37,7 @@ const SECTIONS = [
   ]},
   { title: '📸 Après le séjour', items: [
     { q: "Que se passe-t-il quand le séjour est fini ?", a: "Le tableau de bord passe en mode 'Souvenirs' avec un récap des stats. Tu peux ajouter des photos par journée, clore le séjour, ou l'archiver." },
-    { q: "Clore vs Archiver ?", a: "Clore = le séjour est officiellement terminé (badge 🔒). Archiver = le séjour disparaît de la liste principale et va dans les archives (dépliables en bas du dashboard). Auto-archivage après 6 mois." },
+    { q: "Clore vs Archiver ?", a: "Clore signifie que le séjour est officiellement terminé — un petit 🔒 apparaît dessus. Archiver signifie qu'il disparaît de ta liste principale pour ne pas l'encombrer, mais tu peux toujours le retrouver dans la section 'Archives' en bas de la page d'accueil. Les séjours sont archivés automatiquement au bout de 6 mois." },
     { q: "Je peux ajouter des photos souvenirs ?", a: "Oui ! Dans la carte 'Souvenirs' du tableau de bord, clique '📷 Voir les photos'. Tu peux ajouter des photos pour chaque journée (max 2 Mo par photo)." },
   ]},
 ]

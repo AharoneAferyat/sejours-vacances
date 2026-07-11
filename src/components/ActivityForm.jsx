@@ -228,7 +228,7 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
             <input type="number" min="0" step="0.01" value={form.price || ''} onChange={e => set('price', e.target.value)} placeholder="Gratuit" style={{ width: 100 }} />
             <span style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>€ / personne</span>
           </div>
-          {form.price && parseFloat(form.price) > 0 && !initial?.id && (
+          {form.price && parseFloat(form.price) > 0 && (
             <div style={{ marginTop: '.4rem', background: 'var(--bg)', borderRadius: 10, padding: '.5rem .65rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.8rem', cursor: 'pointer', marginBottom: '.3rem' }}>
                 <input type="checkbox" checked={form.addToBudget || false} onChange={e => set('addToBudget', e.target.checked)} />

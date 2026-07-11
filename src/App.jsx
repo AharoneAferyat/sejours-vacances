@@ -259,8 +259,28 @@ export default function App() {
     else if (isMultiDest) { const nd = destDays.map(d => d.id === dayId ? { ...d, activities: [...(d.activities||[]), cleanAct] } : d); saveDestDays(nd) } else store.addActivity(tripId, dayId, cleanAct)
   }
   const doUpdateActivity = async (tripId, dayId, actId, ch) => {
-    if (adminMode) { const ok = await adminUpdateActivity(adminMode.uid, tripId, dayId, actId, ch); if (ok) refreshAdminTrip() }
-    else if (isMultiDest) { const nd = destDays.map(d => d.id === dayId ? { ...d, activities: (d.activities||[]).map(a => a.id === actId ? {...a,...ch} : a) } : d); saveDestDays(nd) } else store.updateActivity(tripId, dayId, actId, ch)
+    // Handle auto-add to budget on update
+    if (ch._addToBudget && ch.price && parseFloat(ch.price) > 0) {
+      const budgetType = ch._budgetType || 'common'
+      const expense = {
+        id: 'exp_' + Date.now(), label: ch.title || 'Activité', amount: parseFloat(ch.price),
+        category: 'activites', type: budgetType, payerId: vid || '', participants: [],
+        dayId, date: '', createdAt: Date.now(), activityId: actId
+      }
+      if (budgetType === 'common') {
+        const currentExpenses = trip?.expenses || []
+        if (isAdminManaging) { await adminUpdateTripLocal({ expenses: [...currentExpenses, expense] }) }
+        else store.updateTrip(tripId, { expenses: [...currentExpenses, expense] })
+      } else {
+        const vd = trip?.voyageurData || {}; const myVd = vd[vid] || {}
+        const persoExpenses = [...(myVd.depenses || []), expense]
+        if (isAdminManaging) { await adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, depenses: persoExpenses } } }) }
+        else store.updateTrip(tripId, { voyageurData: { ...vd, [vid]: { ...myVd, depenses: persoExpenses } } })
+      }
+    }
+    const cleanCh = { ...ch }; delete cleanCh._addToBudget; delete cleanCh._budgetType
+    if (adminMode) { const ok = await adminUpdateActivity(adminMode.uid, tripId, dayId, actId, cleanCh); if (ok) refreshAdminTrip() }
+    else if (isMultiDest) { const nd = destDays.map(d => d.id === dayId ? { ...d, activities: (d.activities||[]).map(a => a.id === actId ? {...a,...cleanCh} : a) } : d); saveDestDays(nd) } else store.updateActivity(tripId, dayId, actId, cleanCh)
   }
   const doDeleteActivity = async (tripId, dayId, actId) => {
     if (adminMode) { const ok = await adminDeleteActivity(adminMode.uid, tripId, dayId, actId); if (ok) refreshAdminTrip() }
