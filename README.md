@@ -1,14 +1,15 @@
 # Séjours Vacances
 
-Application web premium de planification de séjours & randonnées — React + Firebase.
+Application web de planification de séjours & randonnées entre amis — React + Firebase.
 
 ## Stack
 - **React 18 + Vite 5** — déployé sur Netlify via GitHub
 - **Firebase Firestore** — sync temps réel entre appareils
-- **Firebase Auth Google** — connexion Google obligatoire
+- **Firebase Auth Google** — connexion Google obligatoire (toutes les entrées)
 - **Gemini API** — IA activités via Netlify Function proxy (fallback chain multi-modèles)
-- **Open-Meteo** — météo automatique par GPS
+- **Open-Meteo** — météo automatique par GPS (prévisions horaires, min/max, humidité, lever/coucher)
 - **Nominatim** — géocodage adresse → lat/lon
+- **QR Code** — générateur SVG pur JavaScript (aucune dépendance externe)
 
 ## URLs
 - Site : https://sejours-vacances.netlify.app
@@ -26,8 +27,7 @@ Application web premium de planification de séjours & randonnées — React + F
 
 ## Admin
 - **Un seul admin** : UID `lecSvR1xE5Ni17pngVfODqJ0XBs1` (aaferyat@gmail.com)
-- Pas de check par email — uniquement par UID Firebase
-- Accès admin via onglet "Administration" dans la sidebar (desktop) ou "Plus" (mobile)
+- Accès admin via "⚙️ Administration" dans le menu (desktop sidebar ou mobile "Plus")
 
 ## Règles Firestore
 ```
@@ -62,64 +62,113 @@ service cloud.firestore {
 ## Architecture UI
 
 ### Desktop
-- **Sidebar fixe gauche** (220px) : logo + navigation (Tableau de bord, Planning, Infos, Budget, Valise, Sac à dos, IA Activités) + bas (Voyageurs, Budget global, Administration, Déconnexion, user connecté)
-- **MainHeader** (haut, pleine largeur) : photo de fond adaptée à la destination, titre "Séjours Vacances", date/heure, onglets séjours avec ✏️🗑
-- **Zone contenu** : bandeau séjour + météo (toujours visibles sauf admin), puis contenu de l'onglet actif
+- **Sidebar fixe gauche** (220px) : navigation (Tableau de bord, Planning, Infos, Budget, Valise, Sac à dos, IA Activités, Aide & FAQ, Administration, Déconnexion)
+- **MainHeader** : photo de fond adaptée à la destination, titre, date/heure, onglets séjours
+- **Zone contenu** : bandeau séjour + onglets destination (si multi-dest) + météo, puis contenu de l'onglet actif
 
 ### Mobile (≤768px)
-- Sidebar cachée (`display:none`)
-- MainHeader responsive (même contenu, tailles adaptées)
-- **Bottom nav fixe** : Accueil / Planning / Budget / Plus → sheet (Infos, Valise, Sac, IA Activités, Voyageurs, Budget global, Admin, Déco)
+- Sidebar cachée
+- **Bottom nav fixe** : Accueil / Planning / Budget / Plus → sheet avec tous les onglets
+- Modales en **bottom sheet** (slide-up, coins arrondis, barre de tirage)
 
 ### Thème dynamique
-- Gradient qui change selon la **saison** (printemps/été/automne/hiver) ET l'**heure** (nuit/aube/matin/après-midi/soir)
-- Photo de fond du header adaptée à la destination (montagne/mer/ville/forêt/lac)
-- Cartes toujours neutres/blanches pour la lisibilité
+- Gradient qui change selon la **saison** ET l'**heure** (nuit/aube/matin/après-midi/soir)
+- Photo de fond du header adaptée à la destination
+- Cartes neutres/blanches pour la lisibilité
 
 ## Fonctionnalités
 
-### Système d'invitation
-- Collection Firestore `inviteCodes/{code}` — format `INV-XXXXXX`
-- Collection `allowedUsers/{uid}` — utilisateurs autorisés
-- Écran d'invitation au login : entrer code → connexion Google → accès
-- Règles Firestore : `inviteCodes` read=public (validation avant connexion)
+### Authentification
+- **Google obligatoire** — seule porte d'entrée, que ce soit par connexion directe, lien d'invitation, code, ou QR code
+- Auto-link rétroactif : quand un utilisateur se connecte avec Google, son UID est automatiquement rattaché à ses profils voyageur existants (par correspondance email)
 
-### Admin Panel (inline, pas modal)
-- 3 onglets : Utilisateurs & séjours / Budget global / Codes d'invitation
-- **Gestion utilisateurs** : 🚫 Révoquer (garde séjours, retire accès) / 🗑 Supprimer (tout supprimer)
-- **Gestion séjours** : 👁 Voir / 🗑 Supprimer par séjour
-- Budget global admin : agrège tous les séjours de tous les utilisateurs
-- Quand admin actif : météo/bandeau séjour cachés, photo générique montagne
+### Multi-destination (Étapes)
+- Un séjour peut avoir **plusieurs destinations** (ex: Val d'Isère → Grenoble → Annecy)
+- Chaque étape a : nom, dates, couleur, hébergement, coordonnées GPS, photo, jours/planning
+- **Commun** au voyage : voyageurs, budget
+- Onglets destination dans le bandeau du séjour, bouton "＋ Étape" toujours accessible
+- Ajout possible à la **création**, en **modification**, ou **à tout moment** pendant/après le séjour
+- Planning, Infos, Météo, IA = scoped à l'étape active
+- Rétrocompatible avec les séjours simple destination
 
-### IA Activités
-- Proxy `netlify/functions/gemini.mjs` : fallback chain `gemini-2.0-flash-lite → gemini-2.0-flash → gemini-2.5-flash`
-- JSON parsé côté serveur, renvoyé `{ok:true, data:[...]}`
-- `thinkingBudget:0` sur gemini-2.5, `maxOutputTokens:4000`
-- Support `GEMINI_API_KEY` + `GEMINI_API_KEY_2`
-- Liens de recherche générés automatiquement (Google, AllTrails, Visorando) depuis le titre
-- Message quota affiché dans la page IA Activités
-- Mode recherche libre + mode planning semaine
+### Invitation
+- Lien de partage avec code unique + QR code SVG pur
+- Code d'invitation depuis l'écran de connexion (→ vérification → Google login)
+- Inviter depuis le tableau de bord ou la page Infos
+- Liens avec max utilisations, expiration, compteur
 
-### Formulaire activité
-- Toolbar emoji (17 emojis rapides) sur description et conseil
-- Formatage **gras** (`**texte**`) et _italique_ (`_texte_`) avec rendu HTML
-- Sélecteur emoji pour le titre
-- Gestion correcte des activités IA (id toujours généré, pas de crash à l'édition)
+### Planning & Activités
+- Planning par jour avec validation
+- **Drag & drop** pour réordonner les activités dans un jour
+- **"Non fait" (⏭)** : marquer une activité comme non réalisée → exclue des stats (km, durée, coût)
+- **Prix par activité** : champ € avec option "Ajouter au budget" (commune ou perso)
+- **Source IA** affichée sous chaque suggestion
+- L'IA ne repropose pas les activités déjà planifiées
+- Liens AllTrails/Visorando seulement pour les randonnées, Google pour tout
+- Formulaire : emoji, durée h+min, distance, D+, difficulté, description, conseil, matériel, liens
 
-### Date picker
-- `input type="date"` natif avec affichage du jour de la semaine sous le champ
+### Budget (4 onglets)
+- **Vue d'ensemble** : budget restant, progression, métriques, donut catégories, dépenses par jour, dépenses récentes (→ "Voir tout"), bilan par personne
+- **Dépenses** : liste filtrable (Toutes/Communes/Perso), recherche, filtre catégorie, cards avec menu ⋯ (Modifier / Supprimer), association à une activité
+- **Remboursements** : style Splitwise (qui doit combien à qui), marquer comme réglé, historique
+- **Statistiques** : évolution par jour, donut catégories, qui dépense le plus, commun vs perso
+- Dépassement budget affiché clairement ("Dépassé de X€")
+- Lien bidirectionnel activité ↔ dépense
 
-### Page d'accueil vide (nouveaux utilisateurs)
-- Hero avec message personnalisé "Bienvenue, [prénom] !"
-- Section "Comment ça marche" (4 étapes)
-- Idées de séjours cliquables (montagne, mer, ville, forêt, vélo, ski)
+### Météo
+- 2 cards : résumé (icône + temp + ressenti + 4 métriques : min/max, vent, humidité, lever/coucher) + prévisions horaires scrollables
+- Alertes météo honnêtes (source Open-Meteo, lien vers Météo France Vigilance)
+- S'adapte à l'étape active en multi-destination
+
+### Valise (refonte)
+- Items par **catégorie** : Vêtements, Toilette, Tech, Matériel rando, Nourriture, Autre
+- **Filtres** : Tout / À faire / Essentiels / Consommables
+- Badges : Essentiel, Consommable, Partagé avec
+- **Suggestions automatiques** basées sur le matériel recommandé des activités
+- Par voyageur, avec quantités
+
+### Sac à dos (refonte)
+- **Onglet Base** : items permanents (toujours dans le sac)
+- **Onglets par jour** : items supplémentaires spécifiques à la journée
+- **Suggestions matériel** tirées du champ "gear" des activités du jour
+- Items partagés entre voyageurs (qui prend quoi pour le groupe)
+
+### Tableau de bord (Hype Up)
+- **Avant le départ** : countdown (Xj Xh Xm)
+- **Pendant le séjour** : programme d'aujourd'hui (activités cliquables → modal détail avec Valider/Non fait/Aller à l'activité) + aperçu de demain
+- **Après le séjour** : Souvenirs (récap stats, photos par journée, clore/archiver)
+- Statistiques du séjour, voyageurs, programme avec emojis activités
+- Jours du programme cliquables (→ planning + scroll au bon jour)
+
+### Clore / Archiver
+- **Clore** : séjour officiellement terminé (badge 🔒), reste visible
+- **Archiver** : disparaît de la liste principale, section "Archives" en bas
+- **Auto-archive** après 6 mois
+- **Photos souvenirs** par journée (base64, max 2Mo)
+
+### Admin (mode immersif)
+- Quand tu gères un séjour, tu es **dedans** : header, photo, sidebar, tous les onglets = ceux du séjour géré
+- Bandeau violet "Mode admin" avec bouton quitter
+- Toutes les actions (planning, budget, valise, sac, voyageurs) écrivent dans les données Firebase du propriétaire
+- Liste utilisateurs : séjours créés + séjours rejoints + liaison UID ↔ voyageur
+- Voyageurs : badge "🔗 Compte lié" ou "Sans compte"
+
+### Voyageurs
+- Gestion par séjour
+- En multi-destination : voyageurs assignables par étape
+- Modal avec ajout, suppression, modification email
+
+### FAQ
+- Onglet "❓ Aide & FAQ" dans le menu (desktop + mobile)
+- 7 sections en accordéon, questions/réponses en langage simple
+- Couvre : Général, Invitations, Planning, Budget, Valise/Sac, Météo, Après le séjour
 
 ## Déploiement
 1. Modifier les fichiers sur `github.dev/AharoneAferyat/sejours-vacances`
 2. Commit & Push
 3. Netlify rebuilde automatiquement (~1-2 min)
 
-## Seed (données initiales Val d'Isère)
+## Seed (données initiales)
 Après connexion Google, dans la console F12 :
 ```js
 await seedDatabase()
@@ -132,72 +181,58 @@ await seedDatabase()
 
 ### Session 1 — Juin 2026
 - Création du projet React + Vite
-- Structure 3 colonnes (valise | planning | sac)
-- Données Val d'Isère codées en dur → remplacé par Firebase
-- Header avec heure locale + UTC, onglets séjours
+- Structure 3 colonnes, données Val d'Isère codées en dur → Firebase
 
 ### Session 2 — Juin 2026
-- Firebase Firestore pour sync entre appareils
-- Google Auth — connexion obligatoire
-- Seed pour initialiser les données Val d'Isère
-- Infos éditables, voyageurs fusionnés avec invitations
-- Fix bug dates (toISOString → getDate local)
-- Responsive mobile amélioré
+- Firebase Firestore sync, Google Auth, Seed, Infos éditables, fix dates, responsive
 
 ### Session 3 — Juin 2026
-- Renommage → Séjours Vacances, favicon SVG 🥾
-- Header dynamique saison + heure
-- IA Gemini : mode "Planning semaine"
-- Fix Gemini : parsing JSON serveur, thinkingBudget:0, maxOutputTokens 4000
-- Système d'invitation : codes INV-XXXXXX, panel admin
+- Renommage Séjours Vacances, Header dynamique saison/heure, IA Gemini planning semaine, Système d'invitation
 
 ### Session 4 — Juillet 2026
-- **Refonte UI** : sidebar desktop + MainHeader photo + bottom nav mobile
-- Navigation par onglets (Tableau de bord, Planning, Infos, Budget, Valise, Sac, IA Activités)
-- Contenu principal : affichage selon onglet actif (plus de 3 colonnes)
-- Admin inline (pas modal) avec header + sidebar toujours visibles
-- Photo de fond adaptée à la destination (Unsplash, détection par mots-clés)
-- Thème dynamique saison/heure préservé
-- IA Rando → IA Activités (renommage)
-- Tableau de bord par défaut (Hype Up + météo)
-- Météo toujours visible sauf en admin
-- Date picker natif avec jour de la semaine
-- Fix bug modification activité IA (id manquant → écran blanc)
-- Toolbar emoji + gras/italique dans description/conseil
-- Message quota IA
-- Liens AllTrails/Visorando → liens de recherche Google générés automatiquement
-- Admin : gestion utilisateurs (révoquer / supprimer) + gestion séjours (voir / supprimer)
-- Admin UID uniquement (plus de check par email)
-- Budget global admin (agrège tous les utilisateurs)
-- Page d'accueil pour nouveaux invités (EmptyState)
-- Admin mode gestion séjour : entrer dans le séjour d'un autre utilisateur avec édition complète (planning, infos, budget, voyageurs)
+- Refonte UI : sidebar + MainHeader photo + bottom nav mobile
+- Admin inline, photo destination, thème dynamique, IA renommée, Dashboard Hype Up
+- Toolbar emoji, liens auto, admin gestion séjour complet, page d'accueil vide
+
+### Session 5 — Juillet 2026
+- **Budget refait** : 4 onglets (Vue d'ensemble, Dépenses, Remboursements Splitwise, Statistiques)
+- **Météo refaite** : 2 cards (résumé + prévisions horaires), données honnêtes, alertes source Open-Meteo
+- **Admin immersif** : header/sidebar/onglets = séjour géré, valise/sac/voyageurs synchro
+- **Multi-destination** : étapes avec onglets, ajout à tout moment, planning/météo/infos scoped
+- **Hype Up 3 modes** : countdown / aujourd'hui cliquable (modal détail) / souvenirs + photos
+- **Clore / Archiver** séjours + auto-archive 6 mois
+- **IA améliorée** : pas de doublons, source affichée, liens intelligents (AllTrails si rando, Google sinon)
+- **Voyageurs par étape** + liaison user ↔ voyageur (UID Google) + auto-link rétroactif
+- **Connexion Google obligatoire** partout (code + lien + QR → Google)
+- **Drag & drop** activités pour réordonner
+- **"Non fait"** : exclure activité des stats sans supprimer
+- **Prix activité** : champ €, ajout auto au budget (commun ou perso), lien activité ↔ dépense
+- **Modification dépenses** (pas juste suppression)
+- **Dépassement budget** clairement affiché
+- **Valise refaite** : catégories, filtres, badges (essentiel/consommable/partagé), suggestions IA
+- **Sac à dos refait** : base + par jour, suggestions matériel, items partagés
+- **FAQ** : onglet complet, 7 sections, langage simple
+- **QR codes** invitations (SVG pur JS, aucune API externe)
+- **Programme du séjour** cliquable (→ planning + scroll)
+- **Emojis activités** dans le programme du dashboard
+- **Bottom sheet** modales sur mobile
+- **Responsive** : budget, météo, dashboard, valise, sac adaptés mobile
 
 ---
 
-## Backlog / À faire
+## Backlog
 
-### Priorité haute
-- [ ] Responsive admin mobile — checkup CSS complet
-- [ ] Responsive général — checkup toutes tailles (320px → 1920px)
-- [x] Suppression séjours/utilisateurs — vérifier que ça fonctionne correctement
-- [x] Admin : mode gestion séjour (planning, infos, budget, voyageurs) avec édition complète
-- [ ] Lien d'invitation par séjour (rejoindre librement, sans code admin)
-- [ ] Tricount — choix des participants par dépense + option "tout le monde"
-- [ ] Jour de voyage (aller/retour) — visuellement distinct dans le planning
+### À tester sur le terrain
+- [ ] Multi-destination : flow complet création → gestion → switch étapes
+- [ ] Valise/Sac refondus : catégories, suggestions, par jour
+- [ ] Budget ↔ Activité : lien bidirectionnel, ajout auto
+- [ ] Drag & drop sur mobile (touch)
+- [ ] QR codes : scan et parcours complet d'invitation
 
-### Moyen terme
-- [ ] **Road trip / multi-destinations** — plusieurs lieux par séjour, météo qui suit
-- [ ] **SNCF** — champ référence de réservation, lien direct vers suivi
-- [ ] **Airbnb** — champ lien hébergement avec preview
-- [ ] **Hype Up amélioré** — plus riche, plus proche du mockup de référence
+### Améliorations futures
 - [ ] PWA / mode hors-ligne
-- [ ] Notifications : rappel la veille de chaque rando
-- [ ] Post-séjour : highlights/photos
-- [ ] GlobalBudget : export PDF
-- [ ] Multi-clés Gemini supplémentaires si quota insuffisant
-- [ ] Liens AllTrails/Visorando — utiliser de vrais liens directs au lieu de recherche
-
-### Nice to have
-- [ ] Connexion par code voyageur : tester end-to-end
-- [ ] Budget : estimation coût activités dans le planning
-- [ ] Budget : notification si budget bientôt dépassé
+- [ ] Export PDF (budget, séjour complet)
+- [ ] Notes/commentaires entre voyageurs par activité
+- [ ] Poids estimé du sac à dos
+- [ ] SNCF : champ référence réservation + lien suivi
+- [ ] Airbnb : champ lien hébergement avec preview
