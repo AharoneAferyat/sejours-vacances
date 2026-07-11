@@ -13,6 +13,8 @@ import { useWeather } from './hooks/useWeather'
 import TodayZone from './components/TodayZone'
 import DayCard from './components/DayCard'
 import CheckList from './components/CheckList'
+import Valise from './components/Valise'
+import SacADos from './components/SacADos'
 import TripForm from './components/TripForm'
 import VoyageursModal from './components/VoyageursModal'
 import InfosTab from './components/InfosTab'
@@ -768,7 +770,22 @@ export default function App() {
                 ))}
               </div>
             )}
-            <CheckList items={isAdminManaging ? adminValise : store.currentValise} onToggle={id => isAdminManaging ? adminToggleItem("valise", id) : store.toggleValiseItem(trip?.id, vid, id)} onAdd={text => isAdminManaging ? adminAddItem("valise", text) : store.addValiseItem(trip?.id, vid, text)} onRemove={id => isAdminManaging ? adminRemoveItem("valise", id) : store.removeValiseItem(trip?.id, vid, id)} onUpdateQty={(id, qty) => isAdminManaging ? adminUpdateItemQty("valise", id, qty) : store.updateValiseItemQty(trip?.id, vid, id, qty)} emptyEmoji="🧳" />
+            <Valise
+              items={isAdminManaging ? adminValise : store.currentValise}
+              voyageurs={tripVoyageurs}
+              activeVoyageurId={vid}
+              suggestions={destDays.flatMap(d => (d.activities||[]).flatMap(a => a.gear || [])).filter((g,i,a) => a.indexOf(g) === i)}
+              onToggle={id => isAdminManaging ? adminToggleItem("valise", id) : store.toggleValiseItem(trip?.id, vid, id)}
+              onAdd={(text, cat) => {
+                const item = { id: 'vi_' + Date.now(), text, done: false, qty: 1, category: cat || 'autre' }
+                if (isAdminManaging) {
+                  const vd = adminMode.trip.voyageurData || {}; const myVd = vd[vid] || {}
+                  adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, valise: [...(myVd.valise || []), item] } } })
+                } else store.addValiseItem(trip?.id, vid, text)
+              }}
+              onRemove={id => isAdminManaging ? adminRemoveItem("valise", id) : store.removeValiseItem(trip?.id, vid, id)}
+              onUpdateQty={(id, qty) => isAdminManaging ? adminUpdateItemQty("valise", id, qty) : store.updateValiseItemQty(trip?.id, vid, id, qty)}
+            />
           </div>
         )}
 
@@ -783,7 +800,21 @@ export default function App() {
                 ))}
               </div>
             )}
-            <CheckList items={isAdminManaging ? adminSac : store.currentSac} onToggle={id => isAdminManaging ? adminToggleItem("sac", id) : store.toggleSacItem(trip?.id, vid, id)} onAdd={text => isAdminManaging ? adminAddItem("sac", text) : store.addSacItem(trip?.id, vid, text)} onRemove={id => isAdminManaging ? adminRemoveItem("sac", id) : store.removeSacItem(trip?.id, vid, id)} onUpdateQty={(id, qty) => isAdminManaging ? adminUpdateItemQty("sac", id, qty) : store.updateSacItemQty(trip?.id, vid, id, qty)} emptyEmoji="🎒" />
+            <SacADos
+              baseItems={isAdminManaging ? adminSac : store.currentSac}
+              days={destDays}
+              voyageurs={tripVoyageurs}
+              activeVoyageurId={vid}
+              onToggle={id => isAdminManaging ? adminToggleItem("sac", id) : store.toggleSacItem(trip?.id, vid, id)}
+              onAdd={text => isAdminManaging ? adminAddItem("sac", text) : store.addSacItem(trip?.id, vid, text)}
+              onRemove={id => isAdminManaging ? adminRemoveItem("sac", id) : store.removeSacItem(trip?.id, vid, id)}
+              onUpdateQty={(id, qty) => isAdminManaging ? adminUpdateItemQty("sac", id, qty) : store.updateSacItemQty(trip?.id, vid, id, qty)}
+              onUpdate={(dayId, changes) => {
+                if (isAdminManaging) { adminUpdateTripLocal({ days: (isMultiDest ? destDays : trip.days).map(d => d.id === dayId ? { ...d, ...changes } : d) }) }
+                else if (isMultiDest) { saveDestDays(destDays.map(d => d.id === dayId ? { ...d, ...changes } : d)) }
+                else store.updateDay(trip.id, dayId, changes)
+              }}
+            />
           </div>
         )}
 
