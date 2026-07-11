@@ -391,6 +391,71 @@ export default function App() {
 
   // TODO: vérification d'accès invité à réactiver quand le système sera stable
 
+  if (!store.uid) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'linear-gradient(135deg, #1a4a2e 0%, #2d7a4f 50%, #0d5e38 100%)', fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '2rem', fontWeight: 700, color: '#fff', marginBottom: '.3rem' }}>Séjours Vacances</div>
+          <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '.9rem' }}>Organise tes séjours entre amis</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '2rem', maxWidth: 400, width: '100%', textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,.15)' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🏔</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.2rem', marginBottom: '.5rem' }}>Bienvenue !</h2>
+          <p style={{ fontSize: '.85rem', color: '#888', marginBottom: '1.5rem' }}>Connecte-toi avec Google pour accéder à tes séjours ou rejoindre une invitation.</p>
+          <button onClick={store.signIn} style={{
+            width: '100%', padding: '14px', border: 'none', borderRadius: 12,
+            background: '#2F8F6B', color: '#fff', fontSize: '1rem', fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(47,143,107,.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem'
+          }}>
+            🔐 Se connecter avec Google
+          </button>
+          <div style={{ margin: '1rem 0', fontSize: '.78rem', color: '#aaa' }}>— ou —</div>
+          {!showCode ? (
+            <button onClick={() => setShowCode(true)} style={{
+              width: '100%', padding: '12px', border: '1.5px solid #ddd', borderRadius: 12,
+              background: 'transparent', color: '#555', fontSize: '.88rem', fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit'
+            }}>
+              🔑 Rejoindre avec un code d'invitation
+            </button>
+          ) : (
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '.82rem', fontWeight: 600, marginBottom: '.5rem', color: '#333' }}>🔑 Code d'invitation</div>
+              <p style={{ fontSize: '.75rem', color: '#888', marginBottom: '.75rem' }}>Entre le code reçu. Tu seras ensuite redirigé vers la connexion Google.</p>
+              <input id="invite-code-input" placeholder="ex: INV-ABCDEF" style={{
+                width: '100%', padding: '10px 12px', border: '1.5px solid #ddd', borderRadius: 10,
+                fontSize: '.88rem', fontFamily: 'inherit', marginBottom: '.5rem', boxSizing: 'border-box'
+              }} />
+              <div style={{ display: 'flex', gap: '.4rem' }}>
+                <button onClick={() => setShowCode(false)} style={{
+                  flex: 1, padding: '10px', border: '1px solid #ddd', borderRadius: 10,
+                  background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: '.82rem', color: '#888'
+                }}>Annuler</button>
+                <button onClick={async () => {
+                  const code = document.getElementById('invite-code-input')?.value?.trim()
+                  if (!code) return alert('Entre un code')
+                  const { validateShareCode } = await import('./firebase')
+                  const result = await validateShareCode(code)
+                  if (result?.valid) {
+                    window.history.replaceState({}, '', `?share=${code}`)
+                    store.signIn()
+                  } else {
+                    alert(result?.error || 'Code invalide ou expiré')
+                  }
+                }} style={{
+                  flex: 1, padding: '10px', border: 'none', borderRadius: 10,
+                  background: '#2F8F6B', color: '#fff', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: '.82rem', fontWeight: 600
+                }}>Vérifier → Google</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   if (!store.dataLoaded) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:'1rem', background:'var(--bg)' }}>
