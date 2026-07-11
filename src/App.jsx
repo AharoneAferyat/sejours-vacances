@@ -197,6 +197,8 @@ export default function App() {
   const [scrollToDayId, setScrollToDayId] = useState(null)
   const [activeDestIdx, setActiveDestIdx] = useState(0) // multi-destination: which destination is active
   const [showAddDest, setShowAddDest] = useState(false)
+  const [showCode, setShowCode] = useState(false)
+  const [showFAQ, setShowFAQ] = useState(false)
 
   // Admin mode: manage another user's trip
   const [adminMode, setAdminMode] = useState(null)
