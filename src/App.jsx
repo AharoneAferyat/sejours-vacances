@@ -21,6 +21,7 @@ import GlobalBudget from './components/GlobalBudget'
 import AIRandoSearch from './components/AIRandoSearch'
 import DangerAlert from './components/DangerAlert'
 import AdminPanel from './components/AdminPanel'
+import FAQ from './components/FAQ'
 
 
 function InviteScreen({ onBack, onSuccess }) {
