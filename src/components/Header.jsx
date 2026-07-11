@@ -109,7 +109,7 @@ export default function AppHeader({
           {icon:'👥',label:'Voyageurs',fn:onOpenVoyageurs},
           onOpenGlobalBudget&&{icon:'💰',label:'Budget global',fn:onOpenGlobalBudget},
 
-          onOpenFAQ&&{icon:'❓',label:'Aide & FAQ',fn:onOpenFAQ},
+          onOpenFAQ&&{icon:'❓',label:'Aide & FAQ',fn:()=>setTab('faq')},
           isAdmin&&onOpenAdmin&&{icon:'⚙️',label:'Administration',fn:()=>setTab('admin'),color:'rgba(255,200,80,.85)'},
           {icon:'→',label:'Déconnexion',fn:()=>{setMobileMenu(null);onSignOut()},color:'rgba(255,110,90,.85)'},
         ].filter(Boolean).map((item,i)=>(

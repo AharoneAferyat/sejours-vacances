@@ -42,60 +42,68 @@ const SECTIONS = [
   ]},
 ]
 
-export default function FAQ({ onClose }) {
+export default function FAQ({ onClose, inline }) {
   const [openSection, setOpenSection] = useState(0)
   const [openQ, setOpenQ] = useState(null)
+
+  const content = (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <h2 style={{ margin: 0, fontFamily: "'Playfair Display', serif", fontSize: '1.15rem' }}>❓ Aide & FAQ</h2>
+        {!inline && <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'var(--text-muted)' }}>✕</button>}
+      </div>
+      <p style={{ fontSize: '.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+        Tout ce que tu peux faire sur Séjours Vacances, en questions-réponses.
+      </p>
+
+      {SECTIONS.map((section, sIdx) => (
+        <div key={sIdx} style={{ marginBottom: '.5rem' }}>
+          <button onClick={() => setOpenSection(openSection === sIdx ? -1 : sIdx)} style={{
+            width: '100%', textAlign: 'left', padding: '.6rem .75rem', border: '1px solid var(--border)',
+            borderRadius: openSection === sIdx ? '10px 10px 0 0' : 10, background: openSection === sIdx ? 'var(--bg)' : 'var(--card)',
+            cursor: 'pointer', fontFamily: 'inherit', fontSize: '.85rem', fontWeight: 600,
+            color: 'var(--text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+          }}>
+            {section.title}
+            <span style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>{openSection === sIdx ? '▼' : '▶'}</span>
+          </button>
+          {openSection === sIdx && (
+            <div style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
+              {section.items.map((item, qIdx) => {
+                const key = `${sIdx}-${qIdx}`
+                const isOpen = openQ === key
+                return (
+                  <div key={qIdx} style={{ borderBottom: qIdx < section.items.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <button onClick={() => setOpenQ(isOpen ? null : key)} style={{
+                      width: '100%', textAlign: 'left', padding: '.55rem .85rem', border: 'none',
+                      background: isOpen ? 'var(--green-light)' : 'transparent', cursor: 'pointer',
+                      fontFamily: 'inherit', fontSize: '.82rem', color: isOpen ? 'var(--green)' : 'var(--text)',
+                      fontWeight: isOpen ? 600 : 400, display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    }}>
+                      <span>{item.q}</span>
+                      <span style={{ fontSize: '.7rem', flexShrink: 0, marginLeft: '.5rem' }}>{isOpen ? '−' : '+'}</span>
+                    </button>
+                    {isOpen && (
+                      <div style={{ padding: '.5rem .85rem .65rem', fontSize: '.8rem', color: 'var(--text-muted)', lineHeight: 1.55, background: 'var(--card)' }}>
+                        {item.a}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ))}
+    </>
+  )
+
+  if (inline) return content
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 560, maxHeight: '90vh' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0 }}>❓ Aide & FAQ</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'var(--text-muted)' }}>✕</button>
-        </div>
-        <p style={{ fontSize: '.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-          Tout ce que tu peux faire sur Séjours Vacances, en questions-réponses.
-        </p>
-
-        {SECTIONS.map((section, sIdx) => (
-          <div key={sIdx} style={{ marginBottom: '.5rem' }}>
-            <button onClick={() => setOpenSection(openSection === sIdx ? -1 : sIdx)} style={{
-              width: '100%', textAlign: 'left', padding: '.6rem .75rem', border: '1px solid var(--border)',
-              borderRadius: openSection === sIdx ? '10px 10px 0 0' : 10, background: openSection === sIdx ? 'var(--bg)' : 'var(--card)',
-              cursor: 'pointer', fontFamily: 'inherit', fontSize: '.85rem', fontWeight: 600,
-              color: 'var(--text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-            }}>
-              {section.title}
-              <span style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>{openSection === sIdx ? '▼' : '▶'}</span>
-            </button>
-            {openSection === sIdx && (
-              <div style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
-                {section.items.map((item, qIdx) => {
-                  const key = `${sIdx}-${qIdx}`
-                  const isOpen = openQ === key
-                  return (
-                    <div key={qIdx} style={{ borderBottom: qIdx < section.items.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                      <button onClick={() => setOpenQ(isOpen ? null : key)} style={{
-                        width: '100%', textAlign: 'left', padding: '.55rem .85rem', border: 'none',
-                        background: isOpen ? 'var(--green-light)' : 'transparent', cursor: 'pointer',
-                        fontFamily: 'inherit', fontSize: '.82rem', color: isOpen ? 'var(--green)' : 'var(--text)',
-                        fontWeight: isOpen ? 600 : 400, display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                      }}>
-                        <span>{item.q}</span>
-                        <span style={{ fontSize: '.7rem', flexShrink: 0, marginLeft: '.5rem' }}>{isOpen ? '−' : '+'}</span>
-                      </button>
-                      {isOpen && (
-                        <div style={{ padding: '.5rem .85rem .65rem', fontSize: '.8rem', color: 'var(--text-muted)', lineHeight: 1.55, background: 'var(--card)' }}>
-                          {item.a}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        ))}
+        {content}
       </div>
     </div>
   )
