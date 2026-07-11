@@ -223,29 +223,38 @@ export default function ActivityForm({ initial, onSave, onClose, title = 'Nouvel
         </div>
 
         <div className="form-group">
-          <label>Prix (€)</label>
-          <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center' }}>
-            <input type="number" min="0" step="0.01" value={form.price || ''} onChange={e => set('price', e.target.value)} placeholder="Gratuit" style={{ width: 100 }} />
-            <span style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>€ / personne</span>
+          <label>Prix</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <div style={{ position: 'relative', flex: '0 0 auto' }}>
+              <input type="number" min="0" step="0.01" value={form.price || ''} onChange={e => set('price', e.target.value)} placeholder="0" style={{ width: 90, paddingRight: 28 }} />
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: '.82rem', color: 'var(--text-muted)', pointerEvents: 'none' }}>€</span>
+            </div>
+            <span style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>par personne</span>
           </div>
           {form.price && parseFloat(form.price) > 0 && (
-            <div style={{ marginTop: '.4rem', background: 'var(--bg)', borderRadius: 10, padding: '.5rem .65rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.8rem', cursor: 'pointer', marginBottom: '.3rem' }}>
-                <input type="checkbox" checked={form.addToBudget || false} onChange={e => set('addToBudget', e.target.checked)} />
-                <span>💰 Ajouter au budget</span>
-              </label>
-              {form.addToBudget && (
-                <div style={{ display: 'flex', gap: '.4rem', marginLeft: '1.4rem' }}>
-                  {[['common','👥 Commune'],['perso','👤 Perso']].map(([v,l]) => (
-                    <button key={v} type="button" onClick={() => set('budgetType', v)} style={{
-                      padding: '4px 12px', borderRadius: 8, fontSize: '.75rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
-                      border: `1.5px solid ${(form.budgetType||'common') === v ? 'var(--green)' : 'var(--border)'}`,
-                      background: (form.budgetType||'common') === v ? 'var(--green-light)' : 'transparent',
-                      color: (form.budgetType||'common') === v ? 'var(--green)' : 'var(--text-muted)',
-                    }}>{l}</button>
-                  ))}
-                </div>
-              )}
+            <button type="button" onClick={() => set('addToBudget', !form.addToBudget)} style={{
+              display: 'flex', alignItems: 'center', gap: '.5rem', width: '100%', marginTop: '.5rem',
+              padding: '.55rem .75rem', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: '.82rem', fontWeight: 500, transition: 'all .15s',
+              border: form.addToBudget ? '1.5px solid var(--green)' : '1.5px solid var(--border)',
+              background: form.addToBudget ? 'var(--green-light)' : 'var(--card)',
+              color: form.addToBudget ? 'var(--green)' : 'var(--text-muted)',
+            }}>
+              <span style={{ fontSize: '1rem' }}>{form.addToBudget ? '✅' : '💰'}</span>
+              <span>Ajouter {parseFloat(form.price).toFixed(2)}€ au budget</span>
+            </button>
+          )}
+          {form.addToBudget && form.price && parseFloat(form.price) > 0 && (
+            <div style={{ display: 'flex', gap: '.4rem', marginTop: '.4rem' }}>
+              {[['common','👥 Dépense commune'],['perso','👤 Dépense perso']].map(([v,l]) => (
+                <button key={v} type="button" onClick={() => set('budgetType', v)} style={{
+                  flex: 1, padding: '.45rem .5rem', borderRadius: 10, fontSize: '.78rem', fontWeight: 500,
+                  cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center', transition: 'all .15s',
+                  border: `1.5px solid ${(form.budgetType||'common') === v ? 'var(--green)' : 'var(--border)'}`,
+                  background: (form.budgetType||'common') === v ? 'var(--green)' : 'transparent',
+                  color: (form.budgetType||'common') === v ? '#fff' : 'var(--text-muted)',
+                }}>{l}</button>
+              ))}
             </div>
           )}
         </div>

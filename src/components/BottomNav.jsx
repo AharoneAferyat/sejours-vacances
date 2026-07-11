@@ -39,6 +39,7 @@ export default function BottomNav({ tab, setTab, onOpenVoyageurs, onOpenGlobalBu
             <button className="bn-sheet-item" onClick={()=>go('ai')}><span>🤖</span>IA Activités</button>
             {onOpenVoyageurs && <button className="bn-sheet-item" onClick={()=>{onOpenVoyageurs();setShowMore(false)}}><span>👥</span>Voyageurs</button>}
             {onOpenGlobalBudget && <button className="bn-sheet-item" onClick={()=>{onOpenGlobalBudget();setShowMore(false)}}><span>🌍</span>Budget global</button>}
+            <button className="bn-sheet-item" onClick={()=>go('faq')}><span>❓</span>Aide & FAQ</button>
             {isAdmin && <button className="bn-sheet-item" style={{color:'var(--amber)'}} onClick={()=>go('admin')}><span>⚙️</span>Administration</button>}
             {onSignOut && <button className="bn-sheet-item" style={{color:'var(--red)',borderTop:'1px solid var(--border)',marginTop:'.25rem'}} onClick={()=>{setShowMore(false);onSignOut()}}><span>🚪</span>Déconnexion</button>}
           </div>
