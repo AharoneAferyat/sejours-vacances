@@ -216,17 +216,43 @@ function SouvenirPhotos({ trip, onUpdateTrip }) {
   const days = trip.days || []
   const fileInputRef = { current: null }
 
-  const addPhoto = (dayId, e) => {
+  const compressImage = (file, maxWidth = 800, quality = 0.6) => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let w = img.width, h = img.height
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth }
+        canvas.width = w; canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  const addPhoto = async (dayId, e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) return alert('Photo trop lourde (max 2 Mo). Compresse-la avant.')
-    const reader = new FileReader()
-    reader.onload = () => {
-      const photo = { id: 'ph_' + Date.now(), data: reader.result, name: file.name, addedAt: Date.now() }
-      const newDays = days.map(d => d.id === dayId ? { ...d, photos: [...(d.photos || []), photo] } : d)
-      onUpdateTrip(trip.id, { days: newDays })
+    if (file.size > 10 * 1024 * 1024) return alert('Photo trop lourde (max 10 Mo)')
+    try {
+      const compressed = await compressImage(file)
+      const sizeKB = Math.round(compressed.length * 3 / 4 / 1024)
+      if (sizeKB > 500) {
+        const extraCompressed = await compressImage(file, 600, 0.4)
+        const photo = { id: 'ph_' + Date.now(), data: extraCompressed, name: file.name, addedAt: Date.now() }
+        const newDays = days.map(d => d.id === dayId ? { ...d, photos: [...(d.photos || []), photo] } : d)
+        onUpdateTrip(trip.id, { days: newDays })
+      } else {
+        const photo = { id: 'ph_' + Date.now(), data: compressed, name: file.name, addedAt: Date.now() }
+        const newDays = days.map(d => d.id === dayId ? { ...d, photos: [...(d.photos || []), photo] } : d)
+        onUpdateTrip(trip.id, { days: newDays })
+      }
+    } catch (err) {
+      alert('Erreur lors de la compression : ' + err.message)
     }
-    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   const removePhoto = (dayId, photoId) => {
@@ -247,9 +273,9 @@ function SouvenirPhotos({ trip, onUpdateTrip }) {
                 {day.label}
                 {acts.length > 0 && <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: '.3rem' }}>— {acts.map(a => a.emoji || '').filter(Boolean).join(' ')} {acts[0]?.title}</span>}
               </div>
-              <label style={{ fontSize: '.7rem', color: 'var(--green)', fontWeight: 500, cursor: 'pointer', flexShrink: 0 }}>
-                ＋ Photo
-                <input type="file" accept="image/*" onChange={e => addPhoto(day.id, e)} style={{ display: 'none' }} />
+              <label style={{ fontSize: '.7rem', color: photos.length >= 5 ? 'var(--text-muted)' : 'var(--green)', fontWeight: 500, cursor: photos.length >= 5 ? 'default' : 'pointer', flexShrink: 0 }}>
+                {photos.length >= 5 ? '5/5' : '＋ Photo'}
+                <input type="file" accept="image/*" onChange={e => addPhoto(day.id, e)} style={{ display: 'none' }} disabled={photos.length >= 5} />
               </label>
             </div>
             {photos.length > 0 ? (
