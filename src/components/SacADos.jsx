@@ -6,7 +6,7 @@ function useIsMobile() {
   return m
 }
 
-export default function SacADos({ baseItems, days, voyageurs, activeVoyageurId, onToggle, onAdd, onRemove, onUpdateQty, onUpdate }) {
+export default function SacADos({ baseItems, days, voyageurs, activeVoyageurId, onToggle, onAdd, onRemove, onUpdateQty, onUpdate, onMoveToValise }) {
   const [activeTab, setActiveTab] = useState('base')
   const [newText, setNewText] = useState('')
   const mob = useIsMobile()
@@ -90,6 +90,7 @@ export default function SacADos({ baseItems, days, voyageurs, activeVoyageurId, 
               <button onClick={() => onToggle(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.85rem', padding: 0 }}>{item.done ? '✅' : '⬜'}</button>
               <span style={{ flex: 1, fontSize: '.82rem', textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--text-muted)' : 'var(--text)' }}>{item.text}</span>
               {item.consumable && <span style={{ fontSize: '.58rem', padding: '1px 5px', borderRadius: 4, background: 'var(--red-light)', color: 'var(--red)', fontWeight: 600 }}>Conso.</span>}
+                            {onMoveToValise && <button onClick={() => { onMoveToValise(item); onRemove(item.id) }} title="Déplacer dans la valise" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.7rem', color: 'var(--blue)', padding: '2px' }}>🧳→</button>}
               <button onClick={() => onRemove(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', color: 'var(--red)', padding: '2px' }}>✕</button>
             </div>
           ))}

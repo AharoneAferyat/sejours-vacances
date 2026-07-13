@@ -17,7 +17,7 @@ const CATEGORIES = [
 
 function getCat(item) { return CATEGORIES.find(c => c.id === item.category) || CATEGORIES[CATEGORIES.length - 1] }
 
-export default function Valise({ items, voyageurs, activeVoyageurId, suggestions, onToggle, onAdd, onRemove, onUpdateQty, onUpdate }) {
+export default function Valise({ items, voyageurs, activeVoyageurId, suggestions, onToggle, onAdd, onRemove, onUpdateQty, onUpdate, onMoveToSac, onConsume }) {
   const [newText, setNewText] = useState('')
   const mob = useIsMobile()
   const [newCat, setNewCat] = useState('autre')
@@ -37,8 +37,12 @@ export default function Valise({ items, voyageurs, activeVoyageurId, suggestions
 
   const handleAdd = () => {
     if (!newText.trim()) return
-    onAdd(newText.trim(), newCat)
+    const essential = document.getElementById('new-essential')?.checked || false
+    const consumable = document.getElementById('new-consumable')?.checked || false
+    onAdd(newText.trim(), newCat, { essential, consumable })
     setNewText('')
+    if (document.getElementById('new-essential')) document.getElementById('new-essential').checked = false
+    if (document.getElementById('new-consumable')) document.getElementById('new-consumable').checked = false
   }
 
   const addSuggestion = (text) => {
@@ -85,16 +89,19 @@ export default function Valise({ items, voyageurs, activeVoyageurId, suggestions
                 <button onClick={() => onToggle(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.85rem', padding: 0, lineHeight: 1 }}>
                   {item.done ? '✅' : '⬜'}
                 </button>
-                <span style={{ flex: 1, fontSize: '.82rem', textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--text-muted)' : 'var(--text)' }}>
+                <span style={{ flex: 1, fontSize: '.82rem', textDecoration: (item.done || item.consumed) ? 'line-through' : 'none', color: (item.done || item.consumed) ? 'var(--text-muted)' : 'var(--text)', opacity: item.consumed ? .5 : 1 }}>
                   {item.text}
                 </span>
                 {item.qty > 1 && <span style={{ fontSize: '.68rem', color: 'var(--text-muted)', background: 'var(--bg)', padding: '1px 6px', borderRadius: 4 }}>x{item.qty}</span>}
                 {item.essential && <span style={{ fontSize: mob ? '.55rem' : '.58rem', padding: '1px 5px', borderRadius: 4, background: 'var(--amber-light)', color: 'var(--amber)', fontWeight: 600 }}>Essentiel</span>}
-                {item.consumable && <span style={{ fontSize: '.58rem', padding: '1px 5px', borderRadius: 4, background: 'var(--red-light)', color: 'var(--red)', fontWeight: 600 }}>Conso.</span>}
+                {item.consumable && !item.consumed && <span style={{ fontSize: mob ? '.55rem' : '.58rem', padding: '1px 5px', borderRadius: 4, background: 'var(--red-light)', color: 'var(--red)', fontWeight: 600 }}>Conso.</span>}
+                {item.consumed && <span style={{ fontSize: mob ? '.55rem' : '.58rem', padding: '1px 5px', borderRadius: 4, background: 'var(--green-light)', color: 'var(--green)', fontWeight: 600 }}>Consommé</span>}
                 {item.sharedWith && <span style={{ fontSize: '.58rem', padding: '1px 5px', borderRadius: 4, background: 'var(--blue-light)', color: 'var(--blue)' }}>{voyageurs.find(v => v.id === item.sharedWith)?.name || '?'} aussi</span>}
-                <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 2, flexShrink: 0, alignItems: 'center' }}>
                   <button onClick={() => onUpdateQty(item.id, (item.qty || 1) + 1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', color: 'var(--text-muted)', padding: '2px' }}>＋</button>
                   {(item.qty || 1) > 1 && <button onClick={() => onUpdateQty(item.id, Math.max(1, (item.qty || 1) - 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', color: 'var(--text-muted)', padding: '2px' }}>−</button>}
+                  {onMoveToSac && <button onClick={() => { onMoveToSac(item); onRemove(item.id) }} title="Déplacer dans le sac" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.7rem', color: 'var(--blue)', padding: '2px' }}>🎒→</button>}
+                  {item.consumable && onConsume && <button onClick={() => onConsume(item.id)} title="Consommer" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.7rem', color: item.consumed ? 'var(--green)' : 'var(--amber)', padding: '2px' }}>{item.consumed ? '✓' : '🔥'}</button>}
                   <button onClick={() => onRemove(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.65rem', color: 'var(--red)', padding: '2px' }}>✕</button>
                 </div>
               </div>
@@ -122,6 +129,14 @@ export default function Valise({ items, voyageurs, activeVoyageurId, suggestions
           {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
         </select>
         <button onClick={handleAdd} className="btn btn-primary" style={{ padding: '7px 14px', borderRadius: 8 }}>+</button>
+      </div>
+      <div style={{ display: 'flex', gap: '.5rem', marginTop: '.35rem', fontSize: '.75rem' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '.25rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
+          <input type="checkbox" id="new-essential" /> Essentiel
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '.25rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
+          <input type="checkbox" id="new-consumable" /> Consommable
+        </label>
       </div>
     </div>
   )

@@ -776,8 +776,8 @@ export default function App() {
               activeVoyageurId={vid}
               suggestions={destDays.flatMap(d => (d.activities||[]).flatMap(a => a.gear || [])).filter((g,i,a) => a.indexOf(g) === i)}
               onToggle={id => isAdminManaging ? adminToggleItem("valise", id) : store.toggleValiseItem(trip?.id, vid, id)}
-              onAdd={(text, cat) => {
-                const item = { id: 'vi_' + Date.now(), text, done: false, qty: 1, category: cat || 'autre' }
+              onAdd={(text, cat, flags) => {
+                const item = { id: 'vi_' + Date.now(), text, done: false, qty: 1, category: cat || 'autre', essential: flags?.essential || false, consumable: flags?.consumable || false }
                 if (isAdminManaging) {
                   const vd = adminMode.trip.voyageurData || {}; const myVd = vd[vid] || {}
                   adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, valise: [...(myVd.valise || []), item] } } })
@@ -785,6 +785,14 @@ export default function App() {
               }}
               onRemove={id => isAdminManaging ? adminRemoveItem("valise", id) : store.removeValiseItem(trip?.id, vid, id)}
               onUpdateQty={(id, qty) => isAdminManaging ? adminUpdateItemQty("valise", id, qty) : store.updateValiseItemQty(trip?.id, vid, id, qty)}
+              onMoveToSac={item => isAdminManaging ? adminAddItem("sac", item.text) : store.addSacItem(trip?.id, vid, item.text)}
+              onConsume={itemId => {
+                const vd = isAdminManaging ? (adminMode.trip.voyageurData || {}) : (trip?.voyageurData || {})
+                const myVd = vd[vid] || {}
+                const updated = (myVd.valise || []).map(i => i.id === itemId ? { ...i, consumed: !i.consumed } : i)
+                if (isAdminManaging) adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, valise: updated } } })
+                else store.updateTrip(trip.id, { voyageurData: { ...vd, [vid]: { ...myVd, valise: updated } } })
+              }}
             />
           </div>
         )}
@@ -809,6 +817,13 @@ export default function App() {
               onAdd={text => isAdminManaging ? adminAddItem("sac", text) : store.addSacItem(trip?.id, vid, text)}
               onRemove={id => isAdminManaging ? adminRemoveItem("sac", id) : store.removeSacItem(trip?.id, vid, id)}
               onUpdateQty={(id, qty) => isAdminManaging ? adminUpdateItemQty("sac", id, qty) : store.updateSacItemQty(trip?.id, vid, id, qty)}
+              onMoveToValise={item => {
+                const newItem = { id: 'vi_' + Date.now(), text: item.text, done: false, qty: item.qty || 1, category: item.category || 'autre', essential: item.essential || false, consumable: item.consumable || false }
+                if (isAdminManaging) {
+                  const vd = adminMode.trip.voyageurData || {}; const myVd = vd[vid] || {}
+                  adminUpdateTripLocal({ voyageurData: { ...vd, [vid]: { ...myVd, valise: [...(myVd.valise || []), newItem] } } })
+                } else store.updateTrip(trip.id, { voyageurData: { ...(trip.voyageurData||{}), [vid]: { ...(trip.voyageurData?.[vid]||{}), valise: [...(trip.voyageurData?.[vid]?.valise || []), newItem] } } })
+              }}
               onUpdate={(dayId, changes) => {
                 if (isAdminManaging) { adminUpdateTripLocal({ days: (isMultiDest ? destDays : trip.days).map(d => d.id === dayId ? { ...d, ...changes } : d) }) }
                 else if (isMultiDest) { saveDestDays(destDays.map(d => d.id === dayId ? { ...d, ...changes } : d)) }
